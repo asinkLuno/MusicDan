@@ -48,23 +48,29 @@ jobs:
       - name: Install frontend dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Build universal APK and upload to draft release
+      - name: Cache debug keystore for stable signature across builds
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore
+
+      - name: Build per-ABI APKs and upload to draft release
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tauriScript: yarn tauri
           mobile: android
-          args: --apk --debug
+          args: --apk --debug --split-per-abi --target aarch64 --target armv7
           tagName: v__VERSION__
           releaseName: 'MusicDan v__VERSION__'
-          releaseBody: 'Android debug APK（CI 自动构建，包含全部 ABI，任意设备可直接安装）。'
+          releaseBody: 'Android debug APK（CI 自动构建，按 CPU 架构分包：arm64-v8a 适配现代手机，armeabi-v7a 适配老款 32 位手机）。'
           releaseDraft: true
           prerelease: false
 
-      - name: Upload APK as workflow artifact
+      - name: Upload APKs as workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: apk-universal
+          name: apks-per-abi
           path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
           if-no-files-found: error
