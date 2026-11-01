@@ -57,7 +57,7 @@ jobs:
           mobile: android
           args: --apk --debug
           tagName: v__VERSION__
-          releaseName: 'listenWme v__VERSION__'
+          releaseName: 'MusicDan v__VERSION__'
           releaseBody: 'Android debug APK（CI 自动构建，包含全部 ABI，任意设备可直接安装）。'
           releaseDraft: true
           prerelease: false

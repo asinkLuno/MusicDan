@@ -12,7 +12,7 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
     api: PluginApi<R, C>,
 ) -> crate::Result<Media<R>> {
     #[cfg(target_os = "android")]
-    let handle = api.register_android_plugin("com.listenwme.media", "MediaPlugin")?;
+    let handle = api.register_android_plugin("com.musicdan.media", "MediaPlugin")?;
     Ok(Media(handle))
 }
 

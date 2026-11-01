@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.listenwme.media"
+    namespace = "com.musicdan.media"
     compileSdk = 37
 
     defaultConfig {

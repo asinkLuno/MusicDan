@@ -1,0 +1,187 @@
+{
+  "name": "Lavender Afterglow",
+  "schemes": {
+    "light": false,
+    "dark": true
+  },
+  "palettes": {
+    "base": {
+      "name": "base",
+      "anchors": [
+        {
+          "index": 0,
+          "hue": {
+            "sync": true,
+            "light": 270,
+            "dark": 270
+          },
+          "sat": {
+            "sync": true,
+            "light": 0.19,
+            "dark": 0.19
+          },
+          "lum": {
+            "light": 0.98,
+            "dark": 0.06
+          },
+          "alpha": {
+            "light": 1,
+            "dark": 1
+          }
+        },
+        {
+          "index": 8,
+          "hue": {
+            "sync": true,
+            "light": 270,
+            "dark": 270
+          },
+          "sat": {
+            "sync": true,
+            "light": 0.19,
+            "dark": 0.19
+          },
+          "lum": {
+            "light": 0.5,
+            "dark": 0.72
+          },
+          "alpha": {
+            "light": 1,
+            "dark": 1
+          }
+        },
+        {
+          "index": 9,
+          "hue": {
+            "sync": true,
+            "light": 270,
+            "dark": 270
+          },
+          "sat": {
+            "sync": true,
+            "light": 0.19,
+            "dark": 0.19
+          },
+          "lum": {
+            "light": 0.15,
+            "dark": 0.82
+          },
+          "alpha": {
+            "light": 1,
+            "dark": 1
+          }
+        },
+        {
+          "index": 10,
+          "hue": {
+            "sync": true,
+            "light": 270,
+            "dark": 270
+          },
+          "sat": {
+            "sync": true,
+            "light": 0.19,
+            "dark": 0.19
+          },
+          "lum": {
+            "light": 0.02,
+            "dark": 0.96
+          },
+          "alpha": {
+            "light": 1,
+            "dark": 1
+          }
+        }
+      ]
+    },
+    "accent": {
+      "name": "accent",
+      "anchors": [
+        {
+          "index": 0,
+          "hue": {
+            "sync": true,
+            "light": 272,
+            "dark": 272
+          },
+          "sat": {
+            "sync": true,
+            "light": 0.64,
+            "dark": 0.64
+          },
+          "lum": {
+            "light": 0.4,
+            "dark": 0.25
+          },
+          "alpha": {
+            "light": 1,
+            "dark": 1
+          }
+        },
+        {
+          "index": 8,
+          "hue": {
+            "sync": true,
+            "light": 272,
+            "dark": 272
+          },
+          "sat": {
+            "sync": true,
+            "light": 0.64,
+            "dark": 0.64
+          },
+          "lum": {
+            "light": 0.65,
+            "dark": 0.72
+          },
+          "alpha": {
+            "light": 1,
+            "dark": 1
+          }
+        },
+        {
+          "index": 9,
+          "hue": {
+            "sync": true,
+            "light": 272,
+            "dark": 272
+          },
+          "sat": {
+            "sync": true,
+            "light": 0.64,
+            "dark": 0.64
+          },
+          "lum": {
+            "light": 0.95,
+            "dark": 0.91
+          },
+          "alpha": {
+            "light": 1,
+            "dark": 1
+          }
+        },
+        {
+          "index": 10,
+          "hue": {
+            "sync": true,
+            "light": 272,
+            "dark": 272
+          },
+          "sat": {
+            "sync": true,
+            "light": 0.64,
+            "dark": 0.64
+          },
+          "lum": {
+            "light": 0.98,
+            "dark": 0.97
+          },
+          "alpha": {
+            "light": 1,
+            "dark": 1
+          }
+        }
+      ]
+    }
+  }
+}

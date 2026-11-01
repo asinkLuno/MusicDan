@@ -1,23 +1,35 @@
+import { View, useTheme } from 'tamagui';
 import { useEffect, useRef, useState } from 'react';
 import type { Settings, Snapshot } from './types';
 import { makePlan, visibleRange } from './plan';
+import { getEmoteImage, parseSegments, removeEmoteListener, type Segment } from './emotes';
 import { PlaybackClock } from './playbackClock';
 export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; settings: Settings }) {
+  const theme = useTheme();
+  // Canvas cannot resolve the CSS variable returned by .get(); use the literal color.
+  const textColor = theme.color.val;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const clock = useRef(new PlaybackClock());
-  const playing = useRef(false);
+  const playing = snapshot?.nowPlaying?.isPlaying ?? false;
+  const wake = useRef<(() => void) | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   useEffect(() => {
     clock.current.update(snapshot, performance.now(), Date.now());
-    playing.current = snapshot?.nowPlaying?.isPlaying ?? false;
+    wake.current?.();
   }, [snapshot]);
   useEffect(() => {
-    const observer = new ResizeObserver(([entry]) => setSize({ width: entry.contentRect.width, height: entry.contentRect.height }));
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setSize(previous => previous.width === width && previous.height === height ? previous : { width, height });
+    });
     observer.observe(canvasRef.current!); return () => observer.disconnect();
   }, []);
   useEffect(() => {
     const canvas = canvasRef.current!;
-    const context = canvas.getContext('2d')!;
+    if (!size.width || !size.height) return;
+    const drawingContext = canvas.getContext('2d');
+    if (!drawingContext) return;
+    const context = drawingContext;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = Math.round(size.width * dpr); canvas.height = Math.round(size.height * dpr);
     context.scale(dpr, dpr);
@@ -29,13 +41,17 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
     const tileWidth = 512;
     const padding = 8;
     const spriteHeight = Math.ceil(settings.fontSize * 2.2) + padding * 2;
+    const emoteSize = Math.round(settings.fontSize * 1.5);
     // Rasterize only visible text tiles, once; long comments do not allocate giant canvases.
-    const sprites = new Map<number, { text: string; width: number; tiles: Map<number, HTMLCanvasElement> }>();
+    const sprites = new Map<number, { segs: Segment[]; width: number; tiles: Map<number, HTMLCanvasElement> }>();
+    const invalidateTiles = () => { for (const sprite of sprites.values()) sprite.tiles.clear(); };
     function spriteFor(index: number) {
       let sprite = sprites.get(index);
       if (!sprite) {
-        const text = list[index].content.replaceAll('\n', ' ');
-        sprite = { text, width: Math.ceil(context.measureText(text).width), tiles: new Map() };
+        const segs = parseSegments(list[index].content.replaceAll('\n', ' '));
+        let width = 0;
+        for (const seg of segs) width += seg.type === 'text' ? context.measureText(seg.text).width : emoteSize;
+        sprite = { segs, width: Math.ceil(width), tiles: new Map() };
         sprites.set(index, sprite);
       }
       return sprite;
@@ -48,16 +64,34 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
         image.height = Math.ceil(spriteHeight * dpr);
         const ink = image.getContext('2d')!;
         ink.scale(dpr, dpr); ink.font = font; ink.textBaseline = 'middle';
-        ink.fillStyle = '#f2f8f6'; ink.shadowColor = '#000'; ink.shadowBlur = 3;
-        ink.fillText(sprite.text, padding - tile * tileWidth, spriteHeight / 2);
+        ink.fillStyle = textColor;
+        let cursor = padding - tile * tileWidth;
+        for (const seg of sprite.segs) {
+          const width = seg.type === 'text' ? context.measureText(seg.text).width : emoteSize;
+          if (cursor + width >= 0 && cursor <= tileWidth + padding * 2) {
+            if (seg.type === 'text') {
+              ink.fillText(seg.text, cursor, spriteHeight / 2);
+            } else {
+              const img = getEmoteImage(seg.url, invalidateTiles);
+              if (img) ink.drawImage(img, cursor, (spriteHeight - emoteSize) / 2, emoteSize, emoteSize);
+              else {
+                ink.save(); ink.beginPath(); ink.rect(cursor, 0, emoteSize, spriteHeight); ink.clip();
+                ink.fillText(`[${seg.name}]`, cursor, spriteHeight / 2);
+                ink.restore();
+              }
+            }
+          }
+          cursor += width;
+        }
         sprite.tiles.set(tile, image);
       }
       return image;
     }
     let animation = 0;
     function draw() {
+      animation = 0;
       context.clearRect(0, 0, size.width, size.height);
-      if (playing.current && list.length) {
+      if (playing && list.length && !document.hidden) {
         const position = clock.current.position(performance.now());
         const crossing = settings.crossSeconds * 1000;
         const [start, end] = visibleRange(position, crossing, spacing, list.length);
@@ -77,9 +111,21 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
           }
         }
       }
-      animation = requestAnimationFrame(draw);
+      if (playing && list.length && !document.hidden) animation = requestAnimationFrame(draw);
     }
-    draw(); return () => cancelAnimationFrame(animation);
-  }, [size, snapshot?.revision, snapshot?.nowPlaying?.duration, snapshot?.song?.duration, settings]);
-  return <canvas className="danmaku-canvas" ref={canvasRef} aria-label="实时弹幕" />;
+    function resume() {
+      cancelAnimationFrame(animation);
+      draw();
+    }
+    wake.current = resume;
+    document.addEventListener('visibilitychange', resume);
+    draw();
+    return () => {
+      cancelAnimationFrame(animation);
+      removeEmoteListener(invalidateTiles);
+      wake.current = null;
+      document.removeEventListener('visibilitychange', resume);
+    };
+  }, [size, playing, snapshot?.revision, snapshot?.nowPlaying?.duration, snapshot?.song?.duration, settings, textColor]);
+  return <View render="canvas" position="absolute" inset={0} width="100%" height="100%" pointerEvents="none" ref={element => { if (element instanceof HTMLCanvasElement) canvasRef.current = element; }} aria-label="实时弹幕" />;
 }

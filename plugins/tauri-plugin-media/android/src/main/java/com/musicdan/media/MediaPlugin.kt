@@ -1,17 +1,10 @@
-package com.listenwme.media
+package com.musicdan.media
 
-import android.os.SystemClock
 import android.net.Uri
-import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
 import android.app.Activity
-import android.content.ComponentName
 import android.content.Intent
-import android.media.MediaMetadata
-import android.media.session.MediaController
-import android.media.session.MediaSessionManager
-import android.media.session.PlaybackState
 import android.provider.Settings
 import android.util.Log
 import app.tauri.plugin.JSObject
@@ -21,6 +14,8 @@ import app.tauri.plugin.Invoke
 import app.tauri.plugin.Plugin
 import org.json.JSONObject
 import java.util.concurrent.Executors
+import com.musicdan.media.session.MediaSessionReader
+import com.musicdan.media.permission.MediaPermissions
 
 /**
  * 媒体信息插件 —— 通过 MediaSession 获取当前正在播放的歌曲。
@@ -40,26 +35,13 @@ class MediaPlugin(private val activity: Activity) : Plugin(activity) {
     /** 单线程执行器：getActiveSessions 是 binder 调用，放到后台线程执行 */
     private val executor = Executors.newSingleThreadExecutor()
 
-    private val mediaSessionManager: MediaSessionManager? =
-        activity.getSystemService(Activity.MEDIA_SESSION_SERVICE) as? MediaSessionManager
-
-    private val listenerComponent = ComponentName(activity, MediaListenerService::class.java)
-
-    /** 检查本应用是否已被授予「通知使用权」（无额外依赖，直接读 Secure 设置） */
-    private fun isListenerEnabled(): Boolean {
-        val enabled = Settings.Secure.getString(
-            activity.contentResolver,
-            "enabled_notification_listeners"
-        ) ?: return false
-        return enabled.split(":").any {
-            ComponentName.unflattenFromString(it)?.packageName == activity.packageName
-        }
-    }
+    private val sessions = MediaSessionReader(activity)
+    private val permissions = MediaPermissions(activity)
 
     @Command
     fun isPermissionGranted(invoke: Invoke) {
         val ret = JSObject()
-        ret.put("granted", isListenerEnabled())
+        ret.put("granted", permissions.isListenerEnabled())
         invoke.resolve(ret)
     }
 
@@ -79,21 +61,14 @@ class MediaPlugin(private val activity: Activity) : Plugin(activity) {
     fun getNowPlaying(invoke: Invoke) {
         executor.execute {
             val ret = JSObject()
-            val granted = isListenerEnabled()
+            val granted = permissions.isListenerEnabled()
             ret.put("permissionGranted", granted)
             if (!granted) {
                 invoke.resolve(ret)
                 return@execute
             }
             try {
-                val sessions = mediaSessionManager
-                    ?.getActiveSessions(listenerComponent)
-                    .orEmpty()
-                val controller = sessions.firstOrNull {
-                    it.playbackState?.state == PlaybackState.STATE_PLAYING
-                } ?: sessions.firstOrNull()
-
-                ret.put("nowPlaying", controller?.let(::toJSObject) ?: JSONObject.NULL)
+                ret.put("nowPlaying", sessions.nowPlaying() ?: JSONObject.NULL)
             } catch (e: SecurityException) {
                 Log.w(TAG, "getActiveSessions denied", e)
                 ret.put("permissionGranted", false)
@@ -151,22 +126,4 @@ class MediaPlugin(private val activity: Activity) : Plugin(activity) {
         OverlayService.instance?.updateVisibility()
     }
 
-    private fun toJSObject(controller: MediaController): JSObject {
-        val metadata = controller.metadata
-        val state = controller.playbackState
-        val np = JSObject()
-        np.put("title", metadata?.getString(MediaMetadata.METADATA_KEY_TITLE) ?: "")
-        np.put("artist", metadata?.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: "")
-        np.put("album", metadata?.getString(MediaMetadata.METADATA_KEY_ALBUM) ?: "")
-        np.put("duration", metadata?.getLong(MediaMetadata.METADATA_KEY_DURATION) ?: 0L)
-        val position = state?.position ?: 0L
-        val elapsed = if (state?.state == PlaybackState.STATE_PLAYING && state.lastPositionUpdateTime > 0)
-            ((SystemClock.elapsedRealtime() - state.lastPositionUpdateTime) * state.playbackSpeed).toLong() else 0L
-        np.put("position", (position + elapsed).coerceAtLeast(0L))
-        np.put("playbackSpeed", state?.playbackSpeed?.toDouble() ?: 1.0)
-        np.put("lastPositionUpdateTime", state?.lastPositionUpdateTime ?: 0L)
-        np.put("isPlaying", state?.state == PlaybackState.STATE_PLAYING)
-        np.put("packageName", controller.packageName ?: "")
-        return np
-    }
 }

@@ -1,4 +1,4 @@
-package com.listenwme.media
+package com.musicdan.media
 
 import android.app.*
 import android.content.Intent
@@ -11,6 +11,7 @@ import android.view.*
 import androidx.core.app.NotificationCompat
 import org.json.JSONObject
 import kotlin.math.*
+import com.musicdan.media.overlay.OverlayCanvas
 
 /** The service owns the native renderer; Rust supplies metadata even when the WebView is stopped. */
 class OverlayService : Service() {
@@ -37,7 +38,7 @@ class OverlayService : Service() {
         if (Build.VERSION.SDK_INT >= 34) startForeground(NOTIFICATION, notification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         else startForeground(NOTIFICATION, notification())
         manager = getSystemService(WINDOW_SERVICE) as WindowManager
-        view = OverlayCanvas()
+        view = OverlayCanvas(this)
         params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
             if (Build.VERSION.SDK_INT >= 26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE,
@@ -71,7 +72,7 @@ class OverlayService : Service() {
         fun action(name: String, code: Int) = PendingIntent.getService(this, code,
             Intent(this, OverlayService::class.java).setAction(name), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         return NotificationCompat.Builder(this, CHANNEL)
-            .setSmallIcon(android.R.drawable.ic_media_play).setContentTitle("listenWme · 悬浮弹幕")
+            .setSmallIcon(android.R.drawable.ic_media_play).setContentTitle("MusicDan · 悬浮弹幕")
             .setContentText(if (paused) "已暂停" else "切换应用后显示弹幕，点击返回设置")
             .setContentIntent(open).setOngoing(true).setSilent(true)
             .addAction(android.R.drawable.ic_media_pause, if (paused) "继续" else "暂停", action("pause", 1))
@@ -99,55 +100,4 @@ class OverlayService : Service() {
         super.onDestroy()
     }
 
-    private inner class OverlayCanvas : View(this@OverlayService) {
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; setShadowLayer(3f, 0f, 2f, Color.BLACK) }
-        private var frame = JSONObject()
-        private var receivedAt = 0L
-        private var revision = -1L
-        private var comments = emptyList<JSONObject>()
-        fun setFrame(next: JSONObject) {
-            frame = next
-            receivedAt = SystemClock.uptimeMillis()
-            if (revision != next.optLong("revision")) {
-                revision = next.optLong("revision")
-                val array = next.optJSONArray("comments")
-                comments = (0 until (array?.length() ?: 0)).map { array!!.getJSONObject(it) }
-                    .distinctBy { it.optString("content").trim() }
-                    .sortedByDescending { it.optLong("liked_count") }
-            }
-            invalidate()
-        }
-        override fun onDraw(canvas: Canvas) {
-            super.onDraw(canvas)
-            val np = frame.optJSONObject("nowPlaying") ?: return
-            if (comments.isEmpty() || width == 0 || height == 0 || !np.optBoolean("isPlaying")) return
-            val cfg = frame.optJSONObject("settings") ?: return
-            val density = resources.displayMetrics.density
-            val font = cfg.optDouble("fontSize", 16.0).toFloat() * density
-            val crossing = cfg.optDouble("crossSeconds", 9.0) * 1000
-            val areaHeight = height.toFloat()
-            val lanes = min(cfg.optInt("density", 6), max(1, floor(areaHeight / (font * 1.8f)).toInt()))
-            val duration = np.optLong("duration").takeIf { it > 0 }
-                ?: frame.optJSONObject("song")?.optLong("duration")?.takeIf { it > 0 } ?: 240000L
-            val cap = max(1, floor(lanes * duration / crossing).toInt())
-            val plan = comments.take(cap).sortedWith(compareBy<JSONObject> { it.optLong("time") }.thenBy { it.optLong("commentId") })
-            val spacing = duration.toDouble() / plan.size
-            val position = np.optLong("position") + (SystemClock.uptimeMillis() - receivedAt) * np.optDouble("playbackSpeed", 1.0)
-            val end = min(plan.lastIndex, floor(position / spacing).toInt())
-            val start = max(0, ceil((position - crossing) / spacing).toInt())
-            canvas.save()
-            canvas.clipRect(0f, 0f, width.toFloat(), areaHeight)
-            paint.textSize = font
-            for (i in start..end) {
-                val progress = (position - i * spacing) / crossing
-                if (progress < 0 || progress > 1) continue
-                val text = plan[i].optString("content").replace('\n', ' ')
-                val x = (width - (width + paint.measureText(text)) * progress).toFloat()
-                val baseline = (i % lanes + 0.5f) * areaHeight / lanes - (paint.ascent() + paint.descent()) / 2
-                canvas.drawText(text, x, baseline, paint)
-            }
-            canvas.restore()
-            if (visibility == View.VISIBLE) postInvalidateOnAnimation()
-        }
-    }
 }
