@@ -1,8 +1,9 @@
 import { View, useTheme } from 'tamagui';
 import { useEffect, useRef, useState } from 'react';
 import type { Settings, Snapshot } from './types';
-import { makePlan, visibleRange } from './plan';
+import { commentFontSize, crossingDuration, makePlan, visibleRange } from './plan';
 import { getEmoteImage, parseSegments, removeEmoteListener, type Segment } from './emotes';
+import { danmakuEffects } from './tamagui.config';
 import { PlaybackClock } from './playbackClock';
 export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; settings: Settings }) {
   const theme = useTheme();
@@ -36,41 +37,75 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
     const height = size.height;
     const duration = snapshot?.nowPlaying?.duration || snapshot?.song?.duration || 240000;
     const { list, lanes, spacing } = makePlan(snapshot?.comments || [], duration, height, settings);
-    const font = `500 ${settings.fontSize}px system-ui, sans-serif`;
-    context.font = font;
+    const crossing = crossingDuration(size.width, settings.fontSize, lanes, list.length, duration);
+    // Dense screens need many cached tiles; bound their resolution and memory.
+    const concurrent = list.length * crossing / Math.max(1, duration);
+    const rasterScale = Math.min(dpr, 2, Math.max(1, Math.sqrt(160 / Math.max(1, concurrent))));
     const tileWidth = 512;
     const padding = 8;
-    const spriteHeight = Math.ceil(settings.fontSize * 2.2) + padding * 2;
-    const emoteSize = Math.round(settings.fontSize * 1.5);
     // Rasterize only visible text tiles, once; long comments do not allocate giant canvases.
-    const sprites = new Map<number, { segs: Segment[]; width: number; tiles: Map<number, HTMLCanvasElement> }>();
+    const sprites = new Map<number, { segs: Segment[]; widths: number[]; font: string; badgeFont: string; fontSize: number; height: number; emoteSize: number; effect: 'high' | 'top' | null; badge: string; textWidth: number; width: number; tiles: Map<number, HTMLCanvasElement> }>();
     const invalidateTiles = () => { for (const sprite of sprites.values()) sprite.tiles.clear(); };
     function spriteFor(index: number) {
       let sprite = sprites.get(index);
       if (!sprite) {
-        const segs = parseSegments(list[index].content.replaceAll('\n', ' '));
-        let width = 0;
-        for (const seg of segs) width += seg.type === 'text' ? context.measureText(seg.text).width : emoteSize;
-        sprite = { segs, width: Math.ceil(width), tiles: new Map() };
+        const comment = list[index];
+        const fontSize = commentFontSize(settings.fontSize, comment.occurrences);
+        const font = `500 ${fontSize}px system-ui, sans-serif`;
+        const badgeFont = `600 ${Math.round(fontSize * .65)}px system-ui, sans-serif`;
+        const emoteSize = Math.round(fontSize * 1.5);
+        const height = Math.ceil(fontSize * 2.2) + padding * 2;
+        context.font = font;
+        const label = comment.content.replaceAll('\n', ' ');
+        const badge = [comment.liked_count > 0 ? `♥${comment.liked_count}` : '', (comment.occurrences || 1) > 1 ? `×${comment.occurrences}` : ''].filter(Boolean).join('  ');
+        const segs = parseSegments(label);
+        const widths = segs.map(seg => seg.type === 'text' ? context.measureText(seg.text).width : emoteSize);
+        let width = widths.reduce((sum, width) => sum + width, 0);
+        const textWidth = width;
+        if (badge) {
+          context.font = badgeFont;
+          width += fontSize * .25 + context.measureText(badge).width;
+          context.font = font;
+        }
+        const effect = comment.liked_count >= danmakuEffects.top.minLikes ? 'top' : comment.liked_count >= danmakuEffects.high.minLikes ? 'high' : null;
+        sprite = { segs, widths, font, badgeFont, fontSize, height, emoteSize, effect, badge, textWidth, width: Math.ceil(width), tiles: new Map() };
         sprites.set(index, sprite);
       }
       return sprite;
     }
     function tileFor(sprite: ReturnType<typeof spriteFor>, tile: number) {
+      const { font, badgeFont, fontSize, height: spriteHeight, emoteSize } = sprite;
       let image = sprite.tiles.get(tile);
       if (!image) {
         image = document.createElement('canvas');
-        image.width = Math.ceil((tileWidth + padding * 2) * dpr);
-        image.height = Math.ceil(spriteHeight * dpr);
+        image.width = Math.ceil((tileWidth + padding * 2) * rasterScale);
+        image.height = Math.ceil(spriteHeight * rasterScale);
         const ink = image.getContext('2d')!;
-        ink.scale(dpr, dpr); ink.font = font; ink.textBaseline = 'middle';
+        ink.scale(rasterScale, rasterScale); ink.font = font; ink.textBaseline = 'middle';
         ink.fillStyle = textColor;
+        if (sprite.effect) {
+          // Anchor the gradient to the whole comment, so tile boundaries remain seamless.
+          const left = padding - tile * tileWidth;
+          const gradient = ink.createLinearGradient(left, 0, left + Math.max(1, sprite.textWidth), 0);
+          const colors = danmakuEffects[sprite.effect].colors;
+          colors.forEach((color, index) => gradient.addColorStop(index / (colors.length - 1), color));
+          ink.fillStyle = gradient;
+        }
+        function drawText(text: string, x: number, y: number) {
+          ink.save();
+          if (sprite.effect === 'top') {
+            ink.shadowColor = danmakuEffects.top.colors[0];
+            ink.shadowBlur = Math.min(6, fontSize * .2) * rasterScale;
+          }
+          ink.fillText(text, x, y);
+          ink.restore();
+        }
         let cursor = padding - tile * tileWidth;
-        for (const seg of sprite.segs) {
-          const width = seg.type === 'text' ? context.measureText(seg.text).width : emoteSize;
+        for (const [index, seg] of sprite.segs.entries()) {
+          const width = sprite.widths[index];
           if (cursor + width >= 0 && cursor <= tileWidth + padding * 2) {
             if (seg.type === 'text') {
-              ink.fillText(seg.text, cursor, spriteHeight / 2);
+              drawText(seg.text, cursor, spriteHeight / 2);
             } else {
               const img = getEmoteImage(seg.url, invalidateTiles);
               if (img) ink.drawImage(img, cursor, (spriteHeight - emoteSize) / 2, emoteSize, emoteSize);
@@ -83,6 +118,11 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
           }
           cursor += width;
         }
+        if (sprite.badge) {
+          ink.font = badgeFont;
+          ink.fillStyle = textColor;
+          ink.fillText(sprite.badge, cursor + fontSize * .25, spriteHeight / 2 - fontSize * .55);
+        }
         sprite.tiles.set(tile, image);
       }
       return image;
@@ -93,20 +133,21 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
       context.clearRect(0, 0, size.width, size.height);
       if (playing && list.length && !document.hidden) {
         const position = clock.current.position(performance.now());
-        const crossing = settings.crossSeconds * 1000;
         const [start, end] = visibleRange(position, crossing, spacing, list.length);
         context.globalAlpha = settings.opacity;
         for (const index of sprites.keys()) if (index < start || index > end) sprites.delete(index);
         for (let i = start; i <= end; i++) {
           const sprite = spriteFor(i);
+          const spriteHeight = sprite.height;
           const progress = (position - i * spacing) / crossing;
           const x = size.width - (size.width + sprite.width) * progress;
           const y = ((i % lanes) + .5) * height / lanes - spriteHeight / 2;
           const first = Math.max(0, Math.floor(-x / tileWidth));
           const last = Math.min(Math.floor(sprite.width / tileWidth), Math.floor((size.width - x) / tileWidth));
+          for (const tile of sprite.tiles.keys()) if (tile < first || tile > last) sprite.tiles.delete(tile);
           for (let tile = first; tile <= last; tile++) {
             const image = tileFor(sprite, tile);
-            context.drawImage(image, padding * dpr, 0, tileWidth * dpr, image.height,
+            context.drawImage(image, padding * rasterScale, 0, tileWidth * rasterScale, image.height,
               x + tile * tileWidth, y, tileWidth, spriteHeight);
           }
         }

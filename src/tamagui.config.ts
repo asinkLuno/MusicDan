@@ -1,3 +1,5 @@
+// Shared Canvas palette and thresholds, also bundled for the Android renderer.
+export { default as danmakuEffects } from '../public/danmaku-effects.json' with { type: 'json' };
 import { defaultConfig } from '@tamagui/config/v6';
 import { animations } from '@tamagui/config/animations-css';
 import { createTamagui } from 'tamagui';

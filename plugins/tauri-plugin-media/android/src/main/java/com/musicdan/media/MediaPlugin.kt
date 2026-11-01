@@ -112,7 +112,12 @@ class MediaPlugin(private val activity: Activity) : Plugin(activity) {
 
     @Command
     fun updateOverlay(invoke: Invoke) {
-        OverlayService.latestFrame = JSONObject(invoke.getRawArgs())
+        val next = JSONObject(invoke.getRawArgs())
+        val previous = OverlayService.latestFrame
+        if (!next.has("comments") && next.optLong("revision") == previous.optLong("revision")) {
+            next.put("comments", previous.optJSONArray("comments"))
+        }
+        OverlayService.latestFrame = next
         OverlayService.instance?.updateFrame()
         invoke.resolve(JSObject())
     }

@@ -9,6 +9,9 @@ android {
     namespace = "com.musicdan.media"
     compileSdk = 37
 
+    // Share the bundled official emotes with the WebView renderer.
+    (this as com.android.build.gradle.BaseExtension).sourceSets.getByName("main").assets.srcDir("../../../public")
+
     defaultConfig {
         minSdk = 21
 

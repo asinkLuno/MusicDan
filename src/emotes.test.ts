@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import emoteIds from '../public/emotes/map.json' with { type: 'json' };
 import { getEmoteImage, parseSegments, removeEmoteListener } from './emotes.ts';
-const emote = (name: string, id: number) => ({ type: 'emote', name, url: `https://s1.music.126.net/style/web2/emt/emoji_${id}.png` });
+const emote = (name: string, id: number) => ({ type: 'emote', name, url: `/emotes/emoji_${id}.png` });
 test('splits known emotes and preserves plain or unknown text', () => {
   assert.deepEqual(parseSegments('打卡[爱心]'), [{ type: 'text', text: '打卡' }, emote('爱心', 33)]);
   assert.deepEqual(parseSegments('[doge]你好'), [{ type: 'text', text: '[doge]你好' }]);
@@ -39,5 +41,14 @@ test('deduplicates images, notifies pending consumers and releases listeners', (
   } finally {
     if (original) Object.defineProperty(globalThis, 'Image', original);
     else Reflect.deleteProperty(globalThis, 'Image');
+  }
+});
+
+test('every mapped emote resolves to a bundled PNG for offline rendering', () => {
+  for (const [name, id] of Object.entries(emoteIds)) {
+    const [segment] = parseSegments(`[${name}]`);
+    assert.deepEqual(segment, emote(name, id));
+    const bytes = readFileSync(new URL(`../public/emotes/emoji_${id}.png`, import.meta.url));
+    assert.deepEqual([...bytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
   }
 });
