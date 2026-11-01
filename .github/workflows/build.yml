@@ -10,14 +10,6 @@ jobs:
   build:
     permissions:
       contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: aarch64
-            rust-target: aarch64-linux-android
-          - target: armv7
-            rust-target: armv7-linux-androideabi
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,7 +38,7 @@ jobs:
       - name: Setup Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.rust-target }}
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
 
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
@@ -56,23 +48,23 @@ jobs:
       - name: Install frontend dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Build APK and upload to draft release
+      - name: Build universal APK and upload to draft release
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tauriScript: yarn tauri
           mobile: android
-          args: --target ${{ matrix.target }} --apk --debug
+          args: --apk --debug
           tagName: v__VERSION__
           releaseName: 'listenWme v__VERSION__'
-          releaseBody: 'Android debug APK（CI 自动构建，按设备架构下载安装）。'
+          releaseBody: 'Android debug APK（CI 自动构建，包含全部 ABI，任意设备可直接安装）。'
           releaseDraft: true
           prerelease: false
 
       - name: Upload APK as workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: apk-${{ matrix.target }}
+          name: apk-universal
           path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
           if-no-files-found: error
