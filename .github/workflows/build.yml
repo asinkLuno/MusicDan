@@ -1,0 +1,81 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - releases
+  workflow_dispatch:
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64
+            rust-target: aarch64-linux-android
+          - target: armv7
+            rust-target: armv7-linux-androideabi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: yarn
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Locate NDK
+        run: |
+          ndk=$(ls -d "$ANDROID_HOME"/ndk/* 2>/dev/null | sort -V | tail -n1)
+          if [ -z "$ndk" ]; then
+            sdkmanager --install "ndk;27.2.12479018" >/dev/null
+            ndk="$ANDROID_HOME/ndk/27.2.12479018"
+          fi
+          echo "NDK_HOME=$ndk" >> "$GITHUB_ENV"
+
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build APK and upload to draft release
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tauriScript: yarn tauri
+          mobile: android
+          args: --target ${{ matrix.target }} --apk --debug
+          tagName: v__VERSION__
+          releaseName: 'listenWme v__VERSION__'
+          releaseBody: 'Android debug APK（CI 自动构建，按设备架构下载安装）。'
+          releaseDraft: true
+          prerelease: false
+
+      - name: Upload APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ matrix.target }}
+          path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
