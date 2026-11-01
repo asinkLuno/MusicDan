@@ -68,8 +68,3 @@ cd src-tauri && cargo test --lib    # Rust 侧测试
 ```
 
 安卓构建需要 JDK、Android SDK / NDK 和对应的 Rust target，并设置 `ANDROID_HOME`、`NDK_HOME`。项目包含已定制的 `src-tauri/gen/android`，不要重新初始化覆盖其中的系统栏适配。
-
-## 文档
-
-- [Native 系统设计](docs/native-system-design.md) —— 原生层目录、职责、数据流与生命周期
-- [表情渲染](docs/emote-rendering-guide.md)
