@@ -1,0 +1,6 @@
+{
+  "name": "listenwme", "private": true, "version": "0.1.0", "type": "module",
+  "scripts": { "dev": "vite --host 0.0.0.0", "build": "tsc --noEmit && vite build", "test": "node --experimental-strip-types --test src/*.test.ts", "tauri": "tauri" },
+  "dependencies": { "react": "^19.2.0", "react-dom": "^19.2.0" },
+  "devDependencies": { "@tauri-apps/cli": "^2", "@types/react": "^19", "@types/react-dom": "^19", "@vitejs/plugin-react": "latest", "typescript": "^5", "vite": "latest" }
+}

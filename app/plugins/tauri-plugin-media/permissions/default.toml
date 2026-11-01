@@ -1,0 +1,10 @@
+[default]
+description = "默认权限：允许查询当前播放、通知权限状态并跳转授权设置"
+permissions = [
+    "allow-overlay-status",
+    "allow-open-overlay-settings",
+    "allow-set-overlay",
+    "allow-get-now-playing",
+    "allow-is-permission-granted",
+    "allow-open-permission-settings",
+]
