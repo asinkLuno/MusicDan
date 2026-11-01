@@ -38,7 +38,7 @@ jobs:
       - name: Setup Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+          targets: aarch64-linux-android
 
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
@@ -81,10 +81,10 @@ jobs:
         with:
           tauriScript: yarn tauri
           mobile: android
-          args: --apk --split-per-abi --target aarch64 --target armv7
+          args: --apk --split-per-abi --target aarch64
           tagName: v__VERSION__
           releaseName: 'MusicDan v__VERSION__'
-          releaseBody: 'Android release APK（CI 自动构建并签名，按 CPU 架构分包：arm64-v8a 适配现代手机，armeabi-v7a 适配老款 32 位手机）。'
+          releaseBody: 'Android release APK（CI 自动构建并签名，仅 arm64-v8a，适配绝大多数安卓手机）。'
           releaseDraft: true
           prerelease: false
 
