@@ -48,11 +48,31 @@ jobs:
       - name: Install frontend dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Cache debug keystore for stable signature across builds
+      - name: Restore release keystore
         uses: actions/cache@v4
         with:
-          path: ~/.android/debug.keystore
-          key: android-debug-keystore
+          path: android-signing
+          key: android-release-keystore-v1
+
+      - name: Generate release keystore and signing config
+        env:
+          KS_ALIAS: musicdan
+          KS_STORE_PASS: musicdan
+        run: |
+          mkdir -p android-signing
+          if [ ! -f android-signing/musicdan.keystore ]; then
+            keytool -genkeypair -v \
+              -keystore android-signing/musicdan.keystore \
+              -alias "$KS_ALIAS" -keyalg RSA -keysize 2048 -validity 10950 \
+              -storepass "$KS_STORE_PASS" -keypass "$KS_STORE_PASS" \
+              -dname "CN=MusicDan, OU=MusicDan, O=StarMountain, C=CN"
+          fi
+          {
+            echo "keyAlias=$KS_ALIAS"
+            echo "keyPassword=$KS_STORE_PASS"
+            echo "storeFile=$GITHUB_WORKSPACE/android-signing/musicdan.keystore"
+            echo "storePassword=$KS_STORE_PASS"
+          } > src-tauri/gen/android/keystore.properties
 
       - name: Build per-ABI APKs and upload to draft release
         uses: tauri-apps/tauri-action@v1
@@ -61,10 +81,10 @@ jobs:
         with:
           tauriScript: yarn tauri
           mobile: android
-          args: --apk --debug --split-per-abi --target aarch64 --target armv7
+          args: --apk --split-per-abi --target aarch64 --target armv7
           tagName: v__VERSION__
           releaseName: 'MusicDan v__VERSION__'
-          releaseBody: 'Android debug APK（CI 自动构建，按 CPU 架构分包：arm64-v8a 适配现代手机，armeabi-v7a 适配老款 32 位手机）。'
+          releaseBody: 'Android release APK（CI 自动构建并签名，按 CPU 架构分包：arm64-v8a 适配现代手机，armeabi-v7a 适配老款 32 位手机）。'
           releaseDraft: true
           prerelease: false
 
