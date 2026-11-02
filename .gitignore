@@ -25,3 +25,9 @@ dist-ssr
 
 # ZCode session-local data
 .zcode/
+
+# Android release signing material
+android-signing/
+*.keystore
+*.jks
+src-tauri/gen/android/keystore.properties

@@ -1,6 +1,7 @@
 {
   "name": "musicdan",
   "private": true,
+  "packageManager": "yarn@1.22.22",
   "version": "0.3.0",
   "type": "module",
   "scripts": {
