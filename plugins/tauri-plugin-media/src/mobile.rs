@@ -20,6 +20,11 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 pub struct Media<R: Runtime>(PluginHandle<R>);
 
 impl<R: Runtime> Media<R> {
+    pub fn control_playback(&self, control: PlaybackControl) -> crate::Result<()> {
+        self.0.run_mobile_plugin::<EmptyResponse>("controlPlayback", control)
+            .map(|_| ()).map_err(Into::into)
+    }
+
     pub fn overlay_status(&self) -> crate::Result<serde_json::Value> {
         self.0
             .run_mobile_plugin("overlayStatus", ())

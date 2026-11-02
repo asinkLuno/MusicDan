@@ -4,6 +4,7 @@
 
 #### This default permission set includes the following:
 
+- `allow-control-playback`
 - `allow-overlay-status`
 - `allow-open-overlay-settings`
 - `allow-set-overlay`
@@ -19,6 +20,32 @@
 <th>Description</th>
 </tr>
 
+
+<tr>
+<td>
+
+`media:allow-control-playback`
+
+</td>
+<td>
+
+Enables the control_playback command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`media:deny-control-playback`
+
+</td>
+<td>
+
+Denies the control_playback command without any pre-configured scope.
+
+</td>
+</tr>
 
 <tr>
 <td>

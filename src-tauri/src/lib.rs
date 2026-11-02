@@ -1,5 +1,6 @@
 mod ncm;
 mod player;
+mod updates;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -11,6 +12,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            updates::check_for_updates,
+            updates::open_update_download,
             ncm::fetch_comments,
             ncm::fetch_lyrics,
             ncm::search_songs,

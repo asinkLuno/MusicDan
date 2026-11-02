@@ -82,6 +82,21 @@ class MediaPlugin(private val activity: Activity) : Plugin(activity) {
     }
 
     @Command
+    fun controlPlayback(invoke: Invoke) {
+        executor.execute {
+            try {
+                check(permissions.isListenerEnabled()) { "请先授权读取播放信息" }
+                val args = invoke.getArgs()
+                val position = if (args.has("position") && !args.isNull("position")) args.getLong("position") else null
+                sessions.control(args.getString("packageName"), args.getString("action"), position)
+                invoke.resolve(JSObject())
+            } catch (e: Exception) {
+                invoke.reject(e.message ?: "播放控制失败")
+            }
+        }
+    }
+
+    @Command
     fun overlayStatus(invoke: Invoke) {
         invoke.resolve(JSObject().apply {
             put("granted", Settings.canDrawOverlays(activity))

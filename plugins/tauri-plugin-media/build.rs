@@ -1,4 +1,5 @@
 const COMMANDS: &[&str] = &[
+    "control_playback",
     "overlay_status",
     "open_overlay_settings",
     "set_overlay",

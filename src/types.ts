@@ -1,6 +1,6 @@
 export interface Song { songId: number; name: string; artists: string; album: string; duration: number }
 export interface Comment { commentId: number; content: string; liked_count: number; time: number; occurrences?: number }
-export interface NowPlaying { title: string; artist: string; album: string; position: number; duration: number; isPlaying: boolean; playbackSpeed: number }
+export interface NowPlaying { title: string; artist: string; album: string; position: number; duration: number; isPlaying: boolean; playbackSpeed: number; packageName?: string; playbackActions?: number }
 export interface Settings { fontSize: number; opacity: number; commentLimit: number | null; commentRefreshPercent: number }
 export interface Snapshot { sampledAt: number; permissionGranted: boolean; nowPlaying: NowPlaying | null; song: Song | null; songs?: Song[]; comments: Comment[]; loading: boolean; error: string | null; revision: number; settings: Settings; manualMatch: boolean }
 export const defaults: Settings = { fontSize: 16, opacity: .8, commentLimit: null, commentRefreshPercent: 10 };

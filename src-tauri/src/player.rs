@@ -175,7 +175,7 @@ fn cache_needs_refresh(baseline: Option<i64>, current: Option<i64>, percent: u32
 
 async fn fetch_merged_comments(
     songs: Vec<SongMatch>, progress: CommentProgress,
-    cache_dir: PathBuf, percent: u32, first: bool,
+    cache_dir: PathBuf, percent: u32,
 ) -> Result<(), String> {
     // JoinSet aborts its children if a track change cancels this fetch.
     for batch in songs.chunks(4) {
@@ -192,7 +192,7 @@ async fn fetch_merged_comments(
                 // Read the API total, never the locally capped or grouped comment count.
                 let total = ncm::get_song_comment_count(id).await.ok();
                 let previous = if let Some(cached) = cached {
-                    if first { progress(id, cached.comments.clone()); }
+                    progress(id, cached.comments.clone());
                     if !cache_needs_refresh(cached.total, total, percent) { return Ok(()); }
                     cached.comments
                 } else { Vec::new() };
@@ -339,23 +339,18 @@ pub fn start(app: AppHandle) -> Result<(), String> {
                         inner.snapshot.loading = true;
                         inner.snapshot.revision += 1;
                     });
-                    let mut first = true;
-                    loop {
-                        let percent = {
-                            let inner = shared.0.lock().unwrap();
-                            if inner.generation != generation { return; }
-                            inner.prefs.settings.comment_refresh_percent
-                        };
-                        let result = fetch_merged_comments(songs.clone(), progress.clone(), cache_dir.clone(), percent, first).await;
-                        {
-                            let mut inner = shared.0.lock().unwrap();
-                            if inner.generation != generation { return; }
-                            inner.snapshot.loading = false;
-                            inner.snapshot.error = result.err().map(|e| format!("评论更新失败，已保留已加载评论：{e}"));
-                        }
-                        first = false;
-                        tokio::time::sleep(std::time::Duration::from_secs(60)).await;
-                    }
+                    // Check growth once when this track is opened, then keep its comments
+                    // until another track (or a new matching selection) is opened.
+                    let percent = {
+                        let inner = shared.0.lock().unwrap();
+                        if inner.generation != generation { return; }
+                        inner.prefs.settings.comment_refresh_percent
+                    };
+                    let result = fetch_merged_comments(songs, progress, cache_dir, percent).await;
+                    let mut inner = shared.0.lock().unwrap();
+                    if inner.generation != generation { return; }
+                    inner.snapshot.loading = false;
+                    inner.snapshot.error = result.err().map(|e| format!("评论更新失败，已保留已加载评论：{e}"));
                 }));
             }
             let frame = {

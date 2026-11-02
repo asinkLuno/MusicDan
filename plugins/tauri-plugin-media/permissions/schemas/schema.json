@@ -295,6 +295,18 @@
       "type": "string",
       "oneOf": [
         {
+          "description": "Enables the control_playback command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-control-playback",
+          "markdownDescription": "Enables the control_playback command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the control_playback command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-control-playback",
+          "markdownDescription": "Denies the control_playback command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_now_playing command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-now-playing",
@@ -367,10 +379,10 @@
           "markdownDescription": "Denies the set_overlay command without any pre-configured scope."
         },
         {
-          "description": "默认权限：允许查询当前播放、通知权限状态并跳转授权设置\n#### This default permission set includes:\n\n- `allow-overlay-status`\n- `allow-open-overlay-settings`\n- `allow-set-overlay`\n- `allow-get-now-playing`\n- `allow-is-permission-granted`\n- `allow-open-permission-settings`",
+          "description": "默认权限：允许查询当前播放、通知权限状态并跳转授权设置\n#### This default permission set includes:\n\n- `allow-control-playback`\n- `allow-overlay-status`\n- `allow-open-overlay-settings`\n- `allow-set-overlay`\n- `allow-get-now-playing`\n- `allow-is-permission-granted`\n- `allow-open-permission-settings`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "默认权限：允许查询当前播放、通知权限状态并跳转授权设置\n#### This default permission set includes:\n\n- `allow-overlay-status`\n- `allow-open-overlay-settings`\n- `allow-set-overlay`\n- `allow-get-now-playing`\n- `allow-is-permission-granted`\n- `allow-open-permission-settings`"
+          "markdownDescription": "默认权限：允许查询当前播放、通知权限状态并跳转授权设置\n#### This default permission set includes:\n\n- `allow-control-playback`\n- `allow-overlay-status`\n- `allow-open-overlay-settings`\n- `allow-set-overlay`\n- `allow-get-now-playing`\n- `allow-is-permission-granted`\n- `allow-open-permission-settings`"
         }
       ]
     }

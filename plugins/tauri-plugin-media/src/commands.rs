@@ -35,3 +35,8 @@ pub(crate) async fn open_overlay_settings<R: Runtime>(app: AppHandle<R>) -> Resu
 pub(crate) async fn set_overlay<R: Runtime>(app: AppHandle<R>, enabled: bool) -> Result<()> {
     app.media().set_overlay(enabled)
 }
+
+#[command]
+pub(crate) async fn control_playback<R: Runtime>(app: AppHandle<R>, control: PlaybackControl) -> Result<()> {
+    app.media().control_playback(control)
+}

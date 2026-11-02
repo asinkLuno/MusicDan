@@ -36,7 +36,9 @@ android {
         applicationId = "ink.starmountain.musicdan"
         minSdk = 24
         targetSdk = 37
-        versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
+        // CI builds must remain installable as upgrades even when the app version is unchanged.
+        versionCode = System.getenv("MUSICDAN_BUILD_NUMBER")?.toInt()?.let { 1_000_000_000 + it }
+            ?: tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
     }
     buildTypes {

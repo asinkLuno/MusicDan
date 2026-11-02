@@ -15,6 +15,8 @@ pub struct NowPlaying {
     /// 上次进度锚定的系统时间（SystemClock.elapsedRealtime，毫秒）
     pub last_position_update_time: i64,
     pub is_playing: bool,
+    #[serde(default)]
+    pub playback_actions: u64,
     /// 播放来源应用的包名（如 com.netease.cloudmusic）
     pub package_name: String,
 }
@@ -39,3 +41,11 @@ pub struct PermissionResponse {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EmptyResponse {}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlaybackControl {
+    pub package_name: String,
+    pub action: String,
+    pub position: Option<i64>,
+}

@@ -23,6 +23,36 @@ internal class MediaSessionReader(context: Context) {
         return controller?.let(::toJSObject)
     }
 
+    fun control(packageName: String, action: String, position: Long?) {
+        require(packageName.isNotBlank()) { "缺少播放来源" }
+        val controller = manager?.getActiveSessions(listener).orEmpty()
+            .filter { it.packageName == packageName }
+            .let { matches -> matches.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING } ?: matches.firstOrNull() }
+            ?: error("播放来源已断开，请重新打开音乐 App")
+        val actions = controller.playbackState?.actions ?: 0L
+        val required = when (action) {
+            "play" -> PlaybackState.ACTION_PLAY or PlaybackState.ACTION_PLAY_PAUSE
+            "pause" -> PlaybackState.ACTION_PAUSE or PlaybackState.ACTION_PLAY_PAUSE
+            "previous" -> PlaybackState.ACTION_SKIP_TO_PREVIOUS
+            "next" -> PlaybackState.ACTION_SKIP_TO_NEXT
+            "seek" -> PlaybackState.ACTION_SEEK_TO
+            else -> error("不支持的播放操作")
+        }
+        check(actions and required != 0L) { "当前音乐 App 不支持此操作" }
+        val controls = controller.transportControls
+        when (action) {
+            "play" -> controls.play()
+            "pause" -> controls.pause()
+            "previous" -> controls.skipToPrevious()
+            "next" -> controls.skipToNext()
+            "seek" -> {
+                val duration = controller.metadata?.getLong(MediaMetadata.METADATA_KEY_DURATION) ?: 0L
+                require(position != null && position >= 0L && duration > 0L) { "无效的播放进度" }
+                controls.seekTo(position.coerceAtMost(duration))
+            }
+        }
+    }
+
     private fun toJSObject(controller: MediaController): JSObject {
         val metadata = controller.metadata
         val state = controller.playbackState
@@ -37,6 +67,7 @@ internal class MediaSessionReader(context: Context) {
         np.put("position", (position + elapsed).coerceAtLeast(0L))
         np.put("playbackSpeed", state?.playbackSpeed?.toDouble() ?: 1.0)
         np.put("lastPositionUpdateTime", state?.lastPositionUpdateTime ?: 0L)
+        np.put("playbackActions", state?.actions ?: 0L)
         np.put("isPlaying", state?.state == PlaybackState.STATE_PLAYING)
         np.put("packageName", controller.packageName ?: "")
         return np

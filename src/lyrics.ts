@@ -1,4 +1,4 @@
-export interface Lyrics { lrc: string; yrc: string; translation: string; romanization: string }
+export interface Lyrics { lrc: string; yrc: string; translation: string; yrcTranslation?: string; romanization: string }
 export interface LyricWord { start: number; end: number; text: string }
 export interface LyricLine { start: number; end: number; text: string; words: LyricWord[] }
 
@@ -33,4 +33,21 @@ export function activeLine(lines: LyricLine[], position: number): number {
   let low = 0, high = lines.length;
   while (low < high) { const mid = (low + high) >>> 1; if (lines[mid].start <= position) low = mid + 1; else high = mid; }
   return low - 1;
+}
+
+// Keep the original and translation on the same timing track.
+export function prepareLyrics(data?: Lyrics): { lines: LyricLine[]; translations: Map<number, string> } {
+  const lrc = parseLrc(data?.lrc || '');
+  const useLrc = lrc.some(line => line.text);
+  const lines = useLrc ? lrc : parseYrc(data?.yrc || '');
+  const translation = !useLrc && data?.yrcTranslation?.trim()
+    ? data.yrcTranslation
+    : data?.translation || '';
+  const translations = new Map<number, string>();
+  for (const line of parseLrc(translation)) {
+    if (!line.text) continue;
+    const existing = translations.get(line.start);
+    translations.set(line.start, existing ? `${existing} / ${line.text}` : line.text);
+  }
+  return { lines, translations };
 }

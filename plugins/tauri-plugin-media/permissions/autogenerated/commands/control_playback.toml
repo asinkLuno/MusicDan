@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-control-playback"
+description = "Enables the control_playback command without any pre-configured scope."
+commands.allow = ["control_playback"]
+
+[[permission]]
+identifier = "deny-control-playback"
+description = "Denies the control_playback command without any pre-configured scope."
+commands.deny = ["control_playback"]
