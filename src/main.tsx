@@ -4,7 +4,6 @@ import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Button as TamaguiButton, Card, Checkbox, Dialog, H3, Input, Label, Paragraph, Separator, Switch, TamaguiProvider, Text, XStack, YStack, styled, useMedia } from 'tamagui';
 import { musicAtmosphere, tamaguiConfig } from './tamagui.config';
-import { UpdateChecker } from './UpdateChecker';
 import { PlaybackControls } from './PlaybackControls';
 import { LyricsBackground } from './Lyrics';
 import { Danmaku } from './Danmaku';
@@ -153,7 +152,6 @@ function App() {
     paddingBottom="max(env(safe-area-inset-bottom, 0px), var(--system-inset-bottom, 0px))"
     paddingLeft="max(env(safe-area-inset-left, 0px), var(--system-inset-left, 0px))"
     paddingRight="max(env(safe-area-inset-right, 0px), var(--system-inset-right, 0px))">
-    <UpdateChecker settings={tab === 'settings'}/>
     {error && <XStack role="alert" padding="3" gap="3" alignItems="center" backgroundColor="background-hover">
       <Paragraph flex={1}>{error}</Paragraph>
       <Button size="sm" aria-label="关闭提示" onPress={() => setError('')}>关闭</Button>
