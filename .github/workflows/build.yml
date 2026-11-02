@@ -79,11 +79,8 @@ jobs:
       - name: Install frontend dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Test frontend and Android media controls
-        run: |
-          yarn test
-          cd src-tauri/gen/android
-          ./gradlew :tauri-plugin-media:testDebugUnitTest
+      - name: Test frontend
+        run: yarn test
 
       - name: Restore release signing from Secrets
         env:
@@ -126,6 +123,10 @@ jobs:
           releaseDraft: true
           prerelease: false
           uploadUpdaterJson: false
+
+      - name: Test Android media controls
+        working-directory: src-tauri/gen/android
+        run: ./gradlew :tauri-plugin-media:testDebugUnitTest
 
       - name: Verify signed APKs
         env:
