@@ -4,6 +4,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.media.MediaMetadata
 import android.media.session.MediaController
+import android.media.session.MediaSession
+import android.view.KeyEvent
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
 import android.os.SystemClock
@@ -15,11 +17,14 @@ internal class MediaSessionReader(context: Context) {
     private val manager = context.getSystemService(Context.MEDIA_SESSION_SERVICE) as? MediaSessionManager
     private val listener = ComponentName(context, MediaListenerService::class.java)
 
+    private var selected: MediaController? = null
+
     fun nowPlaying(): JSObject? {
         val sessions = manager?.getActiveSessions(listener).orEmpty()
         val controller = sessions.firstOrNull {
             it.playbackState?.state == PlaybackState.STATE_PLAYING
-        } ?: sessions.firstOrNull()
+        } ?: sessions.firstOrNull { it.sessionToken == selected?.sessionToken } ?: sessions.firstOrNull()
+        selected = controller
         return controller?.let(::toJSObject)
     }
 
@@ -27,18 +32,23 @@ internal class MediaSessionReader(context: Context) {
         require(packageName.isNotBlank()) { "缺少播放来源" }
         val controller = manager?.getActiveSessions(listener).orEmpty()
             .filter { it.packageName == packageName }
-            .let { matches -> matches.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING } ?: matches.firstOrNull() }
+            .let { matches -> matches.firstOrNull { it.sessionToken == selected?.sessionToken }
+                ?: matches.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING } ?: matches.firstOrNull() }
             ?: error("播放来源已断开，请重新打开音乐 App")
         val actions = controller.playbackState?.actions ?: 0L
-        val required = when (action) {
-            "play" -> PlaybackState.ACTION_PLAY or PlaybackState.ACTION_PLAY_PAUSE
-            "pause" -> PlaybackState.ACTION_PAUSE or PlaybackState.ACTION_PLAY_PAUSE
-            "previous" -> PlaybackState.ACTION_SKIP_TO_PREVIOUS
-            "next" -> PlaybackState.ACTION_SKIP_TO_NEXT
-            "seek" -> PlaybackState.ACTION_SEEK_TO
-            else -> error("不支持的播放操作")
+        val mediaKey = MediaControlPolicy.mediaKey(action, actions,
+            controller.flags and MediaSession.FLAG_HANDLES_MEDIA_BUTTONS.toLong() != 0L)
+        if (mediaKey != null) {
+            if (mediaKey == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
+                val playing = controller.playbackState?.state == PlaybackState.STATE_PLAYING
+                if ((action == "play" && playing) || (action == "pause" && !playing)) return
+            }
+            val now = SystemClock.uptimeMillis()
+            val sent = controller.dispatchMediaButtonEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, mediaKey, 0))
+            controller.dispatchMediaButtonEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, mediaKey, 0))
+            check(sent) { "当前音乐 App 未接收播放按键" }
+            return
         }
-        check(actions and required != 0L) { "当前音乐 App 不支持此操作" }
         val controls = controller.transportControls
         when (action) {
             "play" -> controls.play()
@@ -67,7 +77,8 @@ internal class MediaSessionReader(context: Context) {
         np.put("position", (position + elapsed).coerceAtLeast(0L))
         np.put("playbackSpeed", state?.playbackSpeed?.toDouble() ?: 1.0)
         np.put("lastPositionUpdateTime", state?.lastPositionUpdateTime ?: 0L)
-        np.put("playbackActions", state?.actions ?: 0L)
+        np.put("playbackActions", MediaControlPolicy.availableActions(state?.actions ?: 0L,
+            controller.flags and MediaSession.FLAG_HANDLES_MEDIA_BUTTONS.toLong() != 0L))
         np.put("isPlaying", state?.state == PlaybackState.STATE_PLAYING)
         np.put("packageName", controller.packageName ?: "")
         return np

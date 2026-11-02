@@ -79,6 +79,12 @@ jobs:
       - name: Install frontend dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Test frontend and Android media controls
+        run: |
+          yarn test
+          cd src-tauri/gen/android
+          ./gradlew :tauri-plugin-media:testDebugUnitTest
+
       - name: Restore release signing from Secrets
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -109,7 +115,14 @@ jobs:
           args: --apk --split-per-abi --target aarch64
           tagName: build-${{ github.run_number }}
           releaseName: 'MusicDan v__VERSION__ · Build ${{ github.run_number }}'
-          releaseBody: 'Android release APK（CI 自动构建并签名，仅 arm64-v8a，适配绝大多数安卓手机）。'
+          releaseBody: |
+            Android release APK（CI 自动构建并签名，仅 arm64-v8a）。
+
+            本次修复：
+            - 优化歌曲进度条拖动、松手回弹及播放进度更新。
+            - 修复仅支持切换播放状态的音乐 App 的播放／暂停控制。
+            - 为上一首、下一首及播放／暂停增加媒体按键兼容路径。
+            - 暂停后保留选中的媒体会话，按钮等待状态同步以减少重复操作。
           releaseDraft: true
           prerelease: false
           uploadUpdaterJson: false
@@ -150,6 +163,13 @@ jobs:
             exit 0
           fi
           gh release edit "build-$GITHUB_RUN_NUMBER" --draft=false --latest
+          # Keep versioned build tags immutable; move this convenience tag only after publication.
+          commit=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/build-$GITHUB_RUN_NUMBER" --jq '.object.sha')
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/latest" > /dev/null 2>&1; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/latest" -f sha="$commit" -F force=true
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref=refs/tags/latest -f sha="$commit"
+          fi
 
       - name: Remove signing material
         if: always()

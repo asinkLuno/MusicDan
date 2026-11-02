@@ -187,7 +187,7 @@ function App() {
                 <Button circular size="md" minWidth={44} minHeight={44} variant="quiet" aria-label={full ? '退出全屏' : '全屏弹幕'}
                   onPress={() => setFull(value => !value)} icon={full ? <Minimize size={22}/> : <Maximize size={22}/>}/>
               </XStack>
-              <PlaybackControls key={`${currentKey}:${np?.packageName || ''}`} nowPlaying={np} onError={fail}/>
+              <PlaybackControls key={`${currentKey}:${np?.packageName || ''}`} snapshot={snapshot} onError={fail}/>
             </YStack>
           </Card.Footer>
         </Card>
