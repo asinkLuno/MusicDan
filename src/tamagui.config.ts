@@ -26,6 +26,7 @@ const themes = Object.fromEntries(Object.entries(defaultConfig.themes).map(([nam
 export const musicAtmosphere = {
   backdrop: 'radial-gradient(ellipse at 10% 0%, rgba(156, 115, 203, 0.17), transparent 65%), radial-gradient(ellipse at 100% 85%, rgba(113, 126, 193, 0.10), transparent 60%)',
   player: 'radial-gradient(ellipse at 15% 15%, rgba(185, 143, 231, 0.18), transparent 65%), radial-gradient(ellipse at 95% 90%, rgba(131, 147, 211, 0.14), transparent 65%)',
+  button: 'linear-gradient(180deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.02))',
 };
 
 export const tamaguiConfig = createTamagui({
