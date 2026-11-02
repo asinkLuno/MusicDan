@@ -49,3 +49,11 @@ pub struct PlaybackControl {
     pub action: String,
     pub position: Option<i64>,
 }
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum HapticKind {
+    Start,
+    Tick,
+    End,
+}

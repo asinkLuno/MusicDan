@@ -1,6 +1,8 @@
+import { Maximize, MessagesSquare, Minimize, Search, Settings as SettingsIcon } from './icons';
+import { AppSlider as Slider } from './AppSlider';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Button as TamaguiButton, Card, Checkbox, Dialog, H3, Input, Label, Paragraph, Separator, Slider, Switch, TamaguiProvider, Text, XStack, YStack, styled, useMedia } from 'tamagui';
+import { Button as TamaguiButton, Card, Checkbox, Dialog, H3, Input, Label, Paragraph, Separator, Switch, TamaguiProvider, Text, XStack, YStack, styled, useMedia } from 'tamagui';
 import { musicAtmosphere, tamaguiConfig } from './tamagui.config';
 import { UpdateChecker } from './UpdateChecker';
 import { PlaybackControls } from './PlaybackControls';
@@ -180,11 +182,12 @@ function App() {
                   : null}
             </YStack>}
           </YStack>
-          <Card.Footer padding="3" borderTopWidth={1} borderColor="border-color">
+          <Card.Footer flexShrink={0} padding="3" borderTopWidth={1} borderColor="border-color">
             <YStack width="100%" gap="2">
               <XStack alignItems="center" justifyContent="space-between" gap="3">
                 <Text flex={1} fontSize="xs" color="color-10" numberOfLines={1}>{snapshot?.comments.reduce((sum, comment) => sum + (comment.occurrences || 1), 0) || 0} 条评论 · 显示 {Math.min(snapshot?.comments.length || 0, cfg.commentLimit ?? Infinity)} 条{snapshot?.loading && snapshot.comments.length > 0 ? ' · 后台补充中' : ''}</Text>
-                <Button size="sm" variant="quiet" aria-label={full ? '退出全屏' : '全屏弹幕'} onPress={() => setFull(value => !value)}>{full ? '退出全屏' : '全屏'}</Button>
+                <Button circular size="md" minWidth={44} minHeight={44} variant="quiet" aria-label={full ? '退出全屏' : '全屏弹幕'}
+                  onPress={() => setFull(value => !value)} icon={full ? <Minimize size={22}/> : <Maximize size={22}/>}/>
               </XStack>
               <PlaybackControls key={`${currentKey}:${np?.packageName || ''}`} nowPlaying={np} onError={fail}/>
             </YStack>
@@ -278,8 +281,8 @@ function App() {
     {!full && <YStack flexShrink={0}>
       <Separator/>
       <XStack render="nav" aria-label="主导航" width="100%" maxWidth={850} alignSelf="center" paddingHorizontal="4" paddingVertical="2" gap="2" justifyContent="center">
-        {([{ id: 'danmaku', label: '弹幕' }, { id: 'search', label: '搜索匹配' }, { id: 'settings', label: '设置' }]).map(({ id, label }) =>
-          <Button key={id} size="sm" minHeight={44} flex={1} theme={tab === id ? 'accent' : undefined} variant={tab === id ? undefined : 'quiet'} aria-current={tab === id ? 'page' : undefined} onPress={() => setTab(id)}>{label}</Button>)}
+        {([{ id: 'danmaku', label: '弹幕', icon: MessagesSquare }, { id: 'search', label: '搜索匹配', icon: Search }, { id: 'settings', label: '设置', icon: SettingsIcon }]).map(({ id, label, icon: Icon }) =>
+          <Button key={id} size="sm" minHeight={44} minWidth={0} paddingHorizontal="2" gap="2" flex={1} icon={<Icon size={18}/>} theme={tab === id ? 'accent' : undefined} variant={tab === id ? undefined : 'quiet'} aria-current={tab === id ? 'page' : undefined} onPress={() => setTab(id)}>{label}</Button>)}
       </XStack>
     </YStack>}
   </YStack>;
@@ -347,7 +350,7 @@ const SearchResults = memo(function SearchResults({ songs, selectedSongs, onSele
 function SettingSlider({ id, label, value, min, max, unit, onChange }: { id: string; label: string; value: number; min: number; max: number; unit: string; onChange: (value: number) => void }) {
   return <YStack gap="3">
     <XStack alignItems="center" justifyContent="space-between"><Label id={`${id}-label`} htmlFor={id}>{label}</Label><Text fontSize="sm">{value} {unit}</Text></XStack>
-    <Slider id={id} aria-labelledby={`${id}-label`} size="sm" value={[value]} min={min} max={max} step={1} onValueChange={([next]) => onChange(next)}>
+    <Slider id={id} aria-labelledby={`${id}-label`} value={[value]} min={min} max={max} step={1} onValueChange={([next]) => onChange(next)}>
       <Slider.Track><Slider.TrackActive/></Slider.Track>
       <Slider.Thumb index={0} aria-label={label}/>
     </Slider>

@@ -1,5 +1,8 @@
 package com.musicdan.media
 
+import android.os.Build
+import android.os.SystemClock
+import android.view.HapticFeedbackConstants
 import android.net.Uri
 import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
@@ -34,6 +37,36 @@ class MediaPlugin(private val activity: Activity) : Plugin(activity) {
 
     /** 单线程执行器：getActiveSessions 是 binder 调用，放到后台线程执行 */
     private val executor = Executors.newSingleThreadExecutor()
+
+    private var lastHapticTick = 0L
+
+    @Command
+    fun hapticFeedback(invoke: Invoke) {
+        val kind = invoke.getArgs().optString("kind")
+        if (kind !in setOf("start", "tick", "end")) {
+            invoke.reject("不支持的触觉反馈")
+            return
+        }
+        activity.runOnUiThread {
+            val now = SystemClock.uptimeMillis()
+            if (kind == "tick" && now - lastHapticTick < 120L) {
+                invoke.resolve(JSObject())
+                return@runOnUiThread
+            }
+            lastHapticTick = now
+            val feedback = when {
+                kind == "tick" && Build.VERSION.SDK_INT >= 34 -> HapticFeedbackConstants.SEGMENT_FREQUENT_TICK
+                kind == "tick" -> HapticFeedbackConstants.CLOCK_TICK
+                kind == "start" && Build.VERSION.SDK_INT >= 34 -> HapticFeedbackConstants.DRAG_START
+                kind == "start" && Build.VERSION.SDK_INT >= 30 -> HapticFeedbackConstants.GESTURE_START
+                kind == "end" && Build.VERSION.SDK_INT >= 30 -> HapticFeedbackConstants.GESTURE_END
+                else -> HapticFeedbackConstants.CLOCK_TICK
+            }
+            // Default flags respect the user's system touch feedback setting.
+            activity.window.decorView.performHapticFeedback(feedback)
+            invoke.resolve(JSObject())
+        }
+    }
 
     private val sessions = MediaSessionReader(activity)
     private val permissions = MediaPermissions(activity)
@@ -114,13 +147,15 @@ class MediaPlugin(private val activity: Activity) : Plugin(activity) {
     @Command
     fun setOverlay(invoke: Invoke) {
         try {
-            if (invoke.getArgs().optBoolean("enabled")) {
+            val enabled = invoke.getArgs().optBoolean("enabled")
+            if (enabled) {
                 if (!Settings.canDrawOverlays(activity)) { invoke.reject("请先允许显示在其他应用上层"); return }
                 val intent = Intent(activity, OverlayService::class.java)
                 ContextCompat.startForegroundService(activity, intent)
             } else {
                 activity.stopService(Intent(activity, OverlayService::class.java))
             }
+            OverlayService.saveEnabled(activity, enabled)
             invoke.resolve(JSObject())
         } catch (e: Exception) { invoke.reject(e.message) }
     }
@@ -139,6 +174,13 @@ class MediaPlugin(private val activity: Activity) : Plugin(activity) {
 
     override fun onResume(activity: AppCompatActivity) {
         OverlayService.appVisible = true
+        if (OverlayService.isEnabled(activity) && Settings.canDrawOverlays(activity) && OverlayService.instance == null) {
+            try {
+                ContextCompat.startForegroundService(activity, Intent(activity, OverlayService::class.java))
+            } catch (e: Exception) {
+                Log.e(TAG, "Cannot restore overlay", e)
+            }
+        }
         OverlayService.instance?.updateVisibility()
     }
     override fun onStop(activity: AppCompatActivity) {

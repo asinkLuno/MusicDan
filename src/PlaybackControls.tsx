@@ -1,5 +1,7 @@
+import { Pause, Play, SkipBack, SkipForward } from './icons';
+import { AppSlider as Slider } from './AppSlider';
 import { useRef, useState } from 'react';
-import { Button, Slider, Text, XStack, YStack } from 'tamagui';
+import { Button, Text, XStack, YStack } from 'tamagui';
 import { formatTime, invoke } from './types';
 import type { NowPlaying } from './types';
 
@@ -30,12 +32,12 @@ export function PlaybackControls({ nowPlaying, onError }: { nowPlaying?: NowPlay
     finally { pending.current = false; setBusy(false); setDragPosition(null); }
   }
 
-  return <YStack flex={1} minWidth={0} gap="2" aria-label="播放控制">
+  return <YStack flexShrink={0} minWidth={0} gap="2" aria-label="播放控制">
     <XStack justifyContent="space-between" gap="2">
       <Text fontSize="xs" color="color-10">{formatTime(position)}</Text>
       <Text fontSize="xs" color="color-10">{formatTime(duration)}</Text>
     </XStack>
-    <Slider size="sm" min={0} max={duration || 1} step={1000} value={[position]}
+    <Slider min={0} max={duration || 1} step={1000} value={[position]}
       disabled={!can('seek') || duration <= 0} aria-label="播放进度"
       onValueChange={([value]) => setDragPosition(value)}
       onSlideEnd={(_, value) => void control('seek', dragPosition ?? value)}
@@ -47,11 +49,15 @@ export function PlaybackControls({ nowPlaying, onError }: { nowPlaying?: NowPlay
       <Slider.Track><Slider.TrackActive/></Slider.Track>
       <Slider.Thumb index={0} aria-label="拖动播放进度" aria-valuetext={`${formatTime(position)} / ${formatTime(duration)}`}/>
     </Slider>
-    <XStack gap="2" alignItems="center" justifyContent="center" flexWrap="wrap">
-      <Button size="sm" minHeight={44} disabled={!can('previous')} onPress={() => void control('previous')}>上一首</Button>
-      <Button size="sm" minHeight={44} theme="accent" disabled={!canToggle}
-        onPress={() => void control(playing ? 'pause' : 'play')}>{playing ? '暂停' : '播放'}</Button>
-      <Button size="sm" minHeight={44} disabled={!can('next')} onPress={() => void control('next')}>下一首</Button>
+    <XStack gap="5" alignItems="center" justifyContent="center">
+      <Button circular size="md" minWidth={44} minHeight={44} variant="quiet" aria-label="上一首"
+        disabled={!can('previous')} onPress={() => void control('previous')} icon={<SkipBack size={24}/>}/>
+      <Button circular size="lg" width={56} height={56} minWidth={56} minHeight={56}
+        backgroundColor="accent-background hover:accent-background-hover press:accent-background-press"
+        color="accent-color" aria-label={playing ? '暂停' : '播放'} disabled={!canToggle}
+        onPress={() => void control(playing ? 'pause' : 'play')} icon={playing ? <Pause size={26} color="accent-color"/> : <Play size={26} color="accent-color"/>}/>
+      <Button circular size="md" minWidth={44} minHeight={44} variant="quiet" aria-label="下一首"
+        disabled={!can('next')} onPress={() => void control('next')} icon={<SkipForward size={24}/>}/>
     </XStack>
   </YStack>;
 }

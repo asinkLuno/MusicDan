@@ -40,3 +40,8 @@ pub(crate) async fn set_overlay<R: Runtime>(app: AppHandle<R>, enabled: bool) ->
 pub(crate) async fn control_playback<R: Runtime>(app: AppHandle<R>, control: PlaybackControl) -> Result<()> {
     app.media().control_playback(control)
 }
+
+#[command]
+pub(crate) async fn haptic_feedback<R: Runtime>(app: AppHandle<R>, kind: HapticKind) -> Result<()> {
+    app.media().haptic_feedback(kind)
+}

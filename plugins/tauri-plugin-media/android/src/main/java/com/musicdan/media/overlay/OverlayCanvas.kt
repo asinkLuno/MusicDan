@@ -9,15 +9,23 @@ import android.graphics.RectF
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Typeface
+import android.os.Build
 import android.os.SystemClock
 import android.view.View
 import org.json.JSONObject
 import kotlin.math.*
 
 internal class OverlayCanvas(context: android.content.Context) : View(context) {
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; setShadowLayer(3f, 0f, 2f, Color.BLACK) }
-    private val badgePaint = Paint(paint)
     private val effects = context.assets.open("danmaku-effects.json").bufferedReader().use { JSONObject(it.readText()) }
+    private fun font(weight: Int): Typeface = if (Build.VERSION.SDK_INT >= 28)
+        Typeface.create(Typeface.create("sans-serif", Typeface.NORMAL), weight, false)
+        else Typeface.create("sans-serif-medium", Typeface.NORMAL)
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor(effects.getString("textColor"))
+        typeface = font(500)
+    }
+    private val badgePaint = Paint(paint).apply { typeface = font(600) }
     private val highEffect = effects.getJSONObject("high")
     private val topEffect = effects.getJSONObject("top")
     private fun colors(effect: JSONObject): IntArray {
@@ -119,8 +127,8 @@ internal class OverlayCanvas(context: android.content.Context) : View(context) {
             val count = plan[i].optInt("occurrences", 1).coerceAtLeast(1)
             val textFont = round(font / density * (1 + min(1.0, log2(count.toDouble()) * .15))).toFloat() * density
             paint.textSize = textFont
-            badgePaint.textSize = textFont * .65f
-            val emoteSize = textFont * 1.5f
+            badgePaint.textSize = round(textFont / density * .65f) * density
+            val emoteSize = round(textFont / density * 1.5f) * density
             val layout = layouts.getOrPut(i) {
                 val comment = plan[i]
                 val count = comment.optInt("occurrences", 1)
@@ -151,7 +159,7 @@ internal class OverlayCanvas(context: android.content.Context) : View(context) {
                 gradient
             } else null
             if (top) paint.setShadowLayer(min(6f * density, textFont * .2f), 0f, 0f, topColors[0])
-            else paint.setShadowLayer(3f, 0f, 2f, Color.BLACK)
+            else paint.clearShadowLayer()
             for ((index, part) in layout.parts.withIndex()) {
                 val bitmap = part.bitmap
                 if (bitmap != null) {

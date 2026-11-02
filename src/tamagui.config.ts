@@ -1,11 +1,12 @@
 // Shared Canvas palette and thresholds, also bundled for the Android renderer.
 export { default as danmakuEffects } from '../public/danmaku-effects.json' with { type: 'json' };
+import danmakuPalette from '../public/danmaku-effects.json' with { type: 'json' };
 import { defaultConfig } from '@tamagui/config/v6';
 import { animations } from '@tamagui/config/animations-css';
 import { createTamagui } from 'tamagui';
 
 // Lavender at night: quiet surfaces, misty highlights, and warm white text.
-const base = ['#14111e', '#211b30', '#322940', '#463956', '#655575', '#827293', '#a597b5', '#c0b2cf', '#d8cbe5', '#bdb0cd', '#f5effb'];
+const base = ['#14111e', '#211b30', '#322940', '#463956', '#655575', '#827293', '#a597b5', '#c0b2cf', '#d8cbe5', '#bdb0cd', danmakuPalette.textColor];
 const accent = ['#241a38', '#38254f', '#503668', '#72528f', '#c4a5ed', '#d1b5f5', '#dcc6fa', '#e6d6fc', '#eee2ff', '#f3eaff', '#faf5ff'];
 const replacements = new Map<string, string>();
 for (const [original, palette] of [[defaultConfig.themes.dark, base], [defaultConfig.themes.dark_accent, accent]] as const) {

@@ -14,6 +14,10 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 pub struct Media<R: Runtime>(AppHandle<R>);
 
 impl<R: Runtime> Media<R> {
+    pub fn haptic_feedback(&self, _kind: HapticKind) -> crate::Result<()> {
+        Ok(())
+    }
+
     pub fn control_playback(&self, _control: PlaybackControl) -> crate::Result<()> {
         Err(crate::Error::Plugin("播放控制仅支持 Android".into()))
     }

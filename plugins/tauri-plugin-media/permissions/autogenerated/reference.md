@@ -4,6 +4,7 @@
 
 #### This default permission set includes the following:
 
+- `allow-haptic-feedback`
 - `allow-control-playback`
 - `allow-overlay-status`
 - `allow-open-overlay-settings`
@@ -69,6 +70,32 @@ Enables the get_now_playing command without any pre-configured scope.
 <td>
 
 Denies the get_now_playing command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`media:allow-haptic-feedback`
+
+</td>
+<td>
+
+Enables the haptic_feedback command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`media:deny-haptic-feedback`
+
+</td>
+<td>
+
+Denies the haptic_feedback command without any pre-configured scope.
 
 </td>
 </tr>

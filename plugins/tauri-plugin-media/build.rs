@@ -1,4 +1,5 @@
 const COMMANDS: &[&str] = &[
+    "haptic_feedback",
     "control_playback",
     "overlay_status",
     "open_overlay_settings",

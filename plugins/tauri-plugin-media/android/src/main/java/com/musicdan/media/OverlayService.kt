@@ -2,6 +2,7 @@ package com.musicdan.media
 
 import android.app.*
 import android.content.Intent
+import android.content.Context
 import android.content.pm.ServiceInfo
 import android.graphics.*
 import android.hardware.input.InputManager
@@ -21,6 +22,14 @@ class OverlayService : Service() {
         var latestFrame = JSONObject()
         private const val CHANNEL = "music_danmaku"
         private const val NOTIFICATION = 101
+
+        fun isEnabled(context: Context): Boolean =
+            context.getSharedPreferences("overlay", Context.MODE_PRIVATE).getBoolean("enabled", false)
+
+        fun saveEnabled(context: Context, enabled: Boolean) {
+            context.getSharedPreferences("overlay", Context.MODE_PRIVATE)
+                .edit().putBoolean("enabled", enabled).apply()
+        }
     }
     private lateinit var manager: WindowManager
     private lateinit var view: OverlayCanvas
@@ -62,7 +71,7 @@ class OverlayService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            "stop" -> stopSelf()
+            "stop" -> { saveEnabled(this, false); stopSelf() }
             "pause" -> { paused = !paused; updateVisibility(); getSystemService(NotificationManager::class.java).notify(NOTIFICATION, notification()) }
         }
         return START_NOT_STICKY

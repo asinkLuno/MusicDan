@@ -1,4 +1,5 @@
 {
+  "textColor": "#f5effb",
   "high": { "minLikes": 1000, "colors": ["#c4a5ed", "#f3eaff", "#a5d8f3"] },
   "top": { "minLikes": 10000, "colors": ["#f2cc83", "#fff4d6", "#edb56a"] }
 }
