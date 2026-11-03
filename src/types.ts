@@ -8,6 +8,9 @@ export const trackKey = (np: NowPlaying) => `${np.title}|${np.artist}|${np.album
 export function formatTime(ms: number) { const seconds = Math.max(0, Math.floor(ms / 1000)); return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`; }
 export function invoke<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   const tauri = (window as unknown as { __TAURI__?: { core: { invoke: <T>(command: string, args?: Record<string, unknown>) => Promise<T> } } }).__TAURI__;
+  if (!tauri && import.meta.env.DEV && ['creep', 'november-rain'].includes(new URLSearchParams(window.location.search).get('demo') || '')) {
+    return import('./browser-demo').then(module => module.demoInvoke<T>(command, args));
+  }
   return tauri ? tauri.core.invoke<T>(command, args) : Promise.reject(new Error('请在安卓应用中使用此功能'));
 }
 

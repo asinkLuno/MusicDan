@@ -1,0 +1,3530 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "provider": "NetEase Cloud Music",
+    "songUrl": "https://music.163.com/song?id=1997439178",
+    "capturedAt": "2026-11-03T03:30:39.820Z",
+    "commentLimit": 1000,
+    "lyricsExcerpt": true,
+    "previewPosition": 433000,
+    "lyricsCapturedAt": "2026-11-03T03:45:11.966Z"
+  },
+  "song": {
+    "songId": 1997439178,
+    "name": "November Rain (2022 Version)",
+    "artists": "Guns N' Roses",
+    "album": "Use Your Illusion (Super Deluxe)",
+    "duration": 535745
+  },
+  "searchResults": [
+    {
+      "songId": 1997439178,
+      "name": "November Rain (2022 Version)",
+      "artists": "Guns N' Roses",
+      "album": "Use Your Illusion (Super Deluxe)",
+      "duration": 535745
+    },
+    {
+      "songId": 1997442946,
+      "name": "November Rain (2022 Version)",
+      "artists": "Guns N' Roses",
+      "album": "Use Your Illusion I (Deluxe Edition)",
+      "duration": 535745
+    },
+    {
+      "songId": 3456762146,
+      "name": "November Rain 3pm",
+      "artists": "Jay trans",
+      "album": "November Rain 3pm",
+      "duration": 72515
+    },
+    {
+      "songId": 3456728491,
+      "name": "November rain（kris)",
+      "artists": "雷米克斯",
+      "album": "November rain（kris)",
+      "duration": 181159
+    },
+    {
+      "songId": 1997439210,
+      "name": "November Rain (Live In Las Vegas, Thomas & Mack Center - January 25, 1992)",
+      "artists": "Guns N' Roses",
+      "album": "Use Your Illusion (Super Deluxe)",
+      "duration": 751000
+    },
+    {
+      "songId": 1997424378,
+      "name": "November Rain (2022 Version)",
+      "artists": "Guns N' Roses",
+      "album": "Use Your Illusion I",
+      "duration": 535745
+    },
+    {
+      "songId": 2090216460,
+      "name": "November Rain 2023 (Revisited)",
+      "artists": "AngelEowyn",
+      "album": "November Rain 2023 (Revisited)",
+      "duration": 205023
+    },
+    {
+      "songId": 2163156578,
+      "name": "Rain (November 11, 2022)",
+      "artists": "Audio Time Capsule",
+      "album": "Orinda, California (November 2022)",
+      "duration": 200000
+    },
+    {
+      "songId": 18094919,
+      "name": "November Rain",
+      "artists": "Guns N' Roses",
+      "album": "Use Your Illusion I",
+      "duration": 536466
+    },
+    {
+      "songId": 1829636168,
+      "name": "November Rain（翻自 吴亦凡）",
+      "artists": "CLARE KRYOS",
+      "album": "2019.8.3",
+      "duration": 195056
+    },
+    {
+      "songId": 2616977984,
+      "name": "November Rain(Ft.吴亦凡)",
+      "artists": "RR Zarry / BEATLAB STUDIO",
+      "album": "Rain（雨）",
+      "duration": 199183
+    },
+    {
+      "songId": 3346054943,
+      "name": "November Rain",
+      "artists": "bb3",
+      "album": "November Rain",
+      "duration": 184375
+    },
+    {
+      "songId": 2645641440,
+      "name": "November Rain",
+      "artists": "YangYang",
+      "album": "November Rain",
+      "duration": 192875
+    },
+    {
+      "songId": 1477530753,
+      "name": "November Rain",
+      "artists": "Gareth.T",
+      "album": "November Rain",
+      "duration": 212747
+    },
+    {
+      "songId": 1346568631,
+      "name": "November Rain",
+      "artists": "TC",
+      "album": "W",
+      "duration": 57093
+    },
+    {
+      "songId": 3456703189,
+      "name": "November Rain",
+      "artists": "陈予恩",
+      "album": "November Rain",
+      "duration": 96862
+    },
+    {
+      "songId": 2004544701,
+      "name": "November Rain (Holly North Remix)",
+      "artists": "D-Formation / Lonya",
+      "album": "Beatfreak Annual 2022",
+      "duration": 413606
+    },
+    {
+      "songId": 1995550423,
+      "name": "November Rain",
+      "artists": "Graham Blvd",
+      "album": "Thanksgiving 2022 Playlist",
+      "duration": 531005
+    },
+    {
+      "songId": 2012332717,
+      "name": "November Rain Interlude",
+      "artists": "Mitch Matchedash",
+      "album": "What’s It 2022 Ya?",
+      "duration": 96806
+    },
+    {
+      "songId": 2638999815,
+      "name": "Łejk ap szampejn cze ka (feat. Carry_0n & Grind)",
+      "artists": "Ś.P. Brat Michaal / Carry_On / Grind",
+      "album": "november pass to december rain 2021 [2022] LP",
+      "duration": 207171
+    },
+    {
+      "songId": 2163157828,
+      "name": "Rain (Contra Costa County)",
+      "artists": "Audio Time Capsule",
+      "album": "Orinda, California (November 2022)",
+      "duration": 199999
+    },
+    {
+      "songId": 2163157827,
+      "name": "Rain (Orinda, Ca)",
+      "artists": "Audio Time Capsule",
+      "album": "Orinda, California (November 2022)",
+      "duration": 200000
+    },
+    {
+      "songId": 2638999823,
+      "name": "Jungle nr. 776",
+      "artists": "Ś.P. Brat Michaal",
+      "album": "november pass to december rain 2021 [2022] LP",
+      "duration": 585503
+    },
+    {
+      "songId": 2639000531,
+      "name": "Dubstepik teaser",
+      "artists": "Ś.P. Brat Michaal",
+      "album": "november pass to december rain 2021 [2022] LP",
+      "duration": 153048
+    },
+    {
+      "songId": 2638999829,
+      "name": "Oh Je",
+      "artists": "Ś.P. Brat Michaal",
+      "album": "november pass to december rain 2021 [2022] LP",
+      "duration": 368861
+    },
+    {
+      "songId": 2638999826,
+      "name": "Sanding in veneers",
+      "artists": "Ś.P. Brat Michaal",
+      "album": "november pass to december rain 2021 [2022] LP",
+      "duration": 191781
+    },
+    {
+      "songId": 2638999825,
+      "name": "Chee smpl cd",
+      "artists": "Ś.P. Brat Michaal",
+      "album": "november pass to december rain 2021 [2022] LP",
+      "duration": 292943
+    },
+    {
+      "songId": 2638999824,
+      "name": "Smpl from chee",
+      "artists": "Ś.P. Brat Michaal",
+      "album": "november pass to december rain 2021 [2022] LP",
+      "duration": 136842
+    },
+    {
+      "songId": 2638999821,
+      "name": "Got this",
+      "artists": "Ś.P. Brat Michaal",
+      "album": "november pass to december rain 2021 [2022] LP",
+      "duration": 208933
+    },
+    {
+      "songId": 2638999817,
+      "name": "Grzeczny jak zwykle",
+      "artists": "Ś.P. Brat Michaal",
+      "album": "november pass to december rain 2021 [2022] LP",
+      "duration": 172907
+    }
+  ],
+  "commentCounts": {
+    "18094919": 24099,
+    "1346568631": 729,
+    "1477530753": 622,
+    "1829636168": 760,
+    "1995550423": 0,
+    "1997424378": 98,
+    "1997439178": 479,
+    "1997439210": 19,
+    "1997442946": 52,
+    "2004544701": 0,
+    "2012332717": 0,
+    "2090216460": 0,
+    "2163156578": 0,
+    "2163157827": 0,
+    "2163157828": 0,
+    "2616977984": 867,
+    "2638999815": 0,
+    "2638999817": 0,
+    "2638999821": 0,
+    "2638999823": 0,
+    "2638999824": 0,
+    "2638999825": 0,
+    "2638999826": 0,
+    "2638999829": 0,
+    "2639000531": 0,
+    "2645641440": 3046,
+    "3346054943": 67,
+    "3456703189": 0,
+    "3456728491": 0,
+    "3456762146": 0
+  },
+  "comments": [
+    {
+      "commentId": 5889823555,
+      "content": "这一版太过豪华，为这部佳话再添传奇色彩，新增的低音部和重制的人声让我有步入殿堂的感觉",
+      "liked_count": 400,
+      "time": 1681350811486
+    },
+    {
+      "commentId": 5877312282,
+      "content": "不光弦乐换实录，整曲混音母带也重制了，人声和吉他也靠前了，响度贼妈大，爽死好吧",
+      "liked_count": 272,
+      "time": 1679799114053
+    },
+    {
+      "commentId": 5841839250,
+      "content": "那首付费了，穷人来到了这",
+      "liked_count": 143,
+      "time": 1674634088174
+    },
+    {
+      "commentId": 7597943524,
+      "content": "钢丝和螺丝是我国著名民间音乐艺术组合，代表作品主要有《冬月的甘霖》 《张沟欢迎你》",
+      "liked_count": 109,
+      "time": 1745971790618
+    },
+    {
+      "commentId": 5788223125,
+      "content": "淅沥沥哗啦啦 十一月的武汉 昨天是夏天 今天是冬天 爽",
+      "liked_count": 85,
+      "time": 1668257499674
+    },
+    {
+      "commentId": 5859756105,
+      "content": "穷人版的专辑还更先进了~",
+      "liked_count": 66,
+      "time": 1677011296706
+    },
+    {
+      "commentId": 5860953031,
+      "content": "这都2月了，11月的那条秋裤始终挥之不去",
+      "liked_count": 60,
+      "time": 1677206288273
+    },
+    {
+      "commentId": 7424857426,
+      "content": "ai的介绍语已经用上你的评论了哥们",
+      "liked_count": 49,
+      "time": 1727086922145
+    },
+    {
+      "commentId": 5878719723,
+      "content": "没有什么能够永恒，即便是那十一月冰冷的雨",
+      "liked_count": 44,
+      "time": 1680018213464
+    },
+    {
+      "commentId": 5791148594,
+      "content": "“The new 2022 version is the same performance as the original, and mixed faithfully to the established version, but with newly recorded orchestration replacing the sampled sounds used at the time.”",
+      "liked_count": 25,
+      "time": 1668654565201
+    },
+    {
+      "commentId": 5972162430,
+      "content": "确实，这个人声eq调的听起来贼新鲜贼通亮",
+      "liked_count": 23,
+      "time": 1693773591870
+    },
+    {
+      "commentId": 9438909382,
+      "content": "怎么没有《我家的甜娃娃》呢（笑）",
+      "liked_count": 18,
+      "time": 1768193818530
+    },
+    {
+      "commentId": 7432194211,
+      "content": "就是有个私人漫游歌单，现在又一个私人dj它会在每首歌推给你之前说一堆介绍语",
+      "liked_count": 18,
+      "time": 1728045309243
+    },
+    {
+      "commentId": 9550540644,
+      "content": "其实我觉得可以叫《十一月四日风雨大作》[大笑]",
+      "liked_count": 16,
+      "time": 1780763319447
+    },
+    {
+      "commentId": 7542318893,
+      "content": "感觉这个比付费的好听",
+      "liked_count": 13,
+      "time": 1739171274036
+    },
+    {
+      "commentId": 5884793026,
+      "content": "真他妈好听，百听不厌，干",
+      "liked_count": 13,
+      "time": 1680795453833
+    },
+    {
+      "commentId": 5957521754,
+      "content": "这版真的绝了，当初就是通过摇滚三雨真正爱上了摇滚乐，也从此改变了我的人生轨迹[多多大笑]",
+      "liked_count": 10,
+      "time": 1691571127504
+    },
+    {
+      "commentId": 9679881433,
+      "content": "今年的十一月雨会不会依旧冷冽透骨…",
+      "liked_count": 9,
+      "time": 1793463326679
+    },
+    {
+      "commentId": 9411140483,
+      "content": "这是一首用8分57秒讲完一生爱情的摇滚史诗——当钢琴第一个音符落下，你就知道有些雨注定要下在心里一辈子。",
+      "liked_count": 9,
+      "time": 1764964399238
+    },
+    {
+      "commentId": 7687082464,
+      "content": "这版绝对的更好",
+      "liked_count": 9,
+      "time": 1755147965371
+    },
+    {
+      "commentId": 7584480399,
+      "content": "都是歌迷，不分贵贱",
+      "liked_count": 9,
+      "time": 1744205643058
+    },
+    {
+      "commentId": 7465325376,
+      "content": "十一月的雨差点单杀我[可爱]淋成二比了",
+      "liked_count": 9,
+      "time": 1732502807732
+    },
+    {
+      "commentId": 6002393534,
+      "content": "这版音质太无敌了（流泪）",
+      "liked_count": 9,
+      "time": 1699279497454
+    },
+    {
+      "commentId": 5957355904,
+      "content": "这版配乐磅礴大气，有点歌剧的味道了",
+      "liked_count": 9,
+      "time": 1691547093723
+    },
+    {
+      "commentId": 5791462764,
+      "content": "听说以前版本的弦乐是axl用合成器做的，这次用的是真的弦乐",
+      "liked_count": 9,
+      "time": 1668682788133
+    },
+    {
+      "commentId": 9455875987,
+      "content": "Sweet Child O' Mine上哈撒韦第二部了，全剧终的时候会不会用这首呢？",
+      "liked_count": 8,
+      "time": 1769955406858
+    },
+    {
+      "commentId": 7562423179,
+      "content": "上哪给你找喜欢jojo还是摇滚乐迷的",
+      "liked_count": 8,
+      "time": 1741531527368
+    },
+    {
+      "commentId": 9529086512,
+      "content": "太爽了这版，仿佛回到了中学那年跟收手机的老师斗智斗勇东躲西藏最后成功保下手机带着心悸与庆幸躺到床上插上耳机播放枪花与xjapan的夜晚",
+      "liked_count": 7,
+      "time": 1778324121482
+    },
+    {
+      "commentId": 9436688822,
+      "content": "去年十一月的第一场雨，母亲下葬……我一直困在那场雨中。",
+      "liked_count": 7,
+      "time": 1767953825312
+    },
+    {
+      "commentId": 7599412605,
+      "content": "你怎么不需要爱一个人？你怎么不需要被一个人爱？",
+      "liked_count": 7,
+      "time": 1746155077633
+    },
+    {
+      "commentId": 7493649302,
+      "content": "还是喜欢经典版本，有种独自一人在雨中吟唱的感觉",
+      "liked_count": 7,
+      "time": 1735569355465
+    },
+    {
+      "commentId": 7375725856,
+      "content": "就让这规则带我成为百万富翁吧！",
+      "liked_count": 7,
+      "time": 1721141876889
+    },
+    {
+      "commentId": 7362088582,
+      "content": "我淋着十一月的雨，听你骂我没出息",
+      "liked_count": 7,
+      "time": 1719355863107
+    },
+    {
+      "commentId": 6009640850,
+      "content": "老版用的是合成器，这版是真请了个玄乐队",
+      "liked_count": 7,
+      "time": 1700579883528
+    },
+    {
+      "commentId": 5874652600,
+      "content": "我去，这个是那个管弦乐重制版[色]",
+      "liked_count": 7,
+      "time": 1679402299494
+    },
+    {
+      "commentId": 9565454157,
+      "content": "每个人都需要一点时间独处，你也不例外",
+      "liked_count": 6,
+      "time": 1782470369552
+    },
+    {
+      "commentId": 9543779911,
+      "content": "最华丽和史诗莫过于此。这首和Estranged带我入了摇滚的坑，循环300遍了，来评论区打个卡[100分]",
+      "liked_count": 6,
+      "time": 1780009559435
+    },
+    {
+      "commentId": 7572953448,
+      "content": "前奏太顶级了",
+      "liked_count": 6,
+      "time": 1742742300885
+    },
+    {
+      "commentId": 7522510116,
+      "content": "仿佛每一种雨在我浮现",
+      "liked_count": 6,
+      "time": 1737052495094
+    },
+    {
+      "commentId": 7440327036,
+      "content": "今天石家庄下雨了，快11月了",
+      "liked_count": 6,
+      "time": 1729234913987
+    },
+    {
+      "commentId": 7432138405,
+      "content": "啥[大哭][大哭]在哪里",
+      "liked_count": 6,
+      "time": 1728040372423
+    },
+    {
+      "commentId": 7422895330,
+      "content": "11月雨下吧，这规则终将会让我成为百万富翁！",
+      "liked_count": 6,
+      "time": 1726822523021
+    },
+    {
+      "commentId": 7415688690,
+      "content": "等等，是我想的那个风筝吗？什么时候和白姐再出同人曲啊",
+      "liked_count": 6,
+      "time": 1725799900673
+    },
+    {
+      "commentId": 6030305581,
+      "content": "重新混音，弦乐变成真的了",
+      "liked_count": 6,
+      "time": 1703853483623
+    },
+    {
+      "commentId": 6002004192,
+      "content": "今年十一月刚下第一场雨",
+      "liked_count": 6,
+      "time": 1699197445008
+    },
+    {
+      "commentId": 5976162082,
+      "content": "你必须内心丰富，才能摆脱这些表面的相似。",
+      "liked_count": 6,
+      "time": 1694525754914
+    },
+    {
+      "commentId": 5961174133,
+      "content": "这样一听，管弦乐用合成器原来已经足够了....",
+      "liked_count": 6,
+      "time": 1692074470783
+    },
+    {
+      "commentId": 5943784961,
+      "content": "标签居然是小众佳作……",
+      "liked_count": 6,
+      "time": 1689667603375
+    },
+    {
+      "commentId": 5921645775,
+      "content": "网易知道我是穷比，日推这首免费的",
+      "liked_count": 6,
+      "time": 1686360731367
+    },
+    {
+      "commentId": 9633117331,
+      "content": "歌单太多好听的歌了，除了中国人不会飞",
+      "liked_count": 5,
+      "time": 1788539833327
+    },
+    {
+      "commentId": 9598880659,
+      "content": "我六岁天天听钢丝和螺丝，老师家人都不理解我，我觉得我好小众好孤独，经历堪比成年人，好像没有人能够懂我，评论区有和我一样的人吗[EMO听歌]",
+      "liked_count": 5,
+      "time": 1785814923272
+    },
+    {
+      "commentId": 9579389907,
+      "content": "2026年7月的雨，洪水猛兽，广西加油，贵港加油！",
+      "liked_count": 5,
+      "time": 1784002519180
+    },
+    {
+      "commentId": 9485197896,
+      "content": "歪个楼，我预言乔迪奥的替身在后期会发生进化，像乔尼一样[抱抱你]",
+      "liked_count": 5,
+      "time": 1772888932625
+    },
+    {
+      "commentId": 7569548358,
+      "content": "不亚于波西米亚狂想曲的经典",
+      "liked_count": 5,
+      "time": 1742304255389
+    },
+    {
+      "commentId": 7456123372,
+      "content": "听着这歌时，正好下小雨了",
+      "liked_count": 5,
+      "time": 1731239253067
+    },
+    {
+      "commentId": 7454601749,
+      "content": "钢琴，人声都靠前了点，bass也更重了点。",
+      "liked_count": 5,
+      "time": 1731078540116
+    },
+    {
+      "commentId": 7377205461,
+      "content": "😂",
+      "liked_count": 5,
+      "time": 1721307132735
+    },
+    {
+      "commentId": 7366059759,
+      "content": "我一定要在我的婚礼上给她弹这首",
+      "liked_count": 5,
+      "time": 1719914186299
+    },
+    {
+      "commentId": 6064302419,
+      "content": "竟然是Steven Wilson重混的",
+      "liked_count": 5,
+      "time": 1708731987555
+    },
+    {
+      "commentId": 6063291752,
+      "content": "这个版本比原版好太多了\n最喜欢的器乐部分",
+      "liked_count": 5,
+      "time": 1708598145619
+    },
+    {
+      "commentId": 5976140414,
+      "content": "[狗][狗]最爱曲目之一，只是，为啥当年我买的《运用你的想象力》1、2专辑磁带封面都是一个孩子，这个却是一群孩子呢？[鬼脸]",
+      "liked_count": 5,
+      "time": 1694522788130
+    },
+    {
+      "commentId": 5949915697,
+      "content": "妈妈说，不要离有对象的女孩太近，因为你的出现可能要了那个男孩半条命，后来我才知道，不是所有的男孩都有妈妈。",
+      "liked_count": 5,
+      "time": 1690499450850
+    },
+    {
+      "commentId": 5936523334,
+      "content": "这可是重制版，比以前的好多了",
+      "liked_count": 5,
+      "time": 1688640562462
+    },
+    {
+      "commentId": 5810350416,
+      "content": "我去，这个弦乐眼前一亮啊😨 爱了爱了",
+      "liked_count": 5,
+      "time": 1671107138288
+    },
+    {
+      "commentId": 9677809791,
+      "content": "又要到了听十一月雨的时候了",
+      "liked_count": 4,
+      "time": 1793359285925
+    },
+    {
+      "commentId": 9666851956,
+      "content": "十 一 月 四 日 风 雨 大 作",
+      "liked_count": 4,
+      "time": 1792217044531
+    },
+    {
+      "commentId": 9634176181,
+      "content": "choose尼古丁？？！",
+      "liked_count": 4,
+      "time": 1788662239682
+    },
+    {
+      "commentId": 9590398018,
+      "content": "马孔多的雨一直在下",
+      "liked_count": 4,
+      "time": 1785071308465
+    },
+    {
+      "commentId": 9482767202,
+      "content": "抒情史诗",
+      "liked_count": 4,
+      "time": 1772593614252
+    },
+    {
+      "commentId": 7449655177,
+      "content": "十一月的第一天，听雨",
+      "liked_count": 4,
+      "time": 1730420083008
+    },
+    {
+      "commentId": 7361935924,
+      "content": "明天就要中考了，祝我自己好运！",
+      "liked_count": 4,
+      "time": 1719326537235
+    },
+    {
+      "commentId": 6035445162,
+      "content": "歌词翻译的真是太好了，牛逼",
+      "liked_count": 4,
+      "time": 1704616153573
+    },
+    {
+      "commentId": 5802999153,
+      "content": "根据这个前奏都不该这么少评论啊",
+      "liked_count": 4,
+      "time": 1670186938306
+    },
+    {
+      "commentId": 5800395096,
+      "content": "11月以一场冰冷的雨结束",
+      "liked_count": 4,
+      "time": 1669832194177
+    },
+    {
+      "commentId": 5794043564,
+      "content": "这个版本绝赞",
+      "liked_count": 4,
+      "time": 1669030030653
+    },
+    {
+      "commentId": 5787362162,
+      "content": "下着十一月的雨 听着十一月的雨",
+      "liked_count": 4,
+      "time": 1668153464121
+    },
+    {
+      "commentId": 9679832318,
+      "content": "十一月 在下雨",
+      "liked_count": 3,
+      "time": 1793463857033
+    },
+    {
+      "commentId": 9679856447,
+      "content": "感觉重庆11月每天都有雨。。。",
+      "liked_count": 3,
+      "time": 1793462642818
+    },
+    {
+      "commentId": 9679651063,
+      "content": "他们要来了",
+      "liked_count": 3,
+      "time": 1793457325481
+    },
+    {
+      "commentId": 9653273369,
+      "content": "此曲只应天上有啊",
+      "liked_count": 3,
+      "time": 1790777483531
+    },
+    {
+      "commentId": 9643512580,
+      "content": "choose life？",
+      "liked_count": 3,
+      "time": 1789742516952
+    },
+    {
+      "commentId": 9635609286,
+      "content": "噔噔 噔噔蹬",
+      "liked_count": 3,
+      "time": 1788870068218
+    },
+    {
+      "commentId": 9613529134,
+      "content": "牛来了",
+      "liked_count": 3,
+      "time": 1787153174785
+    },
+    {
+      "commentId": 9604607811,
+      "content": "这才是音乐",
+      "liked_count": 3,
+      "time": 1786348606137
+    },
+    {
+      "commentId": 9590406827,
+      "content": "封面设计绝了把俩张专辑切片融合，有种胶片迷幻的感觉[欣赏音乐]",
+      "liked_count": 3,
+      "time": 1785071119543
+    },
+    {
+      "commentId": 9570198060,
+      "content": "6:47开始夯爆了",
+      "liked_count": 3,
+      "time": 1783003559211
+    },
+    {
+      "commentId": 9530600609,
+      "content": "就没有jodio的替身吗？",
+      "liked_count": 3,
+      "time": 1778499889436
+    },
+    {
+      "commentId": 9507831658,
+      "content": "我去原来您还是老资历",
+      "liked_count": 3,
+      "time": 1775749544618
+    },
+    {
+      "commentId": 9480854133,
+      "content": "这个版本爽爆了",
+      "liked_count": 3,
+      "time": 1772372528938
+    },
+    {
+      "commentId": 9429403422,
+      "content": "Jodio！",
+      "liked_count": 3,
+      "time": 1767142975722
+    },
+    {
+      "commentId": 9425258042,
+      "content": "25年都要过去了，依然能陆续收到穷人的点赞[哭哭]",
+      "liked_count": 3,
+      "time": 1766720403215
+    },
+    {
+      "commentId": 9391541211,
+      "content": "十一月的雨来了",
+      "liked_count": 3,
+      "time": 1763437618770
+    },
+    {
+      "commentId": 9385271132,
+      "content": "昨天下雨了 在下雨的空地弹琴 琴坏了[悲伤]",
+      "liked_count": 3,
+      "time": 1762924823797
+    },
+    {
+      "commentId": 9353822883,
+      "content": "十一月的雨",
+      "liked_count": 3,
+      "time": 1761987383176
+    },
+    {
+      "commentId": 7667032826,
+      "content": "抽象了",
+      "liked_count": 3,
+      "time": 1753603024650
+    },
+    {
+      "commentId": 7658588175,
+      "content": "这吉他绕梁三日，余音不断。",
+      "liked_count": 3,
+      "time": 1752815586061
+    },
+    {
+      "commentId": 7621626346,
+      "content": "最爱强化这首！！！[吐舌][吐舌][吐舌]",
+      "liked_count": 3,
+      "time": 1748610676330
+    },
+    {
+      "commentId": 7596875357,
+      "content": "摇滚有5场雨",
+      "liked_count": 3,
+      "time": 1745837883239
+    },
+    {
+      "commentId": 7380753830,
+      "content": "只要不是吴签的那一首就行",
+      "liked_count": 3,
+      "time": 1721745514286
+    },
+    {
+      "commentId": 6053306305,
+      "content": "哈哈 竟然在这看到本尊",
+      "liked_count": 3,
+      "time": 1707065858290
+    },
+    {
+      "commentId": 5977557549,
+      "content": "浑身汗毛直立的感觉",
+      "liked_count": 3,
+      "time": 1694822282491
+    },
+    {
+      "commentId": 5964608127,
+      "content": "但行好事，莫问前程",
+      "liked_count": 3,
+      "time": 1692550994219
+    },
+    {
+      "commentId": 5958528955,
+      "content": "哇呼十一月的雨，好舒服",
+      "liked_count": 3,
+      "time": 1691707831444
+    },
+    {
+      "commentId": 5812659556,
+      "content": "12月了，回忆里总有那条11月的秋裤。。。",
+      "liked_count": 3,
+      "time": 1671425785632
+    },
+    {
+      "commentId": 5812267186,
+      "content": "卧槽，吉吉国民！",
+      "liked_count": 3,
+      "time": 1671365232503
+    },
+    {
+      "commentId": 5812266877,
+      "content": "爽，太爽",
+      "liked_count": 3,
+      "time": 1671365019184
+    },
+    {
+      "commentId": 9681024964,
+      "content": "淅淅沥沥",
+      "liked_count": 2,
+      "time": 1793540837728
+    },
+    {
+      "commentId": 9680607834,
+      "content": "今年的十一月  凌晨就下雨了呢",
+      "liked_count": 2,
+      "time": 1793519517120
+    },
+    {
+      "commentId": 9679901749,
+      "content": "又是一年十一月雨",
+      "liked_count": 2,
+      "time": 1793465024581
+    },
+    {
+      "commentId": 9679857226,
+      "content": "十一月 冷雨",
+      "liked_count": 2,
+      "time": 1793464235312
+    },
+    {
+      "commentId": 9679894478,
+      "content": "哥几个 又来了",
+      "liked_count": 2,
+      "time": 1793464105847
+    },
+    {
+      "commentId": 9679856740,
+      "content": "又是一年十一月雨",
+      "liked_count": 2,
+      "time": 1793463166737
+    },
+    {
+      "commentId": 9679862346,
+      "content": "又是一年十一月雨",
+      "liked_count": 2,
+      "time": 1793462558274
+    },
+    {
+      "commentId": 9679823784,
+      "content": "来了哥几个",
+      "liked_count": 2,
+      "time": 1793462403290
+    },
+    {
+      "commentId": 9679759571,
+      "content": "又是一年十一月雨",
+      "liked_count": 2,
+      "time": 1793460116505
+    },
+    {
+      "commentId": 9626704156,
+      "content": "词曲：Axl Rose\n编程：Michael Wilson\n制作人：Mike Clink\n混音：Bill Price\n母带：Ted Jensen",
+      "liked_count": 2,
+      "time": 1788108679286
+    },
+    {
+      "commentId": 9564202084,
+      "content": "endless rain，11月的雨，purple rain 。摇滚乐史上最伟大的三场雨？！",
+      "liked_count": 2,
+      "time": 1782316746957
+    },
+    {
+      "commentId": 9552614774,
+      "content": "十一月的雨下在晚上就是冷雨夜",
+      "liked_count": 2,
+      "time": 1780980301849
+    },
+    {
+      "commentId": 9543769085,
+      "content": "忘不了第一次听那种无以复加的震撼",
+      "liked_count": 2,
+      "time": 1780009747766
+    },
+    {
+      "commentId": 9531000789,
+      "content": "荒木歌品没得说",
+      "liked_count": 2,
+      "time": 1778563582385
+    },
+    {
+      "commentId": 9498086320,
+      "content": "我竟然才听重制版，我说怎么不一样了",
+      "liked_count": 2,
+      "time": 1774604532969
+    },
+    {
+      "commentId": 9496346995,
+      "content": "完了，我们县有个张沟镇",
+      "liked_count": 2,
+      "time": 1774342690165
+    },
+    {
+      "commentId": 9491007644,
+      "content": "靠音乐来虚度光阴\n这是否也是种堕落\n去往天涯海角\n是我的梦想\n可是没你在的地方\n我发现离不开你\n哪里都有你的影子\n反复挣扎思念着昨天\n回过头再祈求安慰\n可是回不去了\n说什么都没用\n别故作坚强\n休息一下吧\n花会重开，但昨日却不再来\n\n雨从头上的云端里落下\n滋润了万物\n浸湿了我的心\n",
+      "liked_count": 2,
+      "time": 1773611047667
+    },
+    {
+      "commentId": 9478107901,
+      "content": "就是喜欢 不知道为什么 不知道多少遍了 觉得什么都刚刚好  越听越爱",
+      "liked_count": 2,
+      "time": 1772091266102
+    },
+    {
+      "commentId": 9471866636,
+      "content": "每个人都可以爱上唯一的某个人， 只是那某个人也是每个人\n我可以爱上她，可她真的会爱上我吗",
+      "liked_count": 2,
+      "time": 1771295974315
+    },
+    {
+      "commentId": 9441641712,
+      "content": "我爸给我推荐的",
+      "liked_count": 2,
+      "time": 1768568660390
+    },
+    {
+      "commentId": 9419033874,
+      "content": "原来是重制版，挂在后台从前奏开始就感觉不对劲，听完后怀着疑问点进来看了一下就顿悟了",
+      "liked_count": 2,
+      "time": 1765974204347
+    },
+    {
+      "commentId": 9416468465,
+      "content": "每次听十一月的雨都会湿眼眶，不知道为什么？",
+      "liked_count": 2,
+      "time": 1765622941664
+    },
+    {
+      "commentId": 9413056989,
+      "content": "可以听一下我的新歌吗？如果明年火了，在座的各位都有内场票",
+      "liked_count": 2,
+      "time": 1765195669747
+    },
+    {
+      "commentId": 9412895235,
+      "content": "十一月过去哩！",
+      "liked_count": 2,
+      "time": 1765174444896
+    },
+    {
+      "commentId": 9353883536,
+      "content": "十一月",
+      "liked_count": 2,
+      "time": 1761989898090
+    },
+    {
+      "commentId": 9353674925,
+      "content": "2025的十一月",
+      "liked_count": 2,
+      "time": 1761977660624
+    },
+    {
+      "commentId": 9353458130,
+      "content": "又是一年11月\n",
+      "liked_count": 2,
+      "time": 1761960937440
+    },
+    {
+      "commentId": 9353441760,
+      "content": "又十一月啦\n",
+      "liked_count": 2,
+      "time": 1761956935242
+    },
+    {
+      "commentId": 9353396734,
+      "content": "11月了",
+      "liked_count": 2,
+      "time": 1761951550240
+    },
+    {
+      "commentId": 9353261327,
+      "content": "11月，成都，雨\n",
+      "liked_count": 2,
+      "time": 1761933577723
+    },
+    {
+      "commentId": 9353242544,
+      "content": "11月来了！",
+      "liked_count": 2,
+      "time": 1761926689424
+    },
+    {
+      "commentId": 7739540550,
+      "content": "This is exactly what I need now",
+      "liked_count": 2,
+      "time": 1758889495008
+    },
+    {
+      "commentId": 7737925039,
+      "content": "乔迪奥“November Rain”",
+      "liked_count": 2,
+      "time": 1758719172497
+    },
+    {
+      "commentId": 7711926432,
+      "content": "这solo我练2月了还是不连贯好难",
+      "liked_count": 2,
+      "time": 1756950892795
+    },
+    {
+      "commentId": 7654196046,
+      "content": "有一天爱转身离去，只剩下一𠆤孤独的孩子在雨中落淚（想念我的親人）",
+      "liked_count": 2,
+      "time": 1752374017515
+    },
+    {
+      "commentId": 7633522351,
+      "content": "太好听了[强][强][强][强][爱心][爱心][爱心]",
+      "liked_count": 2,
+      "time": 1749912039675
+    },
+    {
+      "commentId": 7632855131,
+      "content": "前奏有多压抑，副歌就有多绚烂",
+      "liked_count": 2,
+      "time": 1749835557195
+    },
+    {
+      "commentId": 7581408201,
+      "content": "这是原班人马吗",
+      "liked_count": 2,
+      "time": 1743836228188
+    },
+    {
+      "commentId": 7572282797,
+      "content": "经典，还是经典[爱心]",
+      "liked_count": 2,
+      "time": 1742663783191
+    },
+    {
+      "commentId": 7491056157,
+      "content": "因为没有任何痛楚永恒\n哪怕是冰凛的十一月雨🌧️",
+      "liked_count": 2,
+      "time": 1735404369581
+    },
+    {
+      "commentId": 7482099572,
+      "content": "我不需要是因为我没有",
+      "liked_count": 2,
+      "time": 1734615673299
+    },
+    {
+      "commentId": 7466737967,
+      "content": "甚金",
+      "liked_count": 2,
+      "time": 1732717969672
+    },
+    {
+      "commentId": 7458799963,
+      "content": "今天下雨啦",
+      "liked_count": 2,
+      "time": 1731594871854
+    },
+    {
+      "commentId": 7454329342,
+      "content": "每年十一月就会来……今年又有雨",
+      "liked_count": 2,
+      "time": 1731050456314
+    },
+    {
+      "commentId": 7453723332,
+      "content": "十一月的潮湿阴霾，不见阳光，没有希望，唯有一曲肝肠断！",
+      "liked_count": 2,
+      "time": 1730956084767
+    },
+    {
+      "commentId": 7445536688,
+      "content": "飞艇的stairway to heaven吧（?）",
+      "liked_count": 2,
+      "time": 1729905554967
+    },
+    {
+      "commentId": 7444032237,
+      "content": "当我听完这首歌 🌧️也该停了",
+      "liked_count": 2,
+      "time": 1729681564133
+    },
+    {
+      "commentId": 7442667039,
+      "content": "重塑传奇的一版",
+      "liked_count": 2,
+      "time": 1729494150686
+    },
+    {
+      "commentId": 7433390793,
+      "content": "这版太好听了~~\n",
+      "liked_count": 2,
+      "time": 1728203317432
+    },
+    {
+      "commentId": 7402485854,
+      "content": "乔  迪  二  相  性",
+      "liked_count": 2,
+      "time": 1724172147331
+    },
+    {
+      "commentId": 7386063981,
+      "content": "太吊了",
+      "liked_count": 2,
+      "time": 1722318609054
+    },
+    {
+      "commentId": 7374717169,
+      "content": "啊啊啊我喜欢这版翻译！",
+      "liked_count": 2,
+      "time": 1721032396621
+    },
+    {
+      "commentId": 7358324604,
+      "content": "我去有动态封面了",
+      "liked_count": 2,
+      "time": 1718814888549
+    },
+    {
+      "commentId": 6118924939,
+      "content": "宝宝说他最喜欢的歌曲是这首十一月的雨，我且来听一下🎧",
+      "liked_count": 2,
+      "time": 1716654724367
+    },
+    {
+      "commentId": 6077443629,
+      "content": "1620年十一月北大西洋五月花号",
+      "liked_count": 2,
+      "time": 1710779450089
+    },
+    {
+      "commentId": 6034641658,
+      "content": "回到中学时代 好怀念",
+      "liked_count": 2,
+      "time": 1704511154173
+    },
+    {
+      "commentId": 6006926408,
+      "content": "这跟老版啥区别，反正肯定不是22年录制的，螺丝嗓子早不行了[流泪]",
+      "liked_count": 2,
+      "time": 1700094228985
+    },
+    {
+      "commentId": 5995122268,
+      "content": "还是那么经典",
+      "liked_count": 2,
+      "time": 1697926960833
+    },
+    {
+      "commentId": 5989104315,
+      "content": "这版太爽了",
+      "liked_count": 2,
+      "time": 1696859265566
+    },
+    {
+      "commentId": 5976158147,
+      "content": "好听",
+      "liked_count": 2,
+      "time": 1694525125508
+    },
+    {
+      "commentId": 5873839621,
+      "content": "[大笑]几个版本听着都有不同的感觉",
+      "liked_count": 2,
+      "time": 1679243480718
+    },
+    {
+      "commentId": 5858061041,
+      "content": "不仅前奏，整轨的弦乐都有所改动，比原版更华丽了一层次",
+      "liked_count": 2,
+      "time": 1676749132915
+    },
+    {
+      "commentId": 5827005340,
+      "content": "[亲亲][亲亲][亲亲]",
+      "liked_count": 2,
+      "time": 1672889412829
+    },
+    {
+      "commentId": 5818808314,
+      "content": "12月底了，来淋一下11月的雨",
+      "liked_count": 2,
+      "time": 1672037408025
+    },
+    {
+      "commentId": 5818673851,
+      "content": "区别在于弦乐，一个合成器弹奏一个实录（真实弦乐团演奏）",
+      "liked_count": 2,
+      "time": 1672023246040
+    },
+    {
+      "commentId": 5787282200,
+      "content": "11月11，11月的雨。",
+      "liked_count": 2,
+      "time": 1668143965677
+    },
+    {
+      "commentId": 9680803321,
+      "content": "芜湖下雨了",
+      "liked_count": 1,
+      "time": 1793531900777
+    },
+    {
+      "commentId": 9680741990,
+      "content": "2026年11月的第一场雨",
+      "liked_count": 1,
+      "time": 1793527188344
+    },
+    {
+      "commentId": 9680581716,
+      "content": "又是一年十一月啊",
+      "liked_count": 1,
+      "time": 1793517855821
+    },
+    {
+      "commentId": 9680130994,
+      "content": "武汉下雨了",
+      "liked_count": 1,
+      "time": 1793495006749
+    },
+    {
+      "commentId": 9680137626,
+      "content": "又一个十一月",
+      "liked_count": 1,
+      "time": 1793493946008
+    },
+    {
+      "commentId": 9680107992,
+      "content": "又是一年十一月🌧️",
+      "liked_count": 1,
+      "time": 1793493592403
+    },
+    {
+      "commentId": 9680095589,
+      "content": "十一月下雨很正常",
+      "liked_count": 1,
+      "time": 1793489593845
+    },
+    {
+      "commentId": 9679930167,
+      "content": "又是一年十一月雨",
+      "liked_count": 1,
+      "time": 1793467760706
+    },
+    {
+      "commentId": 9679912250,
+      "content": "[EMO听歌]",
+      "liked_count": 1,
+      "time": 1793467103721
+    },
+    {
+      "commentId": 9679872309,
+      "content": "刚好在下雨，正好在第一场十一月雨里听十一月的第一首十一月雨",
+      "liked_count": 1,
+      "time": 1793465045144
+    },
+    {
+      "commentId": 9679824174,
+      "content": "又是一年十一月雨",
+      "liked_count": 1,
+      "time": 1793463138745
+    },
+    {
+      "commentId": 9679840761,
+      "content": "又是一年十一月雨",
+      "liked_count": 1,
+      "time": 1793462961033
+    },
+    {
+      "commentId": 9679861571,
+      "content": "又是一年十一月雨",
+      "liked_count": 1,
+      "time": 1793462940918
+    },
+    {
+      "commentId": 9679860545,
+      "content": "来力",
+      "liked_count": 1,
+      "time": 1793462924590
+    },
+    {
+      "commentId": 9679833788,
+      "content": "11月11月我来了",
+      "liked_count": 1,
+      "time": 1793462800410
+    },
+    {
+      "commentId": 9679860382,
+      "content": "又是一年十一月雨",
+      "liked_count": 1,
+      "time": 1793462633801
+    },
+    {
+      "commentId": 9679807151,
+      "content": "😭😭😭😭😭😭",
+      "liked_count": 1,
+      "time": 1793462549991
+    },
+    {
+      "commentId": 9679823801,
+      "content": "😭",
+      "liked_count": 1,
+      "time": 1793462436849
+    },
+    {
+      "commentId": 9679807635,
+      "content": "来了老弟",
+      "liked_count": 1,
+      "time": 1793461543121
+    },
+    {
+      "commentId": 9679738085,
+      "content": "又是一年十一月雨",
+      "liked_count": 1,
+      "time": 1793460315818
+    },
+    {
+      "commentId": 9679449639,
+      "content": "又是一年十一月雨",
+      "liked_count": 1,
+      "time": 1793448616266
+    },
+    {
+      "commentId": 9678417301,
+      "content": "又是一年十一月雨",
+      "liked_count": 1,
+      "time": 1793381235959
+    },
+    {
+      "commentId": 9678456496,
+      "content": "老   生   常   谈",
+      "liked_count": 1,
+      "time": 1793380656645
+    },
+    {
+      "commentId": 9667744341,
+      "content": "又是你",
+      "liked_count": 1,
+      "time": 1792297082046
+    },
+    {
+      "commentId": 9660818128,
+      "content": "2022 版才是真正的十一月雨，重制版",
+      "liked_count": 1,
+      "time": 1791481047100
+    },
+    {
+      "commentId": 9660675521,
+      "content": "十一月雨[超绝]",
+      "liked_count": 1,
+      "time": 1791465763896
+    },
+    {
+      "commentId": 9659632667,
+      "content": "just knowin that you were mine",
+      "liked_count": 1,
+      "time": 1791342787937
+    },
+    {
+      "commentId": 9655417819,
+      "content": "声音开到最大聆听十一月雨传世之音",
+      "liked_count": 1,
+      "time": 1790994348918
+    },
+    {
+      "commentId": 9635859170,
+      "content": "[EMO听歌]",
+      "liked_count": 1,
+      "time": 1788876164785
+    },
+    {
+      "commentId": 9635888529,
+      "content": "可惜了兄弟 6:45才看到你的评论[哭哭]",
+      "liked_count": 1,
+      "time": 1788875796975
+    },
+    {
+      "commentId": 9634452131,
+      "content": "别串了，我是负一岁",
+      "liked_count": 1,
+      "time": 1788685521667
+    },
+    {
+      "commentId": 9632727924,
+      "content": "幻想...",
+      "liked_count": 1,
+      "time": 1788501295067
+    },
+    {
+      "commentId": 9626871793,
+      "content": "一气呵成，一秒多余的都没有，简直是完美……",
+      "liked_count": 1,
+      "time": 1788141607827
+    },
+    {
+      "commentId": 9623742926,
+      "content": "又是荒木取材的一首歌",
+      "liked_count": 1,
+      "time": 1787844025912
+    },
+    {
+      "commentId": 9616805428,
+      "content": "6分50过后那一段太劲了",
+      "liked_count": 1,
+      "time": 1787376605461
+    },
+    {
+      "commentId": 9614283486,
+      "content": "不是《我的唐氏儿童》吗？",
+      "liked_count": 1,
+      "time": 1787214415565
+    },
+    {
+      "commentId": 9612193321,
+      "content": "根音战士的最终幻想啊！",
+      "liked_count": 1,
+      "time": 1787038811420
+    },
+    {
+      "commentId": 9601698505,
+      "content": "抒情史诗",
+      "liked_count": 1,
+      "time": 1786073126526
+    },
+    {
+      "commentId": 9600287287,
+      "content": "靠这版混的好爽，爽听。",
+      "liked_count": 1,
+      "time": 1785933638109
+    },
+    {
+      "commentId": 9579375938,
+      "content": "对的",
+      "liked_count": 1,
+      "time": 1784002535916
+    },
+    {
+      "commentId": 9575416076,
+      "content": "☑️",
+      "liked_count": 1,
+      "time": 1783572039507
+    },
+    {
+      "commentId": 9565201588,
+      "content": "弦乐实录牛逼",
+      "liked_count": 1,
+      "time": 1782453024572
+    },
+    {
+      "commentId": 9533734857,
+      "content": "会员还没这版好呢",
+      "liked_count": 1,
+      "time": 1778925104897
+    },
+    {
+      "commentId": 9531043123,
+      "content": "必须的#荒木歌品#",
+      "liked_count": 1,
+      "time": 1778575510371
+    },
+    {
+      "commentId": 9519707947,
+      "content": "前几年有幸在柏林听过枪花世纪大合体的现场版，最喜欢的歌",
+      "liked_count": 1,
+      "time": 1777190307268
+    },
+    {
+      "commentId": 9494498473,
+      "content": "伟大",
+      "liked_count": 1,
+      "time": 1774085131437
+    },
+    {
+      "commentId": 9492918835,
+      "content": "也就听了八百遍吧",
+      "liked_count": 1,
+      "time": 1773887874789
+    },
+    {
+      "commentId": 9415211476,
+      "content": "大气磅礴，荡气回肠，酣畅淋漓",
+      "liked_count": 1,
+      "time": 1765468219175
+    },
+    {
+      "commentId": 9410576139,
+      "content": "这几个都不是老实货拍出来放不出去[问号]",
+      "liked_count": 1,
+      "time": 1764910092165
+    },
+    {
+      "commentId": 9407400519,
+      "content": "11月最后一场雨[爆笑]",
+      "liked_count": 1,
+      "time": 1764506692741
+    },
+    {
+      "commentId": 9407266379,
+      "content": "明天十二月了",
+      "liked_count": 1,
+      "time": 1764492366030
+    },
+    {
+      "commentId": 9391403383,
+      "content": "为什么没把枪花的故事拍成电影，绝对可以波西米亚媲美，slash真的范太足了，个性这块很强",
+      "liked_count": 1,
+      "time": 1763395081903
+    },
+    {
+      "commentId": 9382415625,
+      "content": "下雨",
+      "liked_count": 1,
+      "time": 1762522807228
+    },
+    {
+      "commentId": 9382039369,
+      "content": "下雨了",
+      "liked_count": 1,
+      "time": 1762477180143
+    },
+    {
+      "commentId": 9357190824,
+      "content": "未来40天，9天降水。",
+      "liked_count": 1,
+      "time": 1762356598351
+    },
+    {
+      "commentId": 9357180559,
+      "content": "今天下了一点小雨",
+      "liked_count": 1,
+      "time": 1762354562096
+    },
+    {
+      "commentId": 9354932629,
+      "content": "该听了",
+      "liked_count": 1,
+      "time": 1762073657881
+    },
+    {
+      "commentId": 9354491209,
+      "content": "《Purple Rain》、《November Rain》、《Endless Rain》[憨笑]\n",
+      "liked_count": 1,
+      "time": 1762044882869
+    },
+    {
+      "commentId": 9354310141,
+      "content": "该听nvr了[爆笑]",
+      "liked_count": 1,
+      "time": 1762018056823
+    },
+    {
+      "commentId": 9353765449,
+      "content": "长春，11 月的第一场雨，可能也是最后一场",
+      "liked_count": 1,
+      "time": 1761980311256
+    },
+    {
+      "commentId": 9353528158,
+      "content": "11月了呀",
+      "liked_count": 1,
+      "time": 1761967599640
+    },
+    {
+      "commentId": 9353550758,
+      "content": "11月",
+      "liked_count": 1,
+      "time": 1761967499475
+    },
+    {
+      "commentId": 9353468846,
+      "content": "今天的日推  耶！",
+      "liked_count": 1,
+      "time": 1761962046721
+    },
+    {
+      "commentId": 9353379870,
+      "content": "十一月了",
+      "liked_count": 1,
+      "time": 1761946318381
+    },
+    {
+      "commentId": 9353208094,
+      "content": "十一月啦[哭哭][哭哭][哭哭]",
+      "liked_count": 1,
+      "time": 1761927649963
+    },
+    {
+      "commentId": 9352614313,
+      "content": "11月来啦",
+      "liked_count": 1,
+      "time": 1761901604176
+    },
+    {
+      "commentId": 9352420383,
+      "content": "太好听了啊！",
+      "liked_count": 1,
+      "time": 1761867590333
+    },
+    {
+      "commentId": 7743508900,
+      "content": "内个啥 👉👈 听说这是大名鼎鼎的三雨之一 前来打卡",
+      "liked_count": 1,
+      "time": 1759339195772
+    },
+    {
+      "commentId": 7730095888,
+      "content": "仙品",
+      "liked_count": 1,
+      "time": 1758110897872
+    },
+    {
+      "commentId": 7709590694,
+      "content": "终于学会了",
+      "liked_count": 1,
+      "time": 1756605870452
+    },
+    {
+      "commentId": 7699146555,
+      "content": "我放不下她...",
+      "liked_count": 1,
+      "time": 1755752795699
+    },
+    {
+      "commentId": 7672078161,
+      "content": "细腻通透",
+      "liked_count": 1,
+      "time": 1754037308715
+    },
+    {
+      "commentId": 7657237139,
+      "content": "神曲",
+      "liked_count": 1,
+      "time": 1752669278620
+    },
+    {
+      "commentId": 7655134450,
+      "content": "这版的十一月雨又惊艳了我一次",
+      "liked_count": 1,
+      "time": 1752444732156
+    },
+    {
+      "commentId": 7607657103,
+      "content": "比波米长三分钟",
+      "liked_count": 1,
+      "time": 1747051852794
+    },
+    {
+      "commentId": 7566330150,
+      "content": "宏伟",
+      "liked_count": 1,
+      "time": 1742044737913
+    },
+    {
+      "commentId": 7565829389,
+      "content": "经典！",
+      "liked_count": 1,
+      "time": 1741985366756
+    },
+    {
+      "commentId": 7564258971,
+      "content": "这首感觉更宏伟一点诶",
+      "liked_count": 1,
+      "time": 1741791501759
+    },
+    {
+      "commentId": 7536164704,
+      "content": "所以这个封面 第一眼：这到底是Ⅰ还是Ⅱ啊（恼",
+      "liked_count": 1,
+      "time": 1738467841659
+    },
+    {
+      "commentId": 7521036786,
+      "content": "真棒",
+      "liked_count": 1,
+      "time": 1736866513339
+    },
+    {
+      "commentId": 7494541262,
+      "content": "痛过就麻木了 新年快乐 我的朋友~",
+      "liked_count": 1,
+      "time": 1735670471030
+    },
+    {
+      "commentId": 7455401284,
+      "content": "十一月",
+      "liked_count": 1,
+      "time": 1731148714159
+    },
+    {
+      "commentId": 7451292781,
+      "content": "break down也很不错，第一个solo超赞",
+      "liked_count": 1,
+      "time": 1730624248205
+    },
+    {
+      "commentId": 7450036394,
+      "content": "南昌雨",
+      "liked_count": 1,
+      "time": 1730467673143
+    },
+    {
+      "commentId": 7441198079,
+      "content": "枪花的还有estranged和coma 还有就是同为三场雨的purple rain",
+      "liked_count": 1,
+      "time": 1729339893062
+    },
+    {
+      "commentId": 7417488980,
+      "content": "9月了你怎么样了",
+      "liked_count": 1,
+      "time": 1726069192339
+    },
+    {
+      "commentId": 7369881112,
+      "content": "冰冷刺骨，这版太好了",
+      "liked_count": 1,
+      "time": 1720425516699
+    },
+    {
+      "commentId": 7362206059,
+      "content": "加油哦宝宝，祝你考上理想高中",
+      "liked_count": 1,
+      "time": 1719380394066
+    },
+    {
+      "commentId": 6033253936,
+      "content": "一月份的雨",
+      "liked_count": 1,
+      "time": 1704279199508
+    },
+    {
+      "commentId": 5946312949,
+      "content": "可以",
+      "liked_count": 1,
+      "time": 1689997755541
+    },
+    {
+      "commentId": 5944866179,
+      "content": "卧槽，爽的一逼",
+      "liked_count": 1,
+      "time": 1689820127857
+    },
+    {
+      "commentId": 5901506170,
+      "content": "这是请了真的管弦乐团来演奏，之前的版本是用的合成器",
+      "liked_count": 1,
+      "time": 1683214472034
+    },
+    {
+      "commentId": 5880907931,
+      "content": "爽",
+      "liked_count": 1,
+      "time": 1680340821252
+    },
+    {
+      "commentId": 5853809151,
+      "content": "冷冷的冰雨在脸上胡乱地拍。中间的间奏真的有点像这个。",
+      "liked_count": 1,
+      "time": 1676130896323
+    },
+    {
+      "commentId": 5851231818,
+      "content": "开溜！",
+      "liked_count": 1,
+      "time": 1675779912674
+    },
+    {
+      "commentId": 5845519407,
+      "content": "前奏弦乐有一小点点区别，老版本是合成的，这个是演奏的",
+      "liked_count": 1,
+      "time": 1675090197860
+    },
+    {
+      "commentId": 5841553971,
+      "content": "好听",
+      "liked_count": 1,
+      "time": 1674579511122
+    },
+    {
+      "commentId": 5804703803,
+      "content": "2022版的 rose都老了 原版评论挺多的",
+      "liked_count": 1,
+      "time": 1670410793032
+    },
+    {
+      "commentId": 5798663705,
+      "content": "I know that you can love me.",
+      "liked_count": 1,
+      "time": 1669637155542
+    },
+    {
+      "commentId": 5798003502,
+      "content": "学学这solo",
+      "liked_count": 1,
+      "time": 1669552720498
+    },
+    {
+      "commentId": 5789870929,
+      "content": "意思是老酒新装？",
+      "liked_count": 1,
+      "time": 1668471595123
+    },
+    {
+      "commentId": 5789739457,
+      "content": "再淋一场2022的雨",
+      "liked_count": 1,
+      "time": 1668440944105
+    },
+    {
+      "commentId": 5789263571,
+      "content": "听说交响乐重录的？",
+      "liked_count": 1,
+      "time": 1668391324271
+    },
+    {
+      "commentId": 5788670491,
+      "content": "永恒。",
+      "liked_count": 1,
+      "time": 1668316943194
+    },
+    {
+      "commentId": 5787383624,
+      "content": "@我是牛奶小夏进 速来",
+      "liked_count": 1,
+      "time": 1668156188079
+    },
+    {
+      "commentId": 9682336047,
+      "content": "依旧依旧啊",
+      "liked_count": 0,
+      "time": 1793661546354
+    },
+    {
+      "commentId": 9682369482,
+      "content": "感觉你是那种会在十一月初听十一月的雨的人",
+      "liked_count": 0,
+      "time": 1793661391210
+    },
+    {
+      "commentId": 9682240123,
+      "content": "Hello****Kitty[认可]",
+      "liked_count": 0,
+      "time": 1793636769111
+    },
+    {
+      "commentId": 9682263653,
+      "content": "是的。",
+      "liked_count": 0,
+      "time": 1793636032558
+    },
+    {
+      "commentId": 9681494178,
+      "content": "李文豪",
+      "liked_count": 0,
+      "time": 1793600691175
+    },
+    {
+      "commentId": 9681348771,
+      "content": "哈咯\n",
+      "liked_count": 0,
+      "time": 1793578433034
+    },
+    {
+      "commentId": 9681247146,
+      "content": "找对象",
+      "liked_count": 0,
+      "time": 1793554341181
+    },
+    {
+      "commentId": 9681205739,
+      "content": "日常求雨",
+      "liked_count": 0,
+      "time": 1793548296198
+    },
+    {
+      "commentId": 9681158221,
+      "content": "🥲你们都在豪，只有我真的下雨挨浇冻到了",
+      "liked_count": 0,
+      "time": 1793547734701
+    },
+    {
+      "commentId": 9681126794,
+      "content": "十一月下雨很正常",
+      "liked_count": 0,
+      "time": 1793545173832
+    },
+    {
+      "commentId": 9681085279,
+      "content": "耶",
+      "liked_count": 0,
+      "time": 1793544584904
+    },
+    {
+      "commentId": 9680938961,
+      "content": "hi",
+      "liked_count": 0,
+      "time": 1793536919767
+    },
+    {
+      "commentId": 9680835015,
+      "content": "十一月了",
+      "liked_count": 0,
+      "time": 1793532380172
+    },
+    {
+      "commentId": 9680771210,
+      "content": "对",
+      "liked_count": 0,
+      "time": 1793529785825
+    },
+    {
+      "commentId": 9680757298,
+      "content": "好大的雨",
+      "liked_count": 0,
+      "time": 1793529415921
+    },
+    {
+      "commentId": 9680642229,
+      "content": "怎么又是十一月了",
+      "liked_count": 0,
+      "time": 1793522533918
+    },
+    {
+      "commentId": 9680516262,
+      "content": "And it's hard to hold a candle，\nIn the cold November rain。",
+      "liked_count": 0,
+      "time": 1793516173687
+    },
+    {
+      "commentId": 9680520150,
+      "content": "下起了雨，你感到冷吗？",
+      "liked_count": 0,
+      "time": 1793516031187
+    },
+    {
+      "commentId": 9680534688,
+      "content": "22版感觉没有初版的迷惘与惆怅了，编曲显得更饱满华丽",
+      "liked_count": 0,
+      "time": 1793515441885
+    },
+    {
+      "commentId": 9680463750,
+      "content": "发大水了",
+      "liked_count": 0,
+      "time": 1793511798259
+    },
+    {
+      "commentId": 9680456542,
+      "content": "你知道我为何而来",
+      "liked_count": 0,
+      "time": 1793510765738
+    },
+    {
+      "commentId": 9680421656,
+      "content": "11.1",
+      "liked_count": 0,
+      "time": 1793509580020
+    },
+    {
+      "commentId": 9680344107,
+      "content": "十一月了",
+      "liked_count": 0,
+      "time": 1793506985522
+    },
+    {
+      "commentId": 9680309223,
+      "content": "In the cold November rain",
+      "liked_count": 0,
+      "time": 1793505578921
+    },
+    {
+      "commentId": 9680328744,
+      "content": "今天刚好11月1日，还下雨了，该来一首冬月的甘霖了[很棒][很棒]",
+      "liked_count": 0,
+      "time": 1793504889077
+    },
+    {
+      "commentId": 9680282132,
+      "content": "没有啊",
+      "liked_count": 0,
+      "time": 1793504207115
+    },
+    {
+      "commentId": 9680275188,
+      "content": "成都下雨了",
+      "liked_count": 0,
+      "time": 1793503860443
+    },
+    {
+      "commentId": 9680268031,
+      "content": "又是一年十一月雨",
+      "liked_count": 0,
+      "time": 1793502978372
+    },
+    {
+      "commentId": 9680262077,
+      "content": "又是一年十一月雨",
+      "liked_count": 0,
+      "time": 1793502786373
+    },
+    {
+      "commentId": 9680274410,
+      "content": "湖北黄石2026年11月1日也下雨了。",
+      "liked_count": 0,
+      "time": 1793501368566
+    },
+    {
+      "commentId": 9680137147,
+      "content": "26年11月1日，长沙下雨了",
+      "liked_count": 0,
+      "time": 1793495973854
+    },
+    {
+      "commentId": 9680138915,
+      "content": "我们这的雨真的下到了十一月 In the cold November rain～～",
+      "liked_count": 0,
+      "time": 1793495238004
+    },
+    {
+      "commentId": 9680105246,
+      "content": "还有《动筷》",
+      "liked_count": 0,
+      "time": 1793494586434
+    },
+    {
+      "commentId": 9680117956,
+      "content": "10月31号的雨连着下到了十一月🎸🎸🎸",
+      "liked_count": 0,
+      "time": 1793494039546
+    },
+    {
+      "commentId": 9680142528,
+      "content": "打卡",
+      "liked_count": 0,
+      "time": 1793493758079
+    },
+    {
+      "commentId": 9680137393,
+      "content": "“Nothing lasts forever, even cold November rain.”",
+      "liked_count": 0,
+      "time": 1793492646970
+    },
+    {
+      "commentId": 9680101442,
+      "content": "又是一年十一月的冷雨",
+      "liked_count": 0,
+      "time": 1793489131980
+    },
+    {
+      "commentId": 9680008556,
+      "content": "[爆笑]🌧️",
+      "liked_count": 0,
+      "time": 1793470441288
+    },
+    {
+      "commentId": 9679972532,
+      "content": "又下雨了",
+      "liked_count": 0,
+      "time": 1793468187836
+    },
+    {
+      "commentId": 9679943890,
+      "content": "我爱你们",
+      "liked_count": 0,
+      "time": 1793467393760
+    },
+    {
+      "commentId": 9679917263,
+      "content": "又是一年十一月雨🌧",
+      "liked_count": 0,
+      "time": 1793467244334
+    },
+    {
+      "commentId": 9679948432,
+      "content": "又是一年十一月雨",
+      "liked_count": 0,
+      "time": 1793466221318
+    },
+    {
+      "commentId": 9679934690,
+      "content": "又是一年十一月雨",
+      "liked_count": 0,
+      "time": 1793466175677
+    },
+    {
+      "commentId": 9679947405,
+      "content": "又是一年十一月🌧️",
+      "liked_count": 0,
+      "time": 1793466014532
+    },
+    {
+      "commentId": 9679841842,
+      "content": "hhhh",
+      "liked_count": 0,
+      "time": 1793463147459
+    },
+    {
+      "commentId": 9679838763,
+      "content": "警惕在动态朋友圈和日常发十一月雨的人😡😡😡",
+      "liked_count": 0,
+      "time": 1793462780875
+    },
+    {
+      "commentId": 9679670962,
+      "content": "要来力",
+      "liked_count": 0,
+      "time": 1793457674748
+    },
+    {
+      "commentId": 9679379321,
+      "content": "又是一年十一月雨",
+      "liked_count": 0,
+      "time": 1793447502207
+    },
+    {
+      "commentId": 9677104384,
+      "content": "i cant stop the rain可以算是第四场雨",
+      "liked_count": 0,
+      "time": 1793287266870
+    },
+    {
+      "commentId": 9676157545,
+      "content": "Choose yani？！",
+      "liked_count": 0,
+      "time": 1793191848100
+    },
+    {
+      "commentId": 9668398126,
+      "content": "啥时候翻这首",
+      "liked_count": 0,
+      "time": 1792374905031
+    },
+    {
+      "commentId": 9664857608,
+      "content": "尾奏",
+      "liked_count": 0,
+      "time": 1791989855765
+    },
+    {
+      "commentId": 9664458313,
+      "content": "Cause nothing lasts forever",
+      "liked_count": 0,
+      "time": 1791973333362
+    },
+    {
+      "commentId": 9655419672,
+      "content": "这个版本是最好的",
+      "liked_count": 0,
+      "time": 1790993864744
+    },
+    {
+      "commentId": 9652865055,
+      "content": "雨",
+      "liked_count": 0,
+      "time": 1790741527213
+    },
+    {
+      "commentId": 9648810735,
+      "content": "回来了[爆笑]",
+      "liked_count": 0,
+      "time": 1790292608393
+    },
+    {
+      "commentId": 9647309280,
+      "content": "跟着荒木来的",
+      "liked_count": 0,
+      "time": 1790158639651
+    },
+    {
+      "commentId": 9644972754,
+      "content": "👍🏼",
+      "liked_count": 0,
+      "time": 1789889031277
+    },
+    {
+      "commentId": 9643677203,
+      "content": "十一月的冷雨落下，不是救赎，是生存的利刃",
+      "liked_count": 0,
+      "time": 1789757231883
+    },
+    {
+      "commentId": 9636104923,
+      "content": "哈哈哈",
+      "liked_count": 0,
+      "time": 1788912306203
+    },
+    {
+      "commentId": 9632726258,
+      "content": "幻想💭……",
+      "liked_count": 0,
+      "time": 1788504746104
+    },
+    {
+      "commentId": 9624635347,
+      "content": "还真是，翻译也更好",
+      "liked_count": 0,
+      "time": 1787922248734
+    },
+    {
+      "commentId": 9623762574,
+      "content": "特别好听",
+      "liked_count": 0,
+      "time": 1787844035510
+    },
+    {
+      "commentId": 9621517476,
+      "content": "史诗",
+      "liked_count": 0,
+      "time": 1787739326996
+    },
+    {
+      "commentId": 9616730867,
+      "content": "羡慕这个词我已经说烂了",
+      "liked_count": 0,
+      "time": 1787373615861
+    },
+    {
+      "commentId": 9616699288,
+      "content": "4:08",
+      "liked_count": 0,
+      "time": 1787373571476
+    },
+    {
+      "commentId": 9614987471,
+      "content": "太美了",
+      "liked_count": 0,
+      "time": 1787254387104
+    },
+    {
+      "commentId": 9614705921,
+      "content": "我的很可爱",
+      "liked_count": 0,
+      "time": 1787237255943
+    },
+    {
+      "commentId": 9614259600,
+      "content": "就是",
+      "liked_count": 0,
+      "time": 1787213774573
+    },
+    {
+      "commentId": 9614273416,
+      "content": "确实",
+      "liked_count": 0,
+      "time": 1787213771034
+    },
+    {
+      "commentId": 9614234034,
+      "content": "讲的太对了",
+      "liked_count": 0,
+      "time": 1787213762062
+    },
+    {
+      "commentId": 9614110883,
+      "content": "夯，太棒了",
+      "liked_count": 0,
+      "time": 1787206093790
+    },
+    {
+      "commentId": 9610163691,
+      "content": "六岁？",
+      "liked_count": 0,
+      "time": 1786816992778
+    },
+    {
+      "commentId": 9597558701,
+      "content": "好",
+      "liked_count": 0,
+      "time": 1785686744435
+    },
+    {
+      "commentId": 9594233197,
+      "content": "，",
+      "liked_count": 0,
+      "time": 1785404448399
+    },
+    {
+      "commentId": 9591980584,
+      "content": "从tt92一下子跳到这首歌，惊呆了我",
+      "liked_count": 0,
+      "time": 1785209296080
+    },
+    {
+      "commentId": 9590140367,
+      "content": "好丰富的旋律~爱~爱之~",
+      "liked_count": 0,
+      "time": 1785045945645
+    },
+    {
+      "commentId": 9588106705,
+      "content": "寻听至此",
+      "liked_count": 0,
+      "time": 1784823414857
+    },
+    {
+      "commentId": 9586770351,
+      "content": "美妙",
+      "liked_count": 0,
+      "time": 1784702455628
+    },
+    {
+      "commentId": 9579450700,
+      "content": "都经典，太经典了，无法形容，历久弥新",
+      "liked_count": 0,
+      "time": 1784002579396
+    },
+    {
+      "commentId": 9576905851,
+      "content": "打卡",
+      "liked_count": 0,
+      "time": 1783736521456
+    },
+    {
+      "commentId": 9564180333,
+      "content": "哈哈哈",
+      "liked_count": 0,
+      "time": 1782317048700
+    },
+    {
+      "commentId": 9563853188,
+      "content": "我真的一辈子都听不厌我觉得",
+      "liked_count": 0,
+      "time": 1782296144823
+    },
+    {
+      "commentId": 9562180241,
+      "content": "我只是喜欢有你在的时候",
+      "liked_count": 0,
+      "time": 1782055777908
+    },
+    {
+      "commentId": 9554737984,
+      "content": "感觉这一版除了开头的鼓不行，其他都要爽啊",
+      "liked_count": 0,
+      "time": 1781194107826
+    },
+    {
+      "commentId": 9537868865,
+      "content": "经典交响摇滚[EMO听歌][欣赏音乐][认可]",
+      "liked_count": 0,
+      "time": 1779418469337
+    },
+    {
+      "commentId": 9521572273,
+      "content": "加强了管弦乐和和声，完美",
+      "liked_count": 0,
+      "time": 1777451183298
+    },
+    {
+      "commentId": 9521578086,
+      "content": "加强了管弦乐，",
+      "liked_count": 0,
+      "time": 1777451155613
+    },
+    {
+      "commentId": 9516772425,
+      "content": "听的第一首枪花的歌，什么也不用说",
+      "liked_count": 0,
+      "time": 1776867435505
+    },
+    {
+      "commentId": 9515776520,
+      "content": "喜欢",
+      "liked_count": 0,
+      "time": 1776745750244
+    },
+    {
+      "commentId": 9515596300,
+      "content": "You're not the only one",
+      "liked_count": 0,
+      "time": 1776702403578
+    },
+    {
+      "commentId": 9512694789,
+      "content": "贫民窟这是[笑哭了]\n那一版每次听看广告",
+      "liked_count": 0,
+      "time": 1776355884193
+    },
+    {
+      "commentId": 9506194234,
+      "content": "不会，扎不扎心？",
+      "liked_count": 0,
+      "time": 1775492511363
+    },
+    {
+      "commentId": 9503393412,
+      "content": "在这11月的雨",
+      "liked_count": 0,
+      "time": 1775214264744
+    },
+    {
+      "commentId": 9491888736,
+      "content": "未经别人苦，莫劝别人善。",
+      "liked_count": 0,
+      "time": 1773714358500
+    },
+    {
+      "commentId": 9489320072,
+      "content": "[抱抱你][抱抱你][抱抱你]",
+      "liked_count": 0,
+      "time": 1773448466685
+    },
+    {
+      "commentId": 9473245033,
+      "content": "太牛逼了",
+      "liked_count": 0,
+      "time": 1771501481718
+    },
+    {
+      "commentId": 9468724189,
+      "content": "时间飞快哦",
+      "liked_count": 0,
+      "time": 1770970362049
+    },
+    {
+      "commentId": 9468781409,
+      "content": "[大哭]",
+      "liked_count": 0,
+      "time": 1770970314943
+    },
+    {
+      "commentId": 9454261969,
+      "content": "在你我的心中",
+      "liked_count": 0,
+      "time": 1769853432013
+    },
+    {
+      "commentId": 9454285480,
+      "content": "雨一直在下",
+      "liked_count": 0,
+      "time": 1769853413812
+    },
+    {
+      "commentId": 9451206563,
+      "content": "恶意可以可以",
+      "liked_count": 0,
+      "time": 1769553548638
+    },
+    {
+      "commentId": 9440006112,
+      "content": "只有没有爱的时候才会需要爱，满腔的冲动应当自省",
+      "liked_count": 0,
+      "time": 1768364674825
+    },
+    {
+      "commentId": 9430899083,
+      "content": "两段间奏[笑哭了]",
+      "liked_count": 0,
+      "time": 1767320280676
+    },
+    {
+      "commentId": 9417638388,
+      "content": "牛掰",
+      "liked_count": 0,
+      "time": 1765761457985
+    },
+    {
+      "commentId": 9414123859,
+      "content": "想着我吧，当你孤独的时候",
+      "liked_count": 0,
+      "time": 1765348670918
+    },
+    {
+      "commentId": 9410897471,
+      "content": "我再次重新了解一下枪花，感谢你的评论。",
+      "liked_count": 0,
+      "time": 1764941348575
+    },
+    {
+      "commentId": 9410630441,
+      "content": "钟情slash",
+      "liked_count": 0,
+      "time": 1764911916289
+    },
+    {
+      "commentId": 9410583103,
+      "content": "哈哈哈还行吧，都是本我而已",
+      "liked_count": 0,
+      "time": 1764911081939
+    },
+    {
+      "commentId": 9409452060,
+      "content": "人声更明亮、吉他鼻音更重，低音部分也更加扎实，还是节奏吉他也是点睛之笔",
+      "liked_count": 0,
+      "time": 1764758768469
+    },
+    {
+      "commentId": 9404389363,
+      "content": "升华了哥们！！！我们都升华了！87年的我，感觉回到了02年",
+      "liked_count": 0,
+      "time": 1764186460037
+    },
+    {
+      "commentId": 9390858865,
+      "content": "十一月！",
+      "liked_count": 0,
+      "time": 1763335021389
+    },
+    {
+      "commentId": 9385534553,
+      "content": "十一月的雨",
+      "liked_count": 0,
+      "time": 1762946713620
+    },
+    {
+      "commentId": 9381967971,
+      "content": "十一月的雨来了",
+      "liked_count": 0,
+      "time": 1762467626477
+    },
+    {
+      "commentId": 9356471712,
+      "content": "是听这歌的时候了",
+      "liked_count": 0,
+      "time": 1762264559972
+    },
+    {
+      "commentId": 9355003501,
+      "content": "11月了 来打卡",
+      "liked_count": 0,
+      "time": 1762078831574
+    },
+    {
+      "commentId": 9354714505,
+      "content": "来的太快了",
+      "liked_count": 0,
+      "time": 1762058634095
+    },
+    {
+      "commentId": 9354710560,
+      "content": "十一月的🌧",
+      "liked_count": 0,
+      "time": 1762058627045
+    },
+    {
+      "commentId": 9354207693,
+      "content": "到底是冬天来的太快还是秋天走得太慢，一个迷失的季节。",
+      "liked_count": 0,
+      "time": 1762011038716
+    },
+    {
+      "commentId": 9354205372,
+      "content": "还有2首是撒",
+      "liked_count": 0,
+      "time": 1762009764673
+    },
+    {
+      "commentId": 9354099557,
+      "content": "雨季来临之前 让我再听一遍",
+      "liked_count": 0,
+      "time": 1762003989659
+    },
+    {
+      "commentId": 9354030096,
+      "content": "十一月一号  打卡\n这个月份的时空…莫名的离不开阴冷与灰白色的天空  冷空气在这个时空的纬度里   着覆在身体的外层 又渗入心里 格外的凄凉 ",
+      "liked_count": 0,
+      "time": 1762001908674
+    },
+    {
+      "commentId": 9354007548,
+      "content": "十一月听November Rain",
+      "liked_count": 0,
+      "time": 1761998166248
+    },
+    {
+      "commentId": 9353827407,
+      "content": "11月了",
+      "liked_count": 0,
+      "time": 1761985067970
+    },
+    {
+      "commentId": 9353653382,
+      "content": "11月的雨",
+      "liked_count": 0,
+      "time": 1761972697812
+    },
+    {
+      "commentId": 9353603552,
+      "content": "真的下了十一月的雨",
+      "liked_count": 0,
+      "time": 1761971417447
+    },
+    {
+      "commentId": 9353564068,
+      "content": "11月",
+      "liked_count": 0,
+      "time": 1761969557936
+    },
+    {
+      "commentId": 7748563365,
+      "content": "人才[很棒]",
+      "liked_count": 0,
+      "time": 1759858093311
+    },
+    {
+      "commentId": 7747680652,
+      "content": "这个版本喜欢捏 ",
+      "liked_count": 0,
+      "time": 1759787437263
+    },
+    {
+      "commentId": 7736357285,
+      "content": "Am I wrong to be in the rain?",
+      "liked_count": 0,
+      "time": 1758532917004
+    },
+    {
+      "commentId": 7729042345,
+      "content": "笑鼠我了哈哈哈，火姐",
+      "liked_count": 0,
+      "time": 1757952973415
+    },
+    {
+      "commentId": 7728579015,
+      "content": "史诗！",
+      "liked_count": 0,
+      "time": 1757925867914
+    },
+    {
+      "commentId": 7711578795,
+      "content": "\n原来还有这个版本，多了好多细节",
+      "liked_count": 0,
+      "time": 1756897055621
+    },
+    {
+      "commentId": 7654307134,
+      "content": "现在是夏天",
+      "liked_count": 0,
+      "time": 1752386954592
+    },
+    {
+      "commentId": 7630358569,
+      "content": "很喜欢的直译翻唱视频",
+      "liked_count": 0,
+      "time": 1749492393437
+    },
+    {
+      "commentId": 7597511369,
+      "content": "民谣有17次离别",
+      "liked_count": 0,
+      "time": 1745921642708
+    },
+    {
+      "commentId": 7596094019,
+      "content": "应该是3",
+      "liked_count": 0,
+      "time": 1745725371747
+    },
+    {
+      "commentId": 7582302937,
+      "content": "不是 但是是同个工作室",
+      "liked_count": 0,
+      "time": 1743926030272
+    },
+    {
+      "commentId": 7575535144,
+      "content": "丁克森！",
+      "liked_count": 0,
+      "time": 1743173457050
+    },
+    {
+      "commentId": 7566789886,
+      "content": "还听pk的[强]",
+      "liked_count": 0,
+      "time": 1742087964234
+    },
+    {
+      "commentId": 7555697265,
+      "content": "很好",
+      "liked_count": 0,
+      "time": 1740756423786
+    },
+    {
+      "commentId": 7553311799,
+      "content": "哈哈哈",
+      "liked_count": 0,
+      "time": 1740498649411
+    },
+    {
+      "commentId": 7540670422,
+      "content": "1.5（确信）",
+      "liked_count": 0,
+      "time": 1738985518286
+    },
+    {
+      "commentId": 7537014139,
+      "content": "别闹",
+      "liked_count": 0,
+      "time": 1738571201086
+    },
+    {
+      "commentId": 7536248575,
+      "content": "[流泪]",
+      "liked_count": 0,
+      "time": 1738476339753
+    },
+    {
+      "commentId": 7536205677,
+      "content": "所以你要怎么忘记我？用新的感情吗？可你从来都不缺女人[多多难过]",
+      "liked_count": 0,
+      "time": 1738472212200
+    },
+    {
+      "commentId": 7492466590,
+      "content": "可是真的没有痛吗[流泪]",
+      "liked_count": 0,
+      "time": 1735548468875
+    },
+    {
+      "commentId": 7478795922,
+      "content": "别刷",
+      "liked_count": 0,
+      "time": 1734170490557
+    },
+    {
+      "commentId": 7464679550,
+      "content": "好聚好散",
+      "liked_count": 0,
+      "time": 1732427955729
+    },
+    {
+      "commentId": 7464680410,
+      "content": "弹了吗",
+      "liked_count": 0,
+      "time": 1732427909767
+    },
+    {
+      "commentId": 7456692370,
+      "content": "听着这首歌的时候刚好在下雨",
+      "liked_count": 0,
+      "time": 1731312508146
+    },
+    {
+      "commentId": 7456627173,
+      "content": "还真是 下的不大\n",
+      "liked_count": 0,
+      "time": 1731310249231
+    },
+    {
+      "commentId": 7454319763,
+      "content": "那日，我看着你远去，眼眸里满是星辰",
+      "liked_count": 0,
+      "time": 1731049272104
+    },
+    {
+      "commentId": 7450598978,
+      "content": "今天立冬[多多耍酷]你听的是我故乡的雪吧？（）",
+      "liked_count": 0,
+      "time": 1730540076988
+    },
+    {
+      "commentId": 7449668108,
+      "content": "已经听上了\n",
+      "liked_count": 0,
+      "time": 1730423034042
+    },
+    {
+      "commentId": 7449640465,
+      "content": "今天杨舍细雨绵绵，十一月第一天！",
+      "liked_count": 0,
+      "time": 1730415211772
+    },
+    {
+      "commentId": 7449541978,
+      "content": "又是一个11月",
+      "liked_count": 0,
+      "time": 1730390656037
+    },
+    {
+      "commentId": 7446339684,
+      "content": "estranged非常好听。我现在每天循环几遍[憨笑]以至于我还没去听coma[呆]",
+      "liked_count": 0,
+      "time": 1730007586831
+    },
+    {
+      "commentId": 7442986410,
+      "content": "step to heaven是纯音吗？哪版的呀？ﾚ(ﾟ∀ﾟ;)",
+      "liked_count": 0,
+      "time": 1729524890144
+    },
+    {
+      "commentId": 7442330257,
+      "content": "哇原来如此，感谢",
+      "liked_count": 0,
+      "time": 1729437904581
+    },
+    {
+      "commentId": 7438750162,
+      "content": "2022版？\n",
+      "liked_count": 0,
+      "time": 1728997205987
+    },
+    {
+      "commentId": 7437380375,
+      "content": "收到🆗",
+      "liked_count": 0,
+      "time": 1728793719054
+    },
+    {
+      "commentId": 7437372070,
+      "content": "可以听听step to heaven和free bird",
+      "liked_count": 0,
+      "time": 1728792949780
+    },
+    {
+      "commentId": 7434715155,
+      "content": "好上头啊。时长也很爽。求推同类型的歌。[憨笑]",
+      "liked_count": 0,
+      "time": 1728379326583
+    },
+    {
+      "commentId": 7433110355,
+      "content": "jo迪奥[流泪]",
+      "liked_count": 0,
+      "time": 1728160017816
+    },
+    {
+      "commentId": 7432825348,
+      "content": "考得还行，谢谢关心",
+      "liked_count": 0,
+      "time": 1728129193561
+    },
+    {
+      "commentId": 7430787606,
+      "content": "一遇爱情的火焰，畏怯的冰霜就消融。",
+      "liked_count": 0,
+      "time": 1727857722963
+    },
+    {
+      "commentId": 7409302620,
+      "content": "就我喜欢中间的吉他solo吗",
+      "liked_count": 0,
+      "time": 1724998370037
+    },
+    {
+      "commentId": 7398086698,
+      "content": "好听",
+      "liked_count": 0,
+      "time": 1723716206420
+    },
+    {
+      "commentId": 7377204139,
+      "content": "CBA",
+      "liked_count": 0,
+      "time": 1721307122056
+    },
+    {
+      "commentId": 6127283027,
+      "content": "是不是听了一会就受不了了赶紧切歌了",
+      "liked_count": 0,
+      "time": 1717706668135
+    },
+    {
+      "commentId": 6120268919,
+      "content": "会员过期了",
+      "liked_count": 0,
+      "time": 1716819055857
+    },
+    {
+      "commentId": 6114781518,
+      "content": "对",
+      "liked_count": 0,
+      "time": 1716075371102
+    },
+    {
+      "commentId": 6113578407,
+      "content": "冰冷刺骨直透灵魂",
+      "liked_count": 0,
+      "time": 1715917995294
+    },
+    {
+      "commentId": 6113361623,
+      "content": "endless rain ?",
+      "liked_count": 0,
+      "time": 1715872893129
+    },
+    {
+      "commentId": 6113363284,
+      "content": "november rain ,purple rain 还有哪一场雨",
+      "liked_count": 0,
+      "time": 1715872862911
+    },
+    {
+      "commentId": 6112406337,
+      "content": "100条评论了",
+      "liked_count": 0,
+      "time": 1715770387874
+    },
+    {
+      "commentId": 6104375704,
+      "content": "最喜欢的歌",
+      "liked_count": 0,
+      "time": 1714564559972
+    },
+    {
+      "commentId": 6101705864,
+      "content": "雨更大了",
+      "liked_count": 0,
+      "time": 1714184657181
+    },
+    {
+      "commentId": 6084229304,
+      "content": "哈哈哈哈哈哈抓得好深",
+      "liked_count": 0,
+      "time": 1711814881662
+    },
+    {
+      "commentId": 6084213183,
+      "content": "抓住了",
+      "liked_count": 0,
+      "time": 1711814311749
+    },
+    {
+      "commentId": 6057708420,
+      "content": "是老了",
+      "liked_count": 0,
+      "time": 1707809225574
+    },
+    {
+      "commentId": 6007849069,
+      "content": "In the cold November rain",
+      "liked_count": 0,
+      "time": 1700252677379
+    },
+    {
+      "commentId": 6002990023,
+      "content": "下雨了",
+      "liked_count": 0,
+      "time": 1699400415616
+    },
+    {
+      "commentId": 5999861132,
+      "content": "十一月没有雨",
+      "liked_count": 0,
+      "time": 1698833920843
+    },
+    {
+      "commentId": 5996567700,
+      "content": "来听",
+      "liked_count": 0,
+      "time": 1698209621821
+    },
+    {
+      "commentId": 5977123437,
+      "content": "Don't ya think that you need someone.",
+      "liked_count": 0,
+      "time": 1694740099172
+    },
+    {
+      "commentId": 5958195728,
+      "content": "好听",
+      "liked_count": 0,
+      "time": 1691670716322
+    },
+    {
+      "commentId": 5953575161,
+      "content": "好骂",
+      "liked_count": 0,
+      "time": 1691027372663
+    },
+    {
+      "commentId": 5953577785,
+      "content": "那种男孩到最后只是女孩的一条狗罢了，得来容易，挥之即去",
+      "liked_count": 0,
+      "time": 1691027369020
+    },
+    {
+      "commentId": 5952975517,
+      "content": "你妈妈说的非常有道理",
+      "liked_count": 0,
+      "time": 1690935904357
+    },
+    {
+      "commentId": 5949950407,
+      "content": "难得这么少人，前排留名",
+      "liked_count": 0,
+      "time": 1690506662455
+    },
+    {
+      "commentId": 5947446413,
+      "content": "○",
+      "liked_count": 0,
+      "time": 1690166288809
+    },
+    {
+      "commentId": 5933935536,
+      "content": "。。。",
+      "liked_count": 0,
+      "time": 1688216620208
+    },
+    {
+      "commentId": 5914126459,
+      "content": "冬雨",
+      "liked_count": 0,
+      "time": 1685240393607
+    },
+    {
+      "commentId": 5901505612,
+      "content": "i know[奸笑]",
+      "liked_count": 0,
+      "time": 1683214611798
+    },
+    {
+      "commentId": 5872438910,
+      "content": "甲流了吗？",
+      "liked_count": 0,
+      "time": 1679056587972
+    },
+    {
+      "commentId": 5867929730,
+      "content": "还是喜欢原版",
+      "liked_count": 0,
+      "time": 1678295850846
+    },
+    {
+      "commentId": 5864260578,
+      "content": "丐版让我们相遇[可爱]",
+      "liked_count": 0,
+      "time": 1677750732831
+    },
+    {
+      "commentId": 5859748573,
+      "content": "痛，太痛",
+      "liked_count": 0,
+      "time": 1677011320160
+    },
+    {
+      "commentId": 5848426454,
+      "content": "all alone",
+      "liked_count": 0,
+      "time": 1675432680471
+    },
+    {
+      "commentId": 5828029857,
+      "content": "抓到你了",
+      "liked_count": 0,
+      "time": 1672994885864
+    },
+    {
+      "commentId": 5824480349,
+      "content": "这不可以听吗",
+      "liked_count": 0,
+      "time": 1672633570362
+    },
+    {
+      "commentId": 5819484935,
+      "content": "[开心]",
+      "liked_count": 0,
+      "time": 1672115577523
+    },
+    {
+      "commentId": 5800083958,
+      "content": "[多多耍酷]",
+      "liked_count": 0,
+      "time": 1669804569805
+    },
+    {
+      "commentId": 5797834654,
+      "content": "我心中永远的BGM",
+      "liked_count": 0,
+      "time": 1669536507839
+    },
+    {
+      "commentId": 5788366597,
+      "content": "今天下雨了",
+      "liked_count": 0,
+      "time": 1668267827203
+    },
+    {
+      "commentId": 5787996896,
+      "content": "♥️14:36",
+      "liked_count": 0,
+      "time": 1668234972308
+    },
+    {
+      "commentId": 5787560035,
+      "content": "来早了",
+      "liked_count": 0,
+      "time": 1668173852322
+    },
+    {
+      "commentId": 5787384374,
+      "content": "来了",
+      "liked_count": 0,
+      "time": 1668156227208
+    }
+  ],
+  "lyrics": {
+    "lrc": "[06:13.547]\n[06:16.610] Even cold November rain\n[07:36.293]\n",
+    "yrc": "",
+    "translation": "[06:16.610]哪怕是冰凛的十一月雨\n",
+    "romanization": ""
+  },
+  "tracks": {
+    "1997442946": {
+      "song": {
+        "songId": 1997442946,
+        "name": "November Rain (2022 Version)",
+        "artists": "Guns N' Roses",
+        "album": "Use Your Illusion I (Deluxe Edition)",
+        "duration": 535745
+      },
+      "comments": [
+        {
+          "commentId": 6042031796,
+          "content": "《November Rain》于2022年重新发行。该曲目的更新版本由乐队演奏相同的内容，但配器由50人的管弦乐队重新录制，由格莱美奖获奖作曲家Christopher于2021年指挥和编曲Lennertz，它取代了Rose最初的合成编排。",
+          "liked_count": 256,
+          "time": 1705568518226
+        },
+        {
+          "commentId": 5860968527,
+          "content": "真实配器的感觉果然不是合成器能比拟的，太棒了",
+          "liked_count": 61,
+          "time": 1677209909880
+        },
+        {
+          "commentId": 7422325192,
+          "content": "新版很好，确确实实比老版好，但还是喜欢老版，没什么特别的的，老版承载了我所有的回忆与感受",
+          "liked_count": 34,
+          "time": 1726745353873
+        },
+        {
+          "commentId": 5788401850,
+          "content": "转眼三十年",
+          "liked_count": 17,
+          "time": 1668269918412
+        },
+        {
+          "commentId": 5992392805,
+          "content": "这是真实管弦乐伴奏，和原先合成器做出的效果相比较，这个更恢弘些！",
+          "liked_count": 15,
+          "time": 1697445736686
+        },
+        {
+          "commentId": 7588655214,
+          "content": "枪花全员巅峰时期的封神之作，钢琴点缀，吉他与管弦交响乐的碰撞，再加上尾奏电吉他如狂风暴雨般的solo共同演奏出了这首世界摇滚史上的不朽经典，大气磅礴，史诗恢宏，谁能想到Axl这个玩世不恭的坏小子也能创作出这样伟大的作品",
+          "liked_count": 10,
+          "time": 1744731712987
+        },
+        {
+          "commentId": 5787580484,
+          "content": "沈阳 浑南2022.11.11雨",
+          "liked_count": 8,
+          "time": 1668175453307
+        },
+        {
+          "commentId": 5919606134,
+          "content": "先入为主了",
+          "liked_count": 7,
+          "time": 1686067403897
+        },
+        {
+          "commentId": 5787523417,
+          "content": "沈阳11.11雨",
+          "liked_count": 6,
+          "time": 1668170946397
+        },
+        {
+          "commentId": 7446662911,
+          "content": "真弦乐真是棒啊。值得一亿个赞美",
+          "liked_count": 5,
+          "time": 1730039410252
+        },
+        {
+          "commentId": 6071144907,
+          "content": "没什么可说的，新版更加震撼",
+          "liked_count": 5,
+          "time": 1709732194748
+        },
+        {
+          "commentId": 5885882365,
+          "content": "比老版差点感觉[哀伤][哀伤][哀伤]",
+          "liked_count": 5,
+          "time": 1680888684194
+        },
+        {
+          "commentId": 5881195796,
+          "content": "重制感觉也不错",
+          "liked_count": 5,
+          "time": 1680366067096
+        },
+        {
+          "commentId": 6021311269,
+          "content": "每次聽到都依然那麼感動。",
+          "liked_count": 4,
+          "time": 1702469316229
+        },
+        {
+          "commentId": 5834368599,
+          "content": "全体起立～",
+          "liked_count": 4,
+          "time": 1673666615062
+        },
+        {
+          "commentId": 5787462575,
+          "content": "2022.11.11，雨",
+          "liked_count": 4,
+          "time": 1668165179041
+        },
+        {
+          "commentId": 9552131550,
+          "content": "最火的就是最初那版",
+          "liked_count": 3,
+          "time": 1780923421979
+        },
+        {
+          "commentId": 9354567069,
+          "content": "解冻十一月吧",
+          "liked_count": 3,
+          "time": 1762051464888
+        },
+        {
+          "commentId": 9354091467,
+          "content": "十一月了 又到十一月了",
+          "liked_count": 3,
+          "time": 1762003133149
+        },
+        {
+          "commentId": 7456543524,
+          "content": "原版飙车听，这版路边听，可惜雨季迟迟不到。",
+          "liked_count": 3,
+          "time": 1731302287335
+        },
+        {
+          "commentId": 6010465293,
+          "content": "依然感动😭",
+          "liked_count": 3,
+          "time": 1700726263113
+        },
+        {
+          "commentId": 5799795560,
+          "content": "2022.11.30，冷，雨。盼往后日子里与你阳光明媚。[爱心]",
+          "liked_count": 3,
+          "time": 1669782157144
+        },
+        {
+          "commentId": 9412809804,
+          "content": "本人对人声更敏感，老版听了30多年，新版听不出多少差别。",
+          "liked_count": 2,
+          "time": 1765153745558
+        },
+        {
+          "commentId": 5903448788,
+          "content": "So if you want to love me, \nthen darlin' don't refrain. ",
+          "liked_count": 2,
+          "time": 1683543638332
+        },
+        {
+          "commentId": 5793403407,
+          "content": "好好好好好好好好好",
+          "liked_count": 2,
+          "time": 1668938592643
+        },
+        {
+          "commentId": 5789871148,
+          "content": "2022，11，15，恰逢其会ﾉ☀",
+          "liked_count": 2,
+          "time": 1668471745088
+        },
+        {
+          "commentId": 9580562094,
+          "content": "10亿一周年",
+          "liked_count": 1,
+          "time": 1784104880687
+        },
+        {
+          "commentId": 9550151032,
+          "content": "真的是一到11月就解冻11月雨😭",
+          "liked_count": 1,
+          "time": 1780743360969
+        },
+        {
+          "commentId": 9494236011,
+          "content": "感觉新版听感更好欸",
+          "liked_count": 1,
+          "time": 1774061635377
+        },
+        {
+          "commentId": 9446962085,
+          "content": "Sometimes I need some time on my own。。。。。。",
+          "liked_count": 1,
+          "time": 1769090565243
+        },
+        {
+          "commentId": 9357404478,
+          "content": "说明内心还是个文青[爆笑]",
+          "liked_count": 1,
+          "time": 1762394852277
+        },
+        {
+          "commentId": 7458102003,
+          "content": "不敢看你的眼睛，i can feel a love refrained",
+          "liked_count": 1,
+          "time": 1731506975909
+        },
+        {
+          "commentId": 7412357870,
+          "content": "这版神了",
+          "liked_count": 1,
+          "time": 1725411048887
+        },
+        {
+          "commentId": 5819113242,
+          "content": "再见2022，你好2023",
+          "liked_count": 1,
+          "time": 1672063237457
+        },
+        {
+          "commentId": 5787898003,
+          "content": "♥️11:43",
+          "liked_count": 1,
+          "time": 1668224626542
+        },
+        {
+          "commentId": 5787706011,
+          "content": "November了",
+          "liked_count": 1,
+          "time": 1668184392175
+        },
+        {
+          "commentId": 5787390619,
+          "content": "4 445671",
+          "liked_count": 1,
+          "time": 1668157110376
+        },
+        {
+          "commentId": 9680944743,
+          "content": "今天真落雨了，11月对我好一点",
+          "liked_count": 0,
+          "time": 1793536380756
+        },
+        {
+          "commentId": 9680647163,
+          "content": "又是一年十一月",
+          "liked_count": 0,
+          "time": 1793522508894
+        },
+        {
+          "commentId": 9680542652,
+          "content": "又是一年11月。今年的雨在1号就已降临",
+          "liked_count": 0,
+          "time": 1793515675709
+        },
+        {
+          "commentId": 9678985507,
+          "content": "又到十一月了",
+          "liked_count": 0,
+          "time": 1793425075367
+        },
+        {
+          "commentId": 9678832917,
+          "content": "[头秃]",
+          "liked_count": 0,
+          "time": 1793418141322
+        },
+        {
+          "commentId": 9677350343,
+          "content": "唉",
+          "liked_count": 0,
+          "time": 1793322941938
+        },
+        {
+          "commentId": 9454250695,
+          "content": "有没有最初的版本\n",
+          "liked_count": 0,
+          "time": 1769851315265
+        },
+        {
+          "commentId": 9445428278,
+          "content": "音质爽飞了",
+          "liked_count": 0,
+          "time": 1768912110970
+        },
+        {
+          "commentId": 7754295801,
+          "content": "这版罗斯声音一出来真的太神了，太牛逼了，没法用言语形容",
+          "liked_count": 0,
+          "time": 1760553013906
+        },
+        {
+          "commentId": 7458163994,
+          "content": "下雨了下雨了！",
+          "liked_count": 0,
+          "time": 1731512315805
+        },
+        {
+          "commentId": 6007850808,
+          "content": "In the cold November rain ",
+          "liked_count": 0,
+          "time": 1700252254515
+        },
+        {
+          "commentId": 5927113609,
+          "content": "the truth always greets me a slap",
+          "liked_count": 0,
+          "time": 1687172624617
+        },
+        {
+          "commentId": 5787488137,
+          "content": "11月雨",
+          "liked_count": 0,
+          "time": 1668167647048
+        },
+        {
+          "commentId": 5787356497,
+          "content": "November",
+          "liked_count": 0,
+          "time": 1668153105975
+        },
+        {
+          "commentId": 5787259657,
+          "content": "[色]",
+          "liked_count": 0,
+          "time": 1668141591392
+        }
+      ],
+      "lyrics": {
+        "lrc": "[06:13.547]\n[06:16.610] Even cold November rain\n[07:36.293]\n",
+        "yrc": "",
+        "translation": "[06:16.610]哪怕是冰凛的十一月雨\n",
+        "romanization": ""
+      },
+      "capturedAt": "2026-11-03T03:37:34.222Z",
+      "lyricsCapturedAt": "2026-11-03T03:45:12.032Z"
+    }
+  },
+  "previewSongIds": [
+    1997439178,
+    1997442946
+  ]
+}
