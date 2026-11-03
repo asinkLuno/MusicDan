@@ -18,9 +18,9 @@
 - 热评优先，上千条评论跟随播放进度滚动，实时显示评论总数与播放进度
 - 支持反向控制原音乐 App：播放/暂停、上一首/下一首、拖动进度条都能在 MusicDan 里完成
 
-| 跨应用悬浮弹幕 | 应用内弹幕 |
-| --- | --- |
-| <img src="docs/screenshots/overlay.jpg" width="270"/> | <img src="artifacts/previews/app-danmaku.png" width="270"/> |
+<p align="center">
+  <img src="artifacts/previews/app-danmaku.png" width="270" alt="应用内弹幕页"/>
+</p>
 
 ### 歌词与全屏弹幕
 
@@ -81,26 +81,6 @@ cd src-tauri && cargo test --lib    # Rust 侧测试
 ```
 
 安卓构建需要 JDK、Android SDK / NDK 和对应的 Rust target，并设置 `ANDROID_HOME`、`NDK_HOME`。项目包含已定制的 `src-tauri/gen/android`，不要重新初始化覆盖其中的系统栏适配。
-
-## 电脑运行与截图
-
-运行 `yarn dev`，打开 `http://localhost:1420/?demo=creep`，即可运行真实的 React / Tamagui 应用界面。演示模式只替换原生 IPC 返回的数据，模拟 Radiohead 的 Creep 播放进度；歌曲搜索、评论数量和 1000 条真实评论来自 `tests/fixtures/ncm-creep.json` 中录制的网易云数据。歌词使用保留真实时间戳的短片段。弹幕、歌词、控件和布局由应用代码实时渲染。fixture 无有效期，启动、刷新和截图都不访问网易云；需要更新时显式运行 `yarn fixtures:refresh`，失败保留旧文件。
-
-该模式仅在 Vite 开发服务器生效，正式构建不启用。普通浏览器页面不加 `?demo=creep` 时维持原来的行为。浏览器截图适用于应用内弹幕、全屏、搜索及设置页面；跨应用悬浮和 Android 权限页面需要安卓模拟器或真机运行。
-
-截图时通过 Chrome / Playwright 打开以上地址，等待播放状态和弹幕出现后捕获页面；不要替换页面截图素材或重画界面来冒充运行截图。README 现有真机图片保持原样。
-
-可复用的截图脚本：用 Chrome 启动 `--headless --remote-debugging-port=9229 --user-data-dir=/tmp/musicdan-capture` 后，执行 `node scripts/capture-app.mjs <弹幕页.png> <搜索页.png> <全屏页.png>`。脚本按安卓竖屏 **9:19.5** 比例运行（432 × 936 CSS 像素），输出 **1080 × 2340** PNG 截图，将播放进度固定在 0:04，依次截取普通弹幕页、全屏弹幕页和搜索结果页。默认输出位于 `artifacts/previews/`。截图前会等待 fixture 评论及歌词加载完成。可用 `MUSICDAN_SCREENSHOT_POSITION` 设置固定进度（毫秒）；手动查看 0:04 可访问 `http://localhost:1420/?demo=creep&position=4000&freeze=1`。可用 `CHROME_DEBUG_URL` 指定浏览器调试地址，`MUSICDAN_PREVIEW_URL` 指定开发页面地址；需要 Node.js 22 及以上。
-
-电脑运行生成的截图（播放状态模拟，内容来自固定的真实数据 fixture）：
-
-脚本输出示例：[应用内弹幕](artifacts/previews/app-danmaku.png) · [搜索匹配](artifacts/previews/app-search.png) · [全屏弹幕](artifacts/previews/app-fullscreen.png)。
-
-测试数据说明见 [tests/fixtures/README.md](tests/fixtures/README.md)。运行 `yarn test:fixtures` 可验证离线预览与 0:04 的弹幕排布。
-
-### November Rain (2022 Version) · 7:13
-
-运行 `yarn dev` 后打开 `http://localhost:1420/?demo=november-rain&position=433000&freeze=1`。自动截图会在搜索页选中 Super Deluxe 和 Deluxe Edition 两个 2022 版本并应用合并。该场景同样读取已保存的真实数据，无需联网；显式运行 `yarn fixtures:refresh november-rain` 才更新。输出示例：[普通弹幕页](artifacts/previews/november-rain-danmaku.png) · [搜索匹配](artifacts/previews/november-rain-search.png) · [全屏弹幕页](artifacts/previews/november-rain-fullscreen.png)。
 
 ---
 
