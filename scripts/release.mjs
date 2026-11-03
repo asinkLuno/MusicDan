@@ -10,6 +10,7 @@
 // 发布内容顺序遵循 AGENTS.md：测试、签名校验、附件上传成功后才发布 Release 并更新 latest。
 // 重复执行幂等：当前版本已发布时跳过构建与发布，仅补服务器同步。
 
+import { prepareDraft, uploadDraftAssets } from './release-github.mjs';
 import { spawn, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import net from 'node:net';
@@ -83,10 +84,6 @@ function freePort(preferred) {
   });
 }
 
-function githubApi(route) {
-  return JSON.parse(run('gh', ['api', route.replace(/^\//, '')]));
-}
-
 const siteBundle = path.join(root, 'artifacts', 'releases', `MusicDan_${version}_website.tar.gz`);
 
 /** 本地重建截图并打包官网（website 的 prebuild 负责截图捕获） */
@@ -134,6 +131,8 @@ async function deploySite() {
 function runTests() {
   console.log('[test] yarn test');
   run('yarn', ['test'], { stdio: 'inherit' });
+  console.log('[test] yarn test:release');
+  run('yarn', ['test:release'], { stdio: 'inherit' });
   console.log('[test] yarn test:fixtures');
   run('yarn', ['test:fixtures'], { stdio: 'inherit' });
   console.log('[test] Kotlin 插件单元测试');
@@ -145,8 +144,12 @@ function runTests() {
 }
 
 /** 下一个构建编号 = GitHub 上最新已发布 build-N + 1（延续历史 versionCode 体系） */
+function listReleases() {
+  return JSON.parse(run('gh', ['api', '--paginate', '--slurp', `repos/${REPO_SLUG}/releases?per_page=100`])).flat();
+}
+
 function nextBuildNumber() {
-  const releases = githubApi(`repos/${REPO_SLUG}/releases?per_page=100`);
+  const releases = listReleases();
   const latest = releases
     .filter(release => !release.draft && !release.prerelease)
     .map(release => /^build-(\d+)$/.exec(release.tag_name)?.[1])
@@ -227,9 +230,10 @@ async function releaseBody(tag) {
 
 /** 当前版本对应的已发布正式 Release（含 APK 资产）；未发布返回 null */
 function findPublishedRelease() {
-  const release = githubApi(`repos/${REPO_SLUG}/releases/latest`);
-  const asset = (release.assets || []).find(item => item.name === apkName);
-  if (!asset || release.draft || release.prerelease) return null;
+  const release = listReleases().find(item => !item.draft && !item.prerelease
+    && item.assets?.some(asset => asset.name === apkName));
+  if (!release) return null;
+  const asset = release.assets.find(item => item.name === apkName);
   return { release, asset };
 }
 
@@ -237,31 +241,35 @@ function findPublishedRelease() {
 async function publishGitHub(buildNumber, sha, apk) {
   const tag = `build-${buildNumber}`;
   const body = await releaseBody(tag);
-  // pre-push 阶段提交尚未在远端：先推送 releases 分支供 Release 标签引用
+  // pre-push 的外层推送尚未完成：使用临时分支提供提交，不能提前改动 releases（会使外层推送失败）
   // （--no-verify：钩子会再次触发本脚本造成递归发布，内部推送必须跳过钩子）
-  run('git', ['push', '--no-verify', 'origin', `${sha}:refs/heads/releases`]);
-  console.log(`[github] 创建草稿 Release ${tag}`);
-  const notesFile = path.join(await mkdtemp(path.join(tmpdir(), 'musicdan-rel-')), 'body.md');
-  await writeFile(notesFile, body);
-  run('gh', ['release', 'create', tag, '--repo', REPO_SLUG, '--target', sha,
-    '--draft', '--title', `MusicDan v${version}`, '--notes-file', notesFile]);
-  run('gh', ['release', 'upload', tag, '--repo', REPO_SLUG, apk, siteBundle, '--clobber']);
-  // 草稿还没有真正的 tag，GET /releases/tags/{tag} 查不到，只能从 Release 列表里找
-  const draft = githubApi(`repos/${REPO_SLUG}/releases`)
-    .find(item => item.draft && item.tag_name === tag);
-  const uploaded = draft.assets.find(item => item.name === apkName);
-  if (!uploaded) throw new Error('APK 上传后未在草稿 Release 中找到');
-  if (uploaded.digest && uploaded.digest !== `sha256:${await sha256File(apk)}`) throw new Error('上传的 APK 摘要与本地不一致');
-  if (!draft.assets.some(item => item.name === path.basename(siteBundle))) throw new Error('官网包上传失败');
+  const stagingRef = `refs/heads/release-staging/${sha}`;
+  run('git', ['push', '--no-verify', 'origin', `${sha}:${stagingRef}`]);
+  const api = (route, method = 'GET', fields) => {
+    const output = run('gh', ['api', `repos/${REPO_SLUG}/${route}`, '--method', method,
+      ...(fields ? ['--input', '-'] : [])], fields ? { input: JSON.stringify(fields) } : {});
+    return output.trim() ? JSON.parse(output) : null;
+  };
+  const draft = await prepareDraft({ api, releases: listReleases(), tag, sha,
+    title: `MusicDan v${version}`, body });
+  console.log(`[github] 上传并校验草稿 ${tag}（ID ${draft.id}）`);
+  const files = await Promise.all([apk, siteBundle].map(async file => ({
+    path: file, name: path.basename(file), size: (await stat(file)).size,
+  })));
+  await uploadDraftAssets({ api, draft, files, digest: sha256File,
+    upload: (url, file) => run('gh', ['api', url, '--method', 'POST',
+      '--header', 'Content-Type: application/octet-stream', '--input', file]),
+  });
   console.log('[github] 资产校验通过，发布 Release 并标记 Latest');
-  run('gh', ['release', 'edit', tag, '--repo', REPO_SLUG, '--draft=false', '--latest']);
+  const published = api(`releases/${draft.id}`, 'PATCH', { draft: false, make_latest: 'true' });
   // 版本标签不可变；latest 便捷标签指向发布提交
   run('git', ['tag', '-f', 'latest', sha]);
   if (!run('git', ['tag', '--list', `v${version}`]).trim()) {
     run('git', ['tag', `v${version}`, sha]);
   }
-  run('git', ['push', '--no-verify', 'origin', `v${version}`, 'latest', '--force']);
-  const published = githubApi(`repos/${REPO_SLUG}/releases/tags/${tag}`);
+  run('git', ['push', '--no-verify', 'origin', `v${version}`]);
+  run('git', ['push', '--no-verify', 'origin', 'latest', '--force']);
+  run('git', ['push', '--no-verify', 'origin', '--delete', stagingRef]);
   return { tag, releaseId: published.id, publishedAt: published.published_at };
 }
 
@@ -308,6 +316,7 @@ async function syncServerFromGitHub() {
   const published = findPublishedRelease();
   if (!published) throw new Error(`GitHub 上没有 v${version} 的正式发布`);
   const { release, asset } = published;
+  const websiteAsset = release.assets.find(item => item.name === path.basename(siteBundle));
   if (asset.digest && !asset.digest.startsWith('sha256:')) throw new Error(`未知的资产摘要格式：${asset.digest}`);
   const work = await mkdtemp(path.join(tmpdir(), 'musicdan-apk-'));
   console.log(`[server] 从 GitHub 下载 ${asset.name}`);
@@ -317,6 +326,21 @@ async function syncServerFromGitHub() {
   if (asset.digest && asset.digest.slice('sha256:'.length) !== await sha256File(apk)) {
     throw new Error('下载的 APK 摘要与 GitHub 不一致');
   }
+  if (websiteAsset) {
+    run('gh', ['release', 'download', release.tag_name, '--repo', REPO_SLUG,
+      '--pattern', websiteAsset.name, '--dir', work, '--clobber']);
+    const downloadedSite = path.join(work, websiteAsset.name);
+    if (!websiteAsset.digest || websiteAsset.digest !== `sha256:${await sha256File(downloadedSite)}`) {
+      throw new Error('下载的官网包摘要与 GitHub 不一致');
+    }
+    run('mkdir', ['-p', path.dirname(siteBundle)]);
+    run('cp', [downloadedSite, siteBundle]);
+    await deploySite();
+  }
+  run('git', ['fetch', 'origin', `refs/tags/${release.tag_name}`]);
+  const sha = run('git', ['rev-parse', 'FETCH_HEAD^{commit}']).trim();
+  run('git', ['push', '--no-verify', 'origin', `${sha}:refs/tags/v${version}`]);
+  run('git', ['push', '--no-verify', 'origin', `${sha}:refs/tags/latest`, '--force']);
   await syncServer(apk, {
     releaseId: release.id,
     tag: release.tag_name,

@@ -18,10 +18,10 @@ yarn --cwd website shadcn add <控件名>
 
 1. **测试与官网**：运行前端与 Kotlin 插件测试；本地起 dev 服务与 headless Chrome 重建应用截图，`yarn build:release-site` 打包官网，上传服务器解压到新的 `site-*` 目录并原子切换 `/srv/musicdan/site` 符号链接。任一步失败则推送中止。
 2. **本地构建签名 APK**：`yarn tauri android build`（构建编号 = 最新已发布 build-N + 1，`versionCode = 1000000000 + 编号`），`apksigner` 与 `aapt` 校验签名和元数据。
-3. **发布 GitHub Release**：创建草稿 `build-N`，上传 APK 与官网包并核对资产摘要，通过后发布并标记 **Latest**，更新 `latest` 标签、创建版本标签 `v<版本>`。
+3. **发布 GitHub Release**：创建或复用草稿 `build-N`，始终按 Release ID 上传 APK 与官网包并核对大小及 SHA-256 摘要，通过后发布并标记 **Latest**，更新 `latest` 标签、创建版本标签 `v<版本>`。
 4. **同步服务器**：上传 APK 到 `/srv/musicdan/public/releases/`，原子切换 `latest.apk` 符号链接，更新 `latest.json` / `releases.json`（版本号从本地 package.json 读取，SHA-256 与 GitHub 资产摘要双向校验）。
 
-任何失败都会中止发布并保留上一成功版本的 Latest 状态。重复执行幂等：版本已发布时只补服务器同步。
+任何失败都会中止发布并保留上一成功版本的 Latest 状态。重复执行幂等：未发布时复用草稿并替换附件；版本已发布时补齐官网、下载镜像和标签同步。pre-push 内部通过临时 `release-staging/<sha>` 分支提供提交，发布完成后删除，不提前更新外层推送的 `releases` 分支。
 
 首次克隆仓库需要启用钩子：
 

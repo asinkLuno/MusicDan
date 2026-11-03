@@ -10,6 +10,7 @@
     "test": "node --experimental-strip-types --test src/*.test.ts",
     "tauri": "tauri",
     "fixtures:refresh": "node scripts/refresh-ncm-fixture.mjs",
+    "test:release": "node --test scripts/release-github.test.mjs",
     "test:fixtures": "node --experimental-strip-types --test scripts/ncm-preview.test.mjs",
     "fixtures:add-version": "node scripts/add-ncm-version.mjs",
     "fixtures:refresh-lyrics": "node scripts/refresh-ncm-lyrics.mjs",
