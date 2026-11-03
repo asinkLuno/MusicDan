@@ -2,7 +2,7 @@
 // yarn release / 推送 releases 分支：完整发布；--site-only：仅重建官网。
 // 服务器 releases.json 是构建编号和已发布版本的唯一来源。
 
-import { nextBuildNumber, releaseHistory, publishCommand } from './release-state.mjs';
+import { nextBuildNumber, releaseHistory, publishCommand, pruneCommand } from './release-state.mjs';
 import { spawn, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import net from 'node:net';
@@ -259,6 +259,7 @@ if (siteOnly) {
   if (published) {
     const existingPath = published.build_number ? `build-${published.build_number}/${published.name}` : published.name;
     ecs(`cd ${ECS_BASE}/public/releases; printf '%s  %s\n' '${published.sha256}' '${existingPath}' | sha256sum -c -`);
+    ecs(pruneCommand(ECS_BASE));
     console.log(`[release] v${version} 已发布且 APK 摘要正确，跳过重复构建`);
   } else {
     const buildNumber = nextBuildNumber(previous);

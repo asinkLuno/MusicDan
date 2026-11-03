@@ -50,43 +50,37 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
     const sprites = new Map<number, Sprite>();
     const pinnedSprites = new Map<number, Sprite>();
 
-    /** 驻留弹幕排版：超出一行的评论按字符折行（最多 maxLines 行，末尾省略） */
-    function wrapLines(segs: Segment[], widths: number[], maxWidth: number, maxLines: number): SpriteLine[] {
+    /** 驻留弹幕按可用宽度折行，保留完整评论。 */
+    function wrapLines(segs: Segment[], widths: number[], maxWidth: number): SpriteLine[] {
       const lines: SpriteLine[] = [{ segs: [], widths: [], width: 0 }];
-      let truncated = false;
       const newLine = () => {
-        if (lines.length >= maxLines) truncated = true;
-        else lines.push({ segs: [], widths: [], width: 0 });
-        return lines[lines.length - 1];
+        const line: SpriteLine = { segs: [], widths: [], width: 0 };
+        lines.push(line);
+        return line;
       };
       const push = (line: SpriteLine, seg: Segment, width: number) => { line.segs.push(seg); line.widths.push(width); line.width += width; };
       for (const [index, seg] of segs.entries()) {
-        if (truncated) break;
-        const width = widths[index];
         let line = lines[lines.length - 1];
-        if (line.width > 0 && line.width + width > maxWidth) line = newLine();
-        if (truncated) break;
-        if (seg.type === 'text' && line.width + width > maxWidth) {
+        if (seg.type === 'text') {
           let text = ''; let measured = 0;
           for (const character of Array.from(seg.text)) {
-            const charWidth = context.measureText(character).width;
-            if (line.width + measured + charWidth > maxWidth) {
-              if (measured) push(line, { type: 'text', text }, measured);
+            const nextWidth = context.measureText(text + character).width;
+            if (line.width + nextWidth > maxWidth && (line.width > 0 || text)) {
+              if (text) push(line, { type: 'text', text }, measured);
               line = newLine();
-              if (truncated) { text = ''; break; }
-              text = ''; measured = 0;
+              text = character;
+              measured = context.measureText(character).width;
+            } else {
+              text += character;
+              measured = nextWidth;
             }
-            text += character; measured += charWidth;
           }
           if (text) push(line, { type: 'text', text }, measured);
-          continue;
+        } else {
+          const width = widths[index];
+          if (line.width > 0 && line.width + width > maxWidth) line = newLine();
+          push(line, seg, width);
         }
-        push(line, seg, width);
-      }
-      if (truncated) {
-        const last = lines[lines.length - 1];
-        const ellipsis = context.measureText('…').width;
-        push(last, { type: 'text', text: '…' }, ellipsis);
       }
       return lines;
     }
@@ -103,13 +97,14 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
       const segs = parseSegments(label);
       const widths = segs.map(seg => seg.type === 'text' ? context.measureText(seg.text).width : emoteSize);
       const textWidth = widths.reduce((sum, width) => sum + width, 0);
-      const lines = maxWidth != null && textWidth > maxWidth
-        ? wrapLines(segs, widths, maxWidth, 2)
-        : [{ segs, widths, width: textWidth }];
       context.font = badgeFont;
       const measuredBadge = badge ? context.measureText(badge).width : 0;
       context.font = font;
-      const width = Math.ceil(Math.max(...lines.map(line => line.width)) + (badge ? fontSize * .25 + measuredBadge : 0));
+      const badgeWidth = badge ? fontSize * .25 + measuredBadge : 0;
+      const lines = maxWidth != null && textWidth + badgeWidth > maxWidth
+        ? wrapLines(segs, widths, Math.max(1, maxWidth - badgeWidth))
+        : [{ segs, widths, width: textWidth }];
+      const width = Math.ceil(Math.max(...lines.map((line, index) => line.width + (index === lines.length - 1 ? badgeWidth : 0))));
       const effect = comment.liked_count >= danmakuEffects.top.minLikes ? 'top' : comment.liked_count >= danmakuEffects.high.minLikes ? 'high' : null;
       const tiles = new Map<number, HTMLCanvasElement>();
       // An arriving emote only invalidates the comment that uses it.

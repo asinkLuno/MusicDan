@@ -19,7 +19,7 @@ yarn --cwd website shadcn add <控件名>
 1. **测试**：运行前端、数据、发布逻辑和 Kotlin 插件测试。
 2. **本地构建**：运行真实前端重建截图、打包官网、构建签名 arm64 APK；校验签名与版本代码。
 3. **上传与校验**：从服务器 `releases.json` 分配下一个构建编号，将 APK、官网包、校验文件、说明和元数据上传到独立暂存目录，服务器再次校验 APK 和官网包的 SHA-256。
-4. **原子发布**：取得服务器发布锁并确认旧记录未变化，保留 `public/releases/build-N/` 为不可变版本目录；以 `public/latest` 符号链接一次切换官网、APK、版本信息和历史列表。旧目录保留用于回滚。
+4. **原子发布**：取得服务器发布锁并确认旧记录未变化，保留 `public/releases/build-N/` 为不可变版本目录；以 `public/latest` 符号链接一次切换官网、APK、版本信息和历史列表。仅保留最近 3 个版本用于回滚；切换成功后在同一发布锁内删除更早安装包、兼容下载链接和废弃官网目录。
 
 不调用 GitHub API、不上传 GitHub Release 附件、不推送发布标签。历史 GitHub Release 和标签保留。构建编号兼容迁移前的 `build-N` 记录，Android versionCode 继续递增。
 
@@ -63,7 +63,7 @@ readlink /srv/musicdan/public/releases/latest.apk
 docker logs --tail 50 caddy
 ```
 
-历史 `public/releases/build-N/` 目录保留作为回滚点；将 `public/latest` 原子切回对应目录即可同时回滚官网、APK 和发布记录。`--site-only` 单独部署的页面可通过 `/srv/musicdan/site` 切回旧目录。定期关注磁盘空间。
+最近 3 个 `public/releases/build-N/` 目录保留作为回滚点；将 `public/latest` 原子切回对应目录即可同时回滚官网、APK 和发布记录。`--site-only` 单独部署的页面可通过 `/srv/musicdan/site` 切回旧目录。定期关注磁盘空间。
 
 ## 日常发布操作手册
 
@@ -88,4 +88,4 @@ docker logs --tail 50 caddy
 
 服务器记录读取失败时修复连接后重试，禁止手工清空记录；并发冲突时等待另一发布完成后重试。上传或构建失败不会推进最新版本指针。官网单独部署使用独立目录，下一次完整发布会重新接管官网指针。
 
-回滚旧 public/latest 会同时回滚历史列表，因此回滚后不要直接发布新版本：必须先恢复完整历史记录并确认最大构建编号，否则可能重新使用已有编号。旧版本目录和签名材料必须保留。
+回滚旧 public/latest 会同时回滚历史列表，因此回滚后不要直接发布新版本：必须先恢复完整历史记录并确认最大构建编号，否则可能重新使用已有编号。回滚仅限仍保留的版本；签名材料必须永久私有备份。

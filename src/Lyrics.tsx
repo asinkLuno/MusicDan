@@ -14,7 +14,7 @@ const LYRIC_FONT_SIZE = 28;
 const LYRIC_LINE_HEIGHT = 1.36;
 const TRANSLATION_FONT_SIZE = 20;
 // 行高由每行内容实测（onLayout），避免两行正文加翻译被固定行距裁剪；
-// 首尾留白按“单行正文 + 翻译”的估计值计算，保证第一行和最后一行也能居中。
+// 首尾留白跟随实际行高，保证第一行和最后一行也能居中。
 const EST_ROW_HEIGHT = 96;
 
 export function LyricsBackground({ snapshot, songId, onError }: {
@@ -24,7 +24,6 @@ export function LyricsBackground({ snapshot, songId, onError }: {
   const [result, setResult] = useState<{ id: number; data?: Lyrics; error?: string } | null>(null);
   const [position, setPosition] = useState(0);
   const [height, setHeight] = useState(0);
-  const [measured, setMeasured] = useState(false);
   const [browsing, setBrowsing] = useState(false);
   const [selected, setSelected] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -35,7 +34,6 @@ export function LyricsBackground({ snapshot, songId, onError }: {
   const dragging = useRef(false);
   const submitting = useRef(false);
   const initialized = useRef(false);
-  const heights = useRef<number[]>([]);
   const returnTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const snapTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const requestTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -74,34 +72,44 @@ export function LyricsBackground({ snapshot, songId, onError }: {
   const canSeek = Boolean(np?.packageName && np.duration > 0 && ((np.playbackActions || 0) & 256)
     && (np.isPlaying || ((np.playbackActions || 0) & (4 | 512))));
 
-  // 行高实测缓存：歌词变化时重置，全部行测量完成后才执行跟随滚动
-  useEffect(() => { heights.current = []; setMeasured(false); initialized.current = false; }, [parsed]);
+  // Keep measurements tied to the lyric result and reactive so wrapping,
+  // focus changes and viewport resizing all trigger a new centering pass.
+  const [measurements, setMeasurements] = useState<{ source: typeof parsed; heights: number[] }>({ source: parsed, heights: [] });
+  const heights = useMemo(() => measurements.source === parsed ? measurements.heights : [], [measurements, parsed]);
+  const measured = lineCount > 0 && heights.filter(value => value > 0).length === lineCount;
+  useEffect(() => { initialized.current = false; }, [parsed]);
   const reportHeight = useCallback((lineIndex: number, rowHeight: number) => {
-    if (heights.current[lineIndex] === rowHeight) return;
-    heights.current[lineIndex] = rowHeight;
-    if (!measured && heights.current.filter(value => value > 0).length >= lineCount && lineCount > 0) setMeasured(true);
-  }, [measured, lineCount]);
-  const rowOffsets = useCallback(() => {
-    const pad = Math.max(0, (height - EST_ROW_HEIGHT) / 2);
-    const offsets: number[] = [];
-    let y = pad;
-    for (const rowHeight of heights.current) { offsets.push(y); y += rowHeight; }
-    return offsets;
-  }, [height]);
+    setMeasurements(previous => {
+      const current = previous.source === parsed ? previous.heights : [];
+      if (current[lineIndex] === rowHeight) return previous;
+      const next = [...current];
+      next[lineIndex] = rowHeight;
+      return { source: parsed, heights: next };
+    });
+  }, [parsed]);
+  const topPadding = Math.max(0, (height - (heights[0] ?? EST_ROW_HEIGHT)) / 2);
+  const bottomPadding = Math.max(0, (height - (heights[lineCount - 1] ?? EST_ROW_HEIGHT)) / 2);
+  const offsets = useMemo(() => {
+    const result: number[] = [];
+    let y = topPadding;
+    for (let i = 0; i < lineCount; i++) {
+      result.push(y);
+      y += heights[i] ?? EST_ROW_HEIGHT;
+    }
+    return result;
+  }, [topPadding, heights, lineCount]);
   const centerScroll = useCallback((line: number): number => {
-    const offsets = rowOffsets();
-    return Math.max(0, (offsets[line] ?? 0) - Math.max(0, height - (heights.current[line] ?? 0)) / 2);
-  }, [height, rowOffsets]);
+    return Math.max(0, (offsets[line] ?? 0) - Math.max(0, height - (heights[line] ?? 0)) / 2);
+  }, [height, offsets, heights]);
   const nearestRow = useCallback((offsetY: number): number => {
-    const offsets = rowOffsets();
     const viewportCenter = offsetY + height / 2;
     let best = 0; let bestDist = Infinity;
     for (let i = 0; i < offsets.length; i++) {
-      const dist = Math.abs(offsets[i] + (heights.current[i] ?? 0) / 2 - viewportCenter);
+      const dist = Math.abs(offsets[i] + (heights[i] ?? 0) / 2 - viewportCenter);
       if (dist < bestDist) { bestDist = dist; best = i; }
     }
     return best;
-  }, [height, rowOffsets]);
+  }, [height, offsets, heights]);
 
   useEffect(() => {
     if (browsing || !height || !lineCount || !measured) return;
@@ -181,7 +189,7 @@ export function LyricsBackground({ snapshot, songId, onError }: {
         setSelected(Math.max(0, Math.min(lineCount - 1, nearestRow(offset.current))));
         scheduleReturn();
       }}>
-      <YStack flexShrink={0} paddingVertical={Math.max(0, (height - EST_ROW_HEIGHT) / 2)}>
+      <YStack flexShrink={0} paddingTop={topPadding} paddingBottom={bottomPadding}>
         {parsed.lines.map((line, lineIndex) => <LyricRow key={`${line.start}:${lineIndex}`}
           line={line} translation={parsed.translations.get(line.start)} active={lineIndex === index}
           nearby={Math.abs(lineIndex - (browsing ? selected : center)) <= 1}

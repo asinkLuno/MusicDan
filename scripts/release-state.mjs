@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 /** Preserve Android upgrade ordering, including records written before website-only releases. */
 export function nextBuildNumber(releases) {
   if (!Array.isArray(releases) || !releases.length) throw new Error('服务器发布记录为空，拒绝重置构建编号');
@@ -15,7 +17,7 @@ export function releaseHistory(entry, previous) {
     // A former latest entry must keep downloading its own APK after the next release.
     if (item.download_url !== '/releases/latest.apk') return item;
     return { ...item, download_url: `/releases/${item.name}` };
-  })];
+  })].sort((a, b) => nextBuildNumber([b]) - nextBuildNumber([a])).slice(0, 3);
 }
 
 /** Files are already staged; the last rename is the only visibility switch. */
@@ -64,5 +66,16 @@ mv -Tf ${base}/.site-next-${buildNumber} ${base}/site
 ln -s build-${buildNumber}/${apkName} ${base}/public/releases/${apkName}
 ln -s build-${buildNumber}/${apkName}.sha256 ${base}/public/releases/${apkName}.sha256
 ln -s releases/build-${buildNumber} ${base}/public/.latest-next-${buildNumber}
-mv -Tf ${base}/public/.latest-next-${buildNumber} ${base}/public/latest`;
+mv -Tf ${base}/public/.latest-next-${buildNumber} ${base}/public/latest
+${pruneCommand(base, false)}`;
+}
+
+/** Retryable cleanup: publication stays live if cleanup is interrupted. */
+export function pruneCommand(base, lock = true) {
+  const script = readFileSync(new URL('./prune-releases.py', import.meta.url), 'utf8');
+  return `set -e
+${lock ? `exec 9>${base}/.publish.lock\nflock -n 9` : ''}
+python3 - '${base}' <<'MUSICDAN_PRUNE'
+${script}
+MUSICDAN_PRUNE`;
 }

@@ -57,6 +57,26 @@ fn build_status(current_version: &str, releases: &[WebsiteRelease]) -> UpdateSta
     }
 }
 
+// reqwest 的 Display 只包含请求地址，保留 source 链才能区分 DNS、TLS 和连接错误。
+fn request_error(error: &reqwest::Error) -> String {
+    use std::error::Error;
+    let mut details = error.to_string();
+    let mut source = error.source();
+    while let Some(cause) = source {
+        details.push_str(": ");
+        details.push_str(&cause.to_string());
+        source = cause.source();
+    }
+    let hint = if error.is_timeout() {
+        "请求超时，请检查网络后重试"
+    } else if error.is_connect() {
+        "连接官网失败，请检查网络、代理及设备时间"
+    } else {
+        "无法获取官网更新信息"
+    };
+    format!("{hint}：{details}")
+}
+
 /// 官网发布记录同时用于检查更新和显示版本说明，无需 GitHub API。
 #[tauri::command]
 pub async fn check_update(app: AppHandle) -> Result<UpdateStatus, String> {
@@ -71,7 +91,7 @@ pub async fn check_update(app: AppHandle) -> Result<UpdateStatus, String> {
         .header("Cache-Control", "no-cache")
         .send().await
         .and_then(|response| response.error_for_status())
-        .map_err(|error| format!("无法连接更新服务：{error}"))?
+        .map_err(|error| request_error(&error))?
         .json().await
         .map_err(|error| format!("更新信息解析失败：{error}"))?;
     Ok(build_status(&current_version, &releases))

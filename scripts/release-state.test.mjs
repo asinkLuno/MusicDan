@@ -10,8 +10,8 @@ test('does not reset build number when server metadata is missing or corrupt', (
   for (const records of [[], null, [{}], [{ build_number: -1 }]]) assert.throws(() => nextBuildNumber(records));
 });
 test('old latest downloads retain the previous APK and retries avoid duplicate versions', () => {
-  const old = { version: '0.5.0', name: 'MusicDan_0.5.0_arm64.apk', download_url: '/releases/latest.apk' };
-  const current = { version: '0.5.1', download_url: '/releases/latest.apk' };
+  const old = { version: '0.5.0', build_number: 18, name: 'MusicDan_0.5.0_arm64.apk', download_url: '/releases/latest.apk' };
+  const current = { version: '0.5.1', build_number: 19, download_url: '/releases/latest.apk' };
   const history = releaseHistory(current, [current, old]);
   assert.equal(history.length, 2);
   assert.equal(history[1].download_url, '/releases/MusicDan_0.5.0_arm64.apk');
@@ -31,7 +31,7 @@ async function fixture(t) {
   t.after(() => rm(base, { recursive: true, force: true }));
   const stage = `${base}/stage`;
   for (const dir of ['public/latest', 'public/releases', 'old-site', 'stage', 'new-site']) await mkdir(`${base}/${dir}`, { recursive: true });
-  const previous = [{ version: '0.5.0', build_number: 18 }];
+  const previous = [{ version: '0.5.0', build_number: 18, name: 'MusicDan_0.5.0_arm64.apk' }];
   await writeFile(`${base}/public/releases.json`, JSON.stringify(previous));
   await writeFile(`${base}/public/latest/release.json`, JSON.stringify(previous[0]));
   await writeFile(`${base}/public/releases/MusicDan_0.5.0_arm64.apk`, 'old apk');
@@ -41,7 +41,7 @@ async function fixture(t) {
   await symlink('old-site', `${base}/site`);
   await writeFile(`${base}/new-site/index.html`, 'new site');
   execFileSync('tar', ['-czf', `${stage}/website.tar.gz`, '-C', `${base}/new-site`, '.']);
-  const entry = { version: '0.5.1', build_number: 19 };
+  const entry = { version: '0.5.1', build_number: 19, name: 'MusicDan_0.5.1_arm64.apk' };
   await writeFile(`${stage}/release.json`, JSON.stringify(entry));
   await writeFile(`${stage}/releases.json`, JSON.stringify([entry, ...previous]));
   await writeFile(`${stage}/MusicDan_0.5.1_arm64.apk`, 'new apk');
@@ -72,4 +72,32 @@ test('corrupt uploads or concurrent record changes leave the previous version li
     assert.equal(await readlink(`${base}/site`), 'old-site');
     assert.equal(JSON.parse(await readFile(`${base}/public/releases.json`, 'utf8'))[0].version, '0.5.0');
   }
+});
+
+test('retains the three highest builds even when old records are unordered', () => {
+  const entries = [16, 20, 18, 19].map(build_number => ({ version: `0.0.${build_number}`, build_number }));
+  const history = releaseHistory({ version: '0.0.21', build_number: 21 }, entries);
+  assert.deepEqual(history.map(item => item.build_number), [21, 20, 19]);
+  assert.equal(nextBuildNumber(history), 22);
+});
+
+test('prunes expired artifacts after publication and preserves three downloadable versions', async t => {
+  const { base, stage, entry, options } = await fixture(t);
+  const kept = [18, 17].map(n => ({ version: `0.0.${n}`, build_number: n, name: `MusicDan_0.0.${n}_arm64.apk` }));
+  for (const item of [...kept, { build_number: 16, name: 'MusicDan_0.0.16_arm64.apk' }]) {
+    const dir = `${base}/public/releases/build-${item.build_number}`;
+    await mkdir(dir);
+    await writeFile(`${dir}/${item.name}`, 'retained apk');
+    await symlink(`build-${item.build_number}/${item.name}`, `${base}/public/releases/${item.name}`);
+  }
+  await mkdir(`${base}/site-expired`);
+  await writeFile(`${stage}/releases.json`, JSON.stringify([entry, ...kept]));
+  execFileSync('sh', ['-c', publishCommand(options)]);
+  for (const item of kept) assert.equal(await readFile(`${base}/public/releases/${item.name}`, 'utf8'), 'retained apk');
+  for (const relative of ['public/releases/build-16', 'public/releases/MusicDan_0.0.16_arm64.apk',
+    'public/releases/MusicDan_0.5.0_arm64.apk', 'site-expired', 'public/.latest-legacy', 'public/.latest-before-19']) {
+    await assert.rejects(readFile(`${base}/${relative}`), { code: 'ENOENT' });
+  }
+  assert.equal(await readFile(`${base}/public/releases/latest.apk`, 'utf8'), 'new apk');
+  assert.equal(await readFile(`${base}/site/index.html`, 'utf8'), 'new site');
 });
