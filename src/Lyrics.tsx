@@ -4,6 +4,7 @@ import { Play } from './icons';
 import { activeLine, prepareLyrics } from './lyrics';
 import type { LyricLine, Lyrics } from './lyrics';
 import { PlaybackClock } from './playbackClock';
+import { musicAtmosphere } from './tamagui.config';
 import { formatTime, invoke } from './types';
 import type { Snapshot } from './types';
 
@@ -125,6 +126,7 @@ export function LyricsBackground({ snapshot, songId, onError }: {
 
   if (!np || !songId || !parsed.lines.length) return null;
   return <YStack position="absolute" inset={0} zIndex={0} overflow="hidden" aria-label="同步歌词"
+    backgroundColor="lyricSurface" backgroundImage={musicAtmosphere.lyrics}
     onLayout={event => setHeight(event.nativeEvent.layout.height)}>
     <ScrollView ref={scroll} flex={1} showsVerticalScrollIndicator={false} tabIndex={0}
       aria-label="上下滑动浏览歌词" scrollEventThrottle={16}
@@ -143,9 +145,11 @@ export function LyricsBackground({ snapshot, songId, onError }: {
       <YStack flexShrink={0} paddingVertical={Math.max(0, (height - ROW_HEIGHT) / 2)}>
         {parsed.lines.map((line, lineIndex) => <LyricRow key={`${line.start}:${lineIndex}`}
           line={line} translation={parsed.translations.get(line.start)} active={lineIndex === index}
+          nearby={Math.abs(lineIndex - (browsing ? selected : center)) <= 1}
           selected={browsing && lineIndex === selected} reduceMotion={reduceMotion}/>)}
       </YStack>
     </ScrollView>
+    <YStack position="absolute" inset={0} pointerEvents="none" backgroundImage={musicAtmosphere.lyricEdges}/>
     {browsing && <>
       <XStack position="absolute" top="50%" left="3" right="3" height={44} y={-22}
         alignItems="center" gap="2" pointerEvents="box-none">
@@ -165,21 +169,21 @@ export function LyricsBackground({ snapshot, songId, onError }: {
   </YStack>;
 }
 
-const LyricRow = memo(function LyricRow({ line, translation, active, selected, reduceMotion }: {
-  line: LyricLine; translation?: string; active: boolean; selected: boolean; reduceMotion: boolean;
+const LyricRow = memo(function LyricRow({ line, translation, active, nearby, selected, reduceMotion }: {
+  line: LyricLine; translation?: string; active: boolean; nearby: boolean; selected: boolean; reduceMotion: boolean;
 }) {
+  const focused = active || selected;
   return <YStack width="100%" maxWidth={720} alignSelf="center" height={ROW_HEIGHT} flexShrink={0}
-    paddingHorizontal={64} gap="2" alignItems="center" justifyContent="center"
-    transition={reduceMotion ? 'none' : 'quickLessBouncy'} scale={active || selected ? 1 : 0.88}
-    opacity={selected ? 0.85 : active ? 0.6 : 0.2}>
-    <Text fontSize="xl" fontWeight={active || selected ? '700' : '400'}
+    paddingHorizontal={28} gap="3" alignItems="center" justifyContent="center"
+    transition={reduceMotion ? 'none' : 'quickLessBouncy'} scale={focused ? 1 : 0.94}
+    opacity={focused ? 1 : nearby ? 0.38 : 0.16}>
+    <Text fontSize={focused ? 28 : 23} lineHeight={1.36} fontWeight={focused ? '700' : '500'}
       transition={reduceMotion ? 'none' : 'quickLessBouncy'}
-      textShadowColor="accent-background" textShadowRadius={active ? 12 : 0}
+      backgroundImage={focused ? musicAtmosphere.lyricInk : undefined} backgroundClip={focused ? 'text' : undefined}
+      textShadowColor="lyricGlow" textShadowRadius={focused ? 8 : 0}
       textShadowOffset={{ width: 0, height: 0 }}
-      color="color" textAlign="center" numberOfLines={2}>{line.text || '♪'}</Text>
-    {translation && <Text fontSize="sm" color="color-10" textAlign="center" numberOfLines={2}
-      transition={reduceMotion ? 'none' : 'quickLessBouncy'}
-      textShadowColor="accent-background" textShadowRadius={active ? 6 : 0}
-      textShadowOffset={{ width: 0, height: 0 }}>{translation}</Text>}
+      color={focused ? 'transparent' : nearby ? 'lyricNearby' : 'lyricRest'} textAlign="center" numberOfLines={2}>{line.text}</Text>
+    {translation && <Text fontSize={15} lineHeight={1.5} color="lyricTranslation" opacity={focused ? 0.76 : 0.65}
+      textAlign="center" numberOfLines={2}>{translation}</Text>}
   </YStack>;
 });
