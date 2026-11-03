@@ -258,7 +258,7 @@ async function publishGitHub(buildNumber, sha, apk) {
   })));
   await uploadDraftAssets({ api, draft, files, digest: sha256File,
     upload: (url, file) => run('gh', ['api', url, '--method', 'POST',
-      '--header', 'Content-Type: application/octet-stream', '--input', file]),
+      '--header', 'Content-Type: application/octet-stream', '--input', file], { timeout: 180_000 }),
   });
   console.log('[github] 资产校验通过，发布 Release 并标记 Latest');
   const published = api(`releases/${draft.id}`, 'PATCH', { draft: false, make_latest: 'true' });
