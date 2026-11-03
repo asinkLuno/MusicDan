@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { MotionConfig, motion } from 'motion/react';
+import { LazyMotion, MotionConfig, domAnimation, m } from 'motion/react';
 import { ArrowDownToLine, AudioLines, Code2, Layers, MessageCircle, Search, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,9 +10,13 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-const overlay = '/screenshots/november-rain-danmaku.webp';
-const danmaku = '/screenshots/app-danmaku.webp';
-const search = '/screenshots/november-rain-search.webp';
+const overlay = '/screenshots/november-rain-danmaku';
+const danmaku = '/screenshots/app-danmaku';
+const search = '/screenshots/november-rain-search';
+const heroSizes = '(min-width: 640px) 384px, calc(100vw - 48px)';
+const cardSizes = '(min-width: 1152px) 492px, (min-width: 768px) calc(50vw - 84px), (min-width: 640px) calc(100vw - 112px), calc(100vw - 80px)';
+const srcSet = (base: string, format: 'avif' | 'webp') =>
+  [540, 810, 1080].map(width => `${base}-${width}.${format} ${width}w`).join(', ');
 import './index.css';
 
 const repository = 'https://github.com/asinkLuno/MusicDan';
@@ -78,7 +82,7 @@ function App() {
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-6 sm:px-10">
         <Button asChild variant="ghost" className="gap-2 px-0 text-lg font-semibold">
           <a href="/" aria-label="MusicDan 首页">
-            <img src="/brand/icon.svg" alt="" width={28} height={28} className="size-7" />
+            <img src="/brand/icon-128.webp" alt="" width={28} height={28} className="size-7" />
             MusicDan
           </a>
         </Button>
@@ -98,23 +102,26 @@ function App() {
               <Button asChild size="lg" variant="outline"><a href="#experience">看看实际效果</a></Button>
             </div>
           </div>
-          <motion.div className="mx-auto w-full max-w-sm" {...reveal}>
+          <m.div className="mx-auto w-full max-w-sm" {...reveal}>
             <Card className="gap-0 p-0">
               <CardContent className="p-0">
                 <AspectRatio ratio={6 / 13}>
-                  <img src={overlay} alt="MusicDan 实际运行画面，November Rain 合并评论与双语歌词" width={1080} height={2340} fetchPriority="high" className="size-full object-cover" />
+                  <picture className="block size-full">
+                    <source type="image/avif" srcSet={srcSet(overlay, 'avif')} sizes={heroSizes} />
+                    <img src={`${overlay}-1080.webp`} srcSet={srcSet(overlay, 'webp')} sizes={heroSizes} alt="MusicDan 实际运行画面，November Rain 合并评论与双语歌词" width={1080} height={2340} fetchPriority="high" className="size-full object-cover" />
+                  </picture>
                 </AspectRatio>
               </CardContent>
             </Card>
-          </motion.div>
+          </m.div>
         </section>
 
         <section id="experience" aria-labelledby="experience-title" className="space-y-8">
-          <motion.div className="max-w-xl space-y-3" {...reveal}>
+          <m.div className="max-w-xl space-y-3" {...reveal}>
             <h2 id="experience-title" className="text-3xl font-semibold tracking-tight">本地音乐，在线评论</h2>
             <p className="leading-relaxed text-muted-foreground">不用换播放器。自动识别正在播放的歌曲，把散落在评论区的文字带到你眼前。</p>
-          </motion.div>
-          <motion.div className="grid gap-6 md:grid-cols-2" {...reveal}>
+          </m.div>
+          <m.div className="grid gap-6 md:grid-cols-2" {...reveal}>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl"><Layers aria-hidden="true" className="size-5" /> 弹幕，浮在音乐之上</CardTitle>
@@ -122,7 +129,10 @@ function App() {
               </CardHeader>
               <CardContent>
                 <AspectRatio ratio={6 / 13} className="overflow-hidden rounded-lg bg-muted">
-                  <img src={danmaku} alt="MusicDan 播放 Creep 时的应用内弹幕，1000 条热评跟随进度滚动" width={1080} height={2340} loading="lazy" className="size-full object-contain" />
+                  <picture className="block size-full">
+                    <source type="image/avif" srcSet={srcSet(danmaku, 'avif')} sizes={cardSizes} />
+                    <img src={`${danmaku}-1080.webp`} srcSet={srcSet(danmaku, 'webp')} sizes={cardSizes} alt="MusicDan 播放 Creep 时的应用内弹幕，1000 条热评跟随进度滚动" width={1080} height={2340} loading="lazy" className="size-full object-contain" />
+                  </picture>
                 </AspectRatio>
               </CardContent>
               <CardFooter><MessageCircle aria-hidden="true" className="mr-2 size-4" /> 热评优先，上千条评论跟随播放进度滚动</CardFooter>
@@ -134,15 +144,18 @@ function App() {
               </CardHeader>
               <CardContent>
                 <AspectRatio ratio={6 / 13} className="overflow-hidden rounded-lg bg-muted">
-                  <img src={search} alt="搜索歌曲并勾选多个版本以合并评论" width={1080} height={2340} loading="lazy" className="size-full object-contain" />
+                  <picture className="block size-full">
+                    <source type="image/avif" srcSet={srcSet(search, 'avif')} sizes={cardSizes} />
+                    <img src={`${search}-1080.webp`} srcSet={srcSet(search, 'webp')} sizes={cardSizes} alt="搜索歌曲并勾选多个版本以合并评论" width={1080} height={2340} loading="lazy" className="size-full object-contain" />
+                  </picture>
                 </AspectRatio>
               </CardContent>
               <CardFooter><AudioLines aria-hidden="true" className="mr-2 size-4" /> 字号、不透明度、显示上限随时调整</CardFooter>
             </Card>
-          </motion.div>
+          </m.div>
         </section>
 
-        <motion.section id="download" aria-labelledby="download-title" {...reveal}>
+        <m.section id="download" aria-labelledby="download-title" {...reveal}>
           <Card>
             <CardHeader className="gap-3">
               <CardTitle id="download-title" role="heading" aria-level={2} className="text-3xl">下一首歌，和大家一起听。</CardTitle>
@@ -209,7 +222,7 @@ function App() {
               </Accordion>
             </CardContent>
           </Card>
-        </motion.section>
+        </m.section>
 
         <footer className="flex flex-wrap items-center justify-between gap-4 border-t pt-6 text-sm text-muted-foreground">
           <p>MusicDan · 让喜欢的歌，多一点共鸣。</p>
@@ -221,7 +234,9 @@ function App() {
 }
 
 createRoot(document.getElementById('root')!).render(
-  <MotionConfig reducedMotion="user">
-    <App />
-  </MotionConfig>,
+  <LazyMotion features={domAnimation} strict>
+    <MotionConfig reducedMotion="user">
+      <App />
+    </MotionConfig>
+  </LazyMotion>,
 );

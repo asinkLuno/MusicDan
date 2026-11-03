@@ -5,6 +5,7 @@ export const screenshotFiles = [
   'app-danmaku.png', 'app-fullscreen.png', 'app-search.png',
   'november-rain-danmaku.png', 'november-rain-fullscreen.png', 'november-rain-search.png',
 ];
+export const siteScreenshotFiles = ['app-danmaku.png', 'november-rain-danmaku.png', 'november-rain-search.png'];
 export async function screenshotInfo(name) {
   const png = await readFile(new URL(`artifacts/previews/${name}`, root));
   if (!png.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) throw new Error(`Invalid PNG: ${name}`);

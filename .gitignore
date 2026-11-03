@@ -35,4 +35,6 @@ src-tauri/gen/android/keystore.properties
 
 # Generated release site assets
 /website/public/screenshots/
+/website/public/brand/icon-128.webp
+/website/public/brand/favicon-64.png
 /artifacts/releases/

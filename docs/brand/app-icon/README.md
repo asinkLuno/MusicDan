@@ -12,6 +12,8 @@ SVG 字符均已转为路径，不依赖系统字体。原字体许可见 `Saras
 yarn tauri icon docs/brand/app-icon/icons.json
 ```
 
+官网构建会从本目录的 `icon.svg` 生成 `website/public/brand/icon-128.webp` 和 `favicon-64.png`，无需手动维护。
+
 自适应前景比例为 90%，为系统图标形状留出空间。应用图标为静态图，动态设计稿位于 `../logo-exploration/type-note/`。
 
 桌面版音符放大 8%；Android 前景比例由 80% 提升到 90%。背景光线与前景一致：左侧暗紫环境光、中部淡蓝反光、右侧偏下的柔白主光，沿左上到右下的方向逐渐提亮。
