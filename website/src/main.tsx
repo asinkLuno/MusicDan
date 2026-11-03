@@ -170,7 +170,7 @@ function App() {
                     <p className="text-sm text-muted-foreground">{(release.size / 1024 / 1024).toFixed(1)} MB · {new Date(release.published_at).toLocaleDateString('zh-CN')}</p>
                   </div>
                   <div className="flex flex-wrap gap-3">
-                    <Button asChild size="lg"><a href={release.download_url} download><ArrowDownToLine aria-hidden="true" /> 本站下载 APK</a></Button>
+                    <Button asChild size="lg"><a href={release.download_url} download={release.name}><ArrowDownToLine aria-hidden="true" /> 本站下载 APK</a></Button>
                     <Button asChild size="lg" variant="outline"><a href={release.github_url}><Code2 aria-hidden="true" /> GitHub 下载</a></Button>
                     <Button asChild variant="link"><a href={release.release_url}>查看更新说明</a></Button>
                   </div>

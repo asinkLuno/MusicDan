@@ -18,10 +18,11 @@ musicdan.syncmoon.ink {
 
     handle /releases/* {
         root * /srv/musicdan/public
-        # latest.apk 符号链接随版本切换，不能缓存；具体版本文件不可变，可长期缓存
+        # latest.apk 符号链接随版本切换，不能缓存；文件名不随链接泄露版本，
+        # 由官网下载按钮的 download 属性给出带版本的文件名
         @latestapk path /releases/latest.apk
         header @latestapk Content-Type application/vnd.android.package-archive
-        header @latestapk Content-Disposition attachment
+        header @latestapk Content-Disposition "attachment; filename=MusicDan_latest_arm64.apk"
         header @latestapk Cache-Control "no-store"
         @latestsum path /releases/latest.apk.sha256
         header @latestsum Cache-Control "no-store"
