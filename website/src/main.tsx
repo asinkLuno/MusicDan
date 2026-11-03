@@ -32,8 +32,7 @@ type Release = {
   size: number;
   sha256: string;
   download_url: string;
-  github_url: string;
-  release_url: string;
+  notes?: string;
   published_at: string;
 };
 
@@ -43,9 +42,7 @@ function validRelease(value: unknown): value is Release {
   return typeof release.version === 'string' && typeof release.name === 'string'
     && typeof release.size === 'number' && release.size > 0
     && typeof release.sha256 === 'string' && /^[a-f0-9]{64}$/.test(release.sha256)
-    && typeof release.download_url === 'string' && /^\/releases\/(?:latest\.apk|[\w.-]+\/MusicDan_[\w.-]+_arm64\.apk)$/.test(release.download_url)
-    && typeof release.github_url === 'string' && release.github_url.startsWith(`${repository}/releases/download/`)
-    && typeof release.release_url === 'string' && release.release_url.startsWith(`${repository}/releases/tag/`)
+    && typeof release.download_url === 'string' && /^\/releases\/(?:latest\.apk|(?:[\w.-]+\/)?MusicDan_[\w.-]+_arm64\.apk)$/.test(release.download_url)
     && typeof release.published_at === 'string' && Number.isFinite(Date.parse(release.published_at));
 }
 
@@ -159,7 +156,7 @@ function App() {
           <Card>
             <CardHeader className="gap-3">
               <CardTitle id="download-title" role="heading" aria-level={2} className="text-3xl">下一首歌，和大家一起听。</CardTitle>
-              <CardDescription>下载 APK 安装到 Android 手机。本站和 GitHub 提供相同的发布安装包。</CardDescription>
+              <CardDescription>从官网下载 APK 安装到 Android 手机，每个版本均提供 SHA-256 校验信息。</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {status === 'loading' ? <Skeleton className="h-10 w-52" aria-label="正在读取最新版本" /> : null}
@@ -171,8 +168,7 @@ function App() {
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <Button asChild size="lg"><a href={release.download_url} download={release.name}><ArrowDownToLine aria-hidden="true" /> 本站下载 APK</a></Button>
-                    <Button asChild size="lg" variant="outline"><a href={release.github_url}><Code2 aria-hidden="true" /> GitHub 下载</a></Button>
-                    <Button asChild variant="link"><a href={release.release_url}>查看更新说明</a></Button>
+                    <Button asChild variant="link"><a href="#release-notes">查看更新说明</a></Button>
                   </div>
                 </div>
               ) : null}
@@ -180,13 +176,19 @@ function App() {
                 <Alert>
                   <AlertTitle>暂时无法读取本站安装包</AlertTitle>
                   <AlertDescription>
-                    <p>可以前往 GitHub 下载最新正式版本。</p>
-                    <Button asChild variant="outline"><a href={`${repository}/releases/latest`}>前往 GitHub 下载</a></Button>
+                    <p>请稍后刷新重试，也可以直接使用固定下载地址。</p>
+                    <Button asChild variant="outline"><a href="/releases/latest.apk">下载最新 APK</a></Button>
                   </AlertDescription>
                 </Alert>
               ) : null}
               <p className="text-sm leading-relaxed text-muted-foreground">需要 Android 7.0（API 24）及以上。仅提供 arm64-v8a（64 位）安装包，暂不支持 32 位 armv7 或 x86 / x86_64 模拟器。</p>
               <Separator />
+              {release?.notes ? (
+                <div id="release-notes" className="space-y-3">
+                  <p className="font-medium">v{release.version} 更新内容</p>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{release.notes.replace(/^#{1,6} /gm, '')}</p>
+                </div>
+              ) : null}
               <Accordion type="single" collapsible>
                 <AccordionItem value="setup">
                   <AccordionTrigger>安装后，如何开启弹幕？</AccordionTrigger>
@@ -210,7 +212,7 @@ function App() {
                   <AccordionItem value="history">
                     <AccordionTrigger>历史版本下载</AccordionTrigger>
                     <AccordionContent className="space-y-3">
-                      {history.filter(item => item.download_url !== release?.download_url).map(item => (
+                      {history.filter(item => item.version !== release?.version).map(item => (
                         <div key={item.download_url} className="flex flex-wrap items-center justify-between gap-2">
                           <p>v{item.version} · {new Date(item.published_at).toLocaleDateString('zh-CN')}</p>
                           <Button asChild variant="outline"><a href={item.download_url} download>下载 {item.name}</a></Button>

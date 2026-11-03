@@ -16,12 +16,14 @@ yarn --cwd website shadcn add <控件名>
 
 服务器只提供静态文件，不再运行任何 GitHub 同步服务。推送 **releases 分支**时，本地 `pre-push` 钩子（`.githooks/pre-push`）执行 `scripts/release.mjs` 完成本地发布：
 
-1. **测试与官网**：运行前端与 Kotlin 插件测试；本地起 dev 服务与 headless Chrome 重建应用截图，`yarn build:release-site` 打包官网，上传服务器解压到新的 `site-*` 目录并原子切换 `/srv/musicdan/site` 符号链接。任一步失败则推送中止。
-2. **本地构建签名 APK**：`yarn tauri android build`（构建编号 = 最新已发布 build-N + 1，`versionCode = 1000000000 + 编号`），`apksigner` 与 `aapt` 校验签名和元数据。
-3. **发布 GitHub Release**：创建或复用草稿 `build-N`，始终按 Release ID 上传 APK 与官网包并核对大小及 SHA-256 摘要，通过后发布并标记 **Latest**，更新 `latest` 标签、创建版本标签 `v<版本>`。
-4. **同步服务器**：上传 APK 到 `/srv/musicdan/public/releases/`，原子切换 `latest.apk` 符号链接，更新 `latest.json` / `releases.json`（版本号从本地 package.json 读取，SHA-256 与 GitHub 资产摘要双向校验）。
+1. **测试**：运行前端、数据、发布逻辑和 Kotlin 插件测试。
+2. **本地构建**：运行真实前端重建截图、打包官网、构建签名 arm64 APK；校验签名与版本代码。
+3. **上传与校验**：从服务器 `releases.json` 分配下一个构建编号，将 APK、官网包、校验文件、说明和元数据上传到独立暂存目录，服务器再次校验 APK 和官网包的 SHA-256。
+4. **原子发布**：取得服务器发布锁并确认旧记录未变化，保留 `public/releases/build-N/` 为不可变版本目录；以 `public/latest` 符号链接一次切换官网、APK、版本信息和历史列表。旧目录保留用于回滚。
 
-任何失败都会中止发布并保留上一成功版本的 Latest 状态。重复执行幂等：未发布时复用草稿并替换附件；版本已发布时补齐官网、下载镜像和标签同步。pre-push 内部通过临时 `release-staging/<sha>` 分支提供提交，发布完成后删除，不提前更新外层推送的 `releases` 分支。
+不调用 GitHub API、不上传 GitHub Release 附件、不推送发布标签。历史 GitHub Release 和标签保留。构建编号兼容迁移前的 `build-N` 记录，Android versionCode 继续递增。
+
+重复执行时，已发布版本校验服务器 APK 后跳过；未发布版本重新构建上传。读取服务器失败会直接终止，不会清空历史或重置构建编号。
 
 首次克隆仓库需要启用钩子：
 
@@ -29,7 +31,7 @@ yarn --cwd website shadcn add <控件名>
 git config core.hooksPath .githooks
 ```
 
-也可手动操作：`yarn release`（完整发布）；`node scripts/release.mjs --sync-server-only`（不构建，把 GitHub 最新发布同步到服务器）。
+也可运行 `yarn release` 完整发布；`node scripts/release.mjs --site-only` 只重建部署官网。原 `--sync-server-only` 已移除。
 
 ## 公开路径
 
@@ -37,7 +39,8 @@ git config core.hooksPath .githooks
 - `/latest.json`：当前最新版本的元数据（服务器文件 `public/latest/release.json`）。
 - `/releases.json`：历史版本列表。
 - `/releases/latest.apk`：**固定下载地址**，始终指向最新发布版本（`.sha256` 为校验文件）。
-- `/releases/<tag>/MusicDan_<版本>_arm64.apk`：历史不可变安装包。
+- `/releases/build-N/MusicDan_<版本>_arm64.apk`：历史不可变安装包。
+- `/releases/build-N/release-notes.md`：该版本的更新说明。
 
 `latest.apk` 与 `/latest.json` 设置 `no-store`；具体版本文件 `immutable` 长缓存。
 
@@ -60,4 +63,4 @@ readlink /srv/musicdan/public/releases/latest.apk
 docker logs --tail 50 caddy
 ```
 
-`site-*` 与历史 APK 目录保留作为回滚点；回滚页面只需把 `/srv/musicdan/site` 符号链接切回旧目录。定期关注磁盘空间。
+历史 `public/releases/build-N/` 目录保留作为回滚点；将 `public/latest` 原子切回对应目录即可同时回滚官网、APK 和发布记录。`--site-only` 单独部署的页面可通过 `/srv/musicdan/site` 切回旧目录。定期关注磁盘空间。

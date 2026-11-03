@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 推送 releases 分支即发布：本地完成测试、签名构建 APK、GitHub Release 与官网部署
+# 推送 releases 分支即发布：本地完成测试、签名构建 APK、官网与 APK 直接发布
 # （scripts/release.mjs）。失败会中止推送；重复执行幂等。
 # 其他克隆需要启用钩子：git config core.hooksPath .githooks
 set -euo pipefail

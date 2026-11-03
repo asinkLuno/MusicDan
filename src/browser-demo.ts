@@ -25,12 +25,12 @@ let manualMatch = false;
 // 设置页“版本与更新”演示数据：与 v0.4.3 真实发布说明一致，检查结果为已是最新版本
 const demoRelease: ReleaseInfo = {
   version: '0.4.3',
-  pageUrl: 'https://github.com/asinkLuno/MusicDan/releases/tag/build-17',
-  apkUrl: 'https://github.com/asinkLuno/MusicDan/releases/download/build-17/MusicDan_0.4.3_arm64.apk',
+  pageUrl: 'https://musicdan.syncmoon.ink/#download',
+  apkUrl: 'https://musicdan.syncmoon.ink/releases/build-17/MusicDan_0.4.3_arm64.apk',
   notes: [
     '## 📱 Android 用户请下载这个文件',
     '',
-    '**[`MusicDan_0.4.3_arm64.apk`](https://github.com/asinkLuno/MusicDan/releases/download/build-17/MusicDan_0.4.3_arm64.apk)**',
+    '**[`MusicDan_0.4.3_arm64.apk`](https://musicdan.syncmoon.ink/releases/build-17/MusicDan_0.4.3_arm64.apk)**',
     '',
     '## ✨ v0.4.3 更新内容',
     '',

@@ -1,16 +1,8 @@
-// 本地发布：推送 releases 分支时由 .githooks/pre-push 调用，也可手动运行。
-// GitHub 不再托管构建：测试、签名 APK、发布 Release、部署官网与下载镜像全部在本地完成。
-//
-// 完整发布：
-//   node scripts/release.mjs --pushed-sha <sha>   # 钩子调用；版本号与内容取该提交
-//   node scripts/release.mjs                      # 手动；需在发布提交的工作区上
-// 仅同步服务器（当前版本已在 GitHub 发布时补齐官网下载与元数据）：
-//   node scripts/release.mjs --sync-server-only
-//
-// 发布内容顺序遵循 AGENTS.md：测试、签名校验、附件上传成功后才发布 Release 并更新 latest。
-// 重复执行幂等：当前版本已发布时跳过构建与发布，仅补服务器同步。
+// 本地测试、签名构建，直接发布官网与 APK；不调用 GitHub API 或推送 Git 标签。
+// yarn release / 推送 releases 分支：完整发布；--site-only：仅重建官网。
+// 服务器 releases.json 是构建编号和已发布版本的唯一来源。
 
-import { prepareDraft, uploadDraftAssets } from './release-github.mjs';
+import { nextBuildNumber, releaseHistory, publishCommand } from './release-state.mjs';
 import { spawn, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import net from 'node:net';
@@ -24,14 +16,13 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const ECS_INSTANCE = process.env.MUSICDAN_ECS_INSTANCE;
 const ECS_BASE = '/srv/musicdan';
 const MACMINI_STAGE = '/tmp/musicdan-deploy';
-const REPOSITORY = 'https://github.com/asinkLuno/MusicDan';
-const REPO_SLUG = 'asinkLuno/MusicDan';
+const WEBSITE = 'https://musicdan.syncmoon.ink';
 const ANDROID_BUILD_TOOLS = '37.0.0';
 const ANDROID_PROJECT = path.join(root, 'src-tauri/gen/android');
 
 const args = process.argv.slice(2);
 const pushedSha = args.includes('--pushed-sha') ? args[args.indexOf('--pushed-sha') + 1] : null;
-const syncServerOnly = args.includes('--sync-server-only');
+if (args.includes('--sync-server-only')) throw new Error('--sync-server-only 已移除；请运行 yarn release，已发布版本会自动校验并跳过');
 const siteOnly = args.includes('--site-only');
 
 function run(command, cliArgs, options = {}) {
@@ -143,22 +134,6 @@ function runTests() {
   });
 }
 
-/** 下一个构建编号 = GitHub 上最新已发布 build-N + 1（延续历史 versionCode 体系） */
-function listReleases() {
-  return JSON.parse(run('gh', ['api', '--paginate', '--slurp', `repos/${REPO_SLUG}/releases?per_page=100`])).flat();
-}
-
-function nextBuildNumber() {
-  const releases = listReleases();
-  const latest = releases
-    .filter(release => !release.draft && !release.prerelease)
-    .map(release => /^build-(\d+)$/.exec(release.tag_name)?.[1])
-    .filter(Boolean)
-    .map(Number)
-    .sort((a, b) => b - a)[0] ?? 0;
-  return latest + 1;
-}
-
 function buildTool(name) {
   return path.join(process.env.ANDROID_HOME || `${process.env.HOME}/Android/Sdk`, 'build-tools', ANDROID_BUILD_TOOLS, name);
 }
@@ -209,168 +184,66 @@ async function buildApk(buildNumber) {
   return canonical;
 }
 
-/** GitHub Release 说明：下载小节与系统要求按 AGENTS.md 模板生成，更新内容读 release-notes.md */
-async function releaseBody(tag) {
-  const notes = (await readFile(path.join(root, 'release-notes.md'), 'utf8')).trim();
-  if (!notes || !notes.includes('更新内容')) throw new Error('release-notes.md 为空或缺少“更新内容”：请填写本次版本的更新说明');
-  return [
-    '## 📱 Android 用户请下载这个文件',
-    '',
-    `**[\`${apkName}\`](${REPOSITORY}/releases/download/${tag}/${apkName})**`,
-    '',
-    notes,
-    '',
-    '## 📋 系统要求',
-    '',
-    '- 需要 **Android 7.0（API 24）及以上**。',
-    '- 仅提供 arm64-v8a（64 位）安装包；暂不提供 32 位 armv7 和模拟器（x86/x86_64）的包。',
-    '',
-  ].join('\n');
+/** 发布记录必须从服务器读取；网络错误不得当成空历史继续发布。 */
+function readServerState() {
+  return JSON.parse(ecs(`cat ${ECS_BASE}/public/releases.json`));
 }
 
-/** 当前版本对应的已发布正式 Release（含 APK 资产）；未发布返回 null */
-function findPublishedRelease() {
-  const release = listReleases().find(item => !item.draft && !item.prerelease
-    && item.assets?.some(asset => asset.name === apkName));
-  if (!release) return null;
-  const asset = release.assets.find(item => item.name === apkName);
-  return { release, asset };
-}
-
-/** 创建 draft Release → 上传并校验资产 → 发布并标记 Latest（失败保留 draft，不影响上一版 Latest） */
-async function publishGitHub(buildNumber, sha, apk) {
-  const tag = `build-${buildNumber}`;
-  const body = await releaseBody(tag);
-  // pre-push 的外层推送尚未完成：使用临时分支提供提交，不能提前改动 releases（会使外层推送失败）
-  // （--no-verify：钩子会再次触发本脚本造成递归发布，内部推送必须跳过钩子）
-  const stagingRef = `refs/heads/release-staging/${sha}`;
-  run('git', ['push', '--no-verify', 'origin', `${sha}:${stagingRef}`]);
-  const api = (route, method = 'GET', fields) => {
-    const output = run('gh', ['api', `repos/${REPO_SLUG}/${route}`, '--method', method,
-      ...(fields ? ['--input', '-'] : [])], fields ? { input: JSON.stringify(fields) } : {});
-    return output.trim() ? JSON.parse(output) : null;
-  };
-  const draft = await prepareDraft({ api, releases: listReleases(), tag, sha,
-    title: `MusicDan v${version}`, body });
-  console.log(`[github] 上传并校验草稿 ${tag}（ID ${draft.id}）`);
-  const files = await Promise.all([apk, siteBundle].map(async file => ({
-    path: file, name: path.basename(file), size: (await stat(file)).size,
-  })));
-  await uploadDraftAssets({ api, draft, files, digest: sha256File,
-    upload: (url, file) => run('gh', ['api', url, '--method', 'POST',
-      '--header', 'Content-Type: application/octet-stream', '--input', file], { timeout: 180_000 }),
-  });
-  console.log('[github] 资产校验通过，发布 Release 并标记 Latest');
-  const published = api(`releases/${draft.id}`, 'PATCH', { draft: false, make_latest: 'true' });
-  // 版本标签不可变；latest 便捷标签指向发布提交
-  run('git', ['tag', '-f', 'latest', sha]);
-  if (!run('git', ['tag', '--list', `v${version}`]).trim()) {
-    run('git', ['tag', `v${version}`, sha]);
-  }
-  run('git', ['push', '--no-verify', 'origin', `v${version}`]);
-  run('git', ['push', '--no-verify', 'origin', 'latest', '--force']);
-  run('git', ['push', '--no-verify', 'origin', '--delete', stagingRef]);
-  return { tag, releaseId: published.id, publishedAt: published.published_at };
-}
-
-/** 部署 APK 与元数据到服务器；下载地址固定 latest.apk，原子切换符号链接 */
-async function syncServer(apk, meta) {
+/** 先上传所有文件、核对摘要，最后切换公开下载与元数据。 */
+async function publishServer(apk, buildNumber, sha, previous) {
   const sha256 = await sha256File(apk);
-  const size = (await readFile(apk)).length;
-  const checksum = path.join(path.dirname(apk), `${apkName}.sha256`);
-  await writeFile(checksum, `${sha256}  ${apkName}\n`);
-  console.log('[server] 上传 APK 与校验文件');
-  await upload(apk, '/tmp/');
-  await upload(checksum, '/tmp/');
-  ecs(`set -e; mv /tmp/${apkName} /tmp/${apkName}.sha256 ${ECS_BASE}/public/releases/; chown musicdan:musicdan ${ECS_BASE}/public/releases/${apkName}*`);
-  ecs(`set -e; cd ${ECS_BASE}/public/releases; ln -sfn ${apkName} latest.apk; ln -sfn ${apkName}.sha256 latest.apk.sha256`);
-
+  const siteSha256 = await sha256File(siteBundle);
+  const notes = (await readFile(path.join(root, 'release-notes.md'), 'utf8')).trim();
+  if (!notes.includes(`v${version} 更新内容`)) throw new Error('release-notes.md 与当前版本不符');
   const entry = {
-    version,
-    release_id: meta.releaseId,
-    name: apkName,
-    size,
-    sha256,
+    version, build_number: buildNumber, version_code: 1_000_000_000 + buildNumber,
+    source_commit: sha, name: apkName, size: (await stat(apk)).size, sha256,
     download_url: '/releases/latest.apk',
-    github_url: `${REPOSITORY}/releases/download/${meta.tag}/${apkName}`,
-    release_url: `${REPOSITORY}/releases/tag/${meta.tag}`,
-    published_at: meta.publishedAt,
+    release_url: `/releases/build-${buildNumber}/release-notes.md`,
+    notes, published_at: new Date().toISOString(),
   };
-  const previous = await fetch('https://musicdan.syncmoon.ink/releases.json', { cache: 'no-store' })
-    .then(response => response.ok ? response.json() : []).catch(() => []);
-  const history = Array.isArray(previous) ? previous.filter(item => item?.version !== version) : [];
-  const work = await mkdtemp(path.join(tmpdir(), 'musicdan-meta-'));
-  await writeFile(path.join(work, 'musicdan-release.json'), JSON.stringify(entry, null, 2) + '\n');
-  await writeFile(path.join(work, 'musicdan-releases.json'), JSON.stringify([entry, ...history], null, 2) + '\n');
-  console.log('[server] 更新 latest.json 与 releases.json');
-  await upload(path.join(work, 'musicdan-release.json'), '/tmp/');
-  await upload(path.join(work, 'musicdan-releases.json'), '/tmp/');
-  // 旧安装曾把 public/latest 做成指向 build 目录的符号链接：替换为真实目录，避免 mv 穿透写进旧版本
-  ecs(`set -e; if [ -L ${ECS_BASE}/public/latest ]; then rm ${ECS_BASE}/public/latest; fi; mkdir -p ${ECS_BASE}/public/latest; mv /tmp/musicdan-release.json ${ECS_BASE}/public/latest/release.json; mv /tmp/musicdan-releases.json ${ECS_BASE}/public/releases.json; chown musicdan:musicdan ${ECS_BASE}/public/latest/release.json ${ECS_BASE}/public/releases.json`);
-  await rm(work, { recursive: true, force: true });
-  console.log(`[server] v${version} 已上线：https://musicdan.syncmoon.ink/releases/latest.apk`);
-}
-
-/** --sync-server-only：从 GitHub 最新发布取 APK 同步到服务器（不构建、不改 Release） */
-async function syncServerFromGitHub() {
-  const published = findPublishedRelease();
-  if (!published) throw new Error(`GitHub 上没有 v${version} 的正式发布`);
-  const { release, asset } = published;
-  const websiteAsset = release.assets.find(item => item.name === path.basename(siteBundle));
-  if (asset.digest && !asset.digest.startsWith('sha256:')) throw new Error(`未知的资产摘要格式：${asset.digest}`);
-  const work = await mkdtemp(path.join(tmpdir(), 'musicdan-apk-'));
-  console.log(`[server] 从 GitHub 下载 ${asset.name}`);
-  run('gh', ['release', 'download', release.tag_name, '--repo', REPO_SLUG,
-    '--pattern', asset.name, '--dir', work, '--clobber']);
-  const apk = path.join(work, asset.name);
-  if (asset.digest && asset.digest.slice('sha256:'.length) !== await sha256File(apk)) {
-    throw new Error('下载的 APK 摘要与 GitHub 不一致');
-  }
-  if (websiteAsset) {
-    run('gh', ['release', 'download', release.tag_name, '--repo', REPO_SLUG,
-      '--pattern', websiteAsset.name, '--dir', work, '--clobber']);
-    const downloadedSite = path.join(work, websiteAsset.name);
-    if (!websiteAsset.digest || websiteAsset.digest !== `sha256:${await sha256File(downloadedSite)}`) {
-      throw new Error('下载的官网包摘要与 GitHub 不一致');
+  const work = await mkdtemp(path.join(tmpdir(), 'musicdan-publish-'));
+  const stage = `${ECS_BASE}/.stage-${buildNumber}-${sha.slice(0, 12)}-${Date.now()}`;
+  try {
+    await writeFile(path.join(work, `${apkName}.sha256`), `${sha256}  ${apkName}\n`);
+    await writeFile(path.join(work, 'release.json'), JSON.stringify(entry, null, 2) + '\n');
+    await writeFile(path.join(work, 'releases.json'), JSON.stringify(releaseHistory(entry, previous), null, 2) + '\n');
+    await writeFile(path.join(work, 'release-notes.md'), notes + '\n');
+    ecs(`mkdir -p ${stage}`);
+    for (const file of [apk, siteBundle, ...['release.json', 'releases.json', 'release-notes.md', `${apkName}.sha256`].map(name => path.join(work, name))]) {
+      console.log(`[server] 上传 ${path.basename(file)}`);
+      upload(file, stage);
     }
-    run('mkdir', ['-p', path.dirname(siteBundle)]);
-    run('cp', [downloadedSite, siteBundle]);
-    await deploySite();
+    const expectedState = createHash('sha256').update(JSON.stringify(previous)).digest('hex');
+    // flock prevents simultaneous publishers; compare the original records again before committing.
+    // Published metadata, APK and website share one atomic public/latest symlink switch.
+    ecs(publishCommand({ base: ECS_BASE, stage, buildNumber, sha256, siteSha256,
+      apkName, siteBundleName: path.basename(siteBundle), expectedState }));
+    console.log(`[server] v${version} 已发布：${WEBSITE}/releases/latest.apk`);
+  } finally {
+    await rm(work, { recursive: true, force: true });
   }
-  run('git', ['fetch', 'origin', `refs/tags/${release.tag_name}`]);
-  const sha = run('git', ['rev-parse', 'FETCH_HEAD^{commit}']).trim();
-  run('git', ['push', '--no-verify', 'origin', `${sha}:refs/tags/v${version}`]);
-  run('git', ['push', '--no-verify', 'origin', `${sha}:refs/tags/latest`, '--force']);
-  await syncServer(apk, {
-    releaseId: release.id,
-    tag: release.tag_name,
-    publishedAt: asset.updated_at || release.published_at,
-  });
-  await rm(work, { recursive: true, force: true });
 }
 
-if (syncServerOnly) {
-  await syncServerFromGitHub();
-} else if (siteOnly) {
+if (siteOnly) {
   await buildSiteBundle();
   await deploySite();
 } else {
-  // 完整发布：工作区必须就是待发布的提交（树一致），保证本地构建内容与推送内容相同
-  const treeOf = sha => run('git', ['rev-parse', `${sha}^{tree}`]).trim();
-  if (pushedSha && treeOf(pushedSha) !== treeOf('HEAD')) {
+  const sha = pushedSha ?? run('git', ['rev-parse', 'HEAD']).trim();
+  if (run('git', ['rev-parse', `${sha}^{tree}`]).trim() !== run('git', ['rev-parse', 'HEAD^{tree}']).trim()) {
     throw new Error('当前工作区不是待发布的提交；请在发布提交上执行推送');
   }
-  if (findPublishedRelease()) {
-    console.log(`[release] v${version} 已在 GitHub 发布，跳过构建，仅同步服务器`);
-    await syncServerFromGitHub();
+  const previous = readServerState();
+  const published = previous.find(item => item.version === version);
+  if (published) {
+    const existingPath = published.build_number ? `build-${published.build_number}/${published.name}` : published.name;
+    ecs(`cd ${ECS_BASE}/public/releases; printf '%s  %s\n' '${published.sha256}' '${existingPath}' | sha256sum -c -`);
+    console.log(`[release] v${version} 已发布且 APK 摘要正确，跳过重复构建`);
   } else {
-    const sha = pushedSha ?? run('git', ['rev-parse', 'HEAD']).trim();
-    await runTests();
+    const buildNumber = nextBuildNumber(previous);
+    runTests();
     await buildSiteBundle();
-    const buildNumber = nextBuildNumber();
     const apk = await buildApk(buildNumber);
-    const meta = await publishGitHub(buildNumber, sha, apk);
-    await deploySite();
-    await syncServer(apk, meta);
+    await publishServer(apk, buildNumber, sha, previous);
   }
 }

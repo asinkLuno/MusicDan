@@ -53,7 +53,7 @@
 
 ## 下载
 
-- 官网 [musicdan.syncmoon.ink](https://musicdan.syncmoon.ink) 与 [GitHub Releases](https://github.com/asinkLuno/MusicDan/releases) 提供相同的发布安装包，每个版本附 SHA-256 校验值
+- 通过官网 [musicdan.syncmoon.ink](https://musicdan.syncmoon.ink) 下载最新安装包，每个版本附 SHA-256 校验值；应用内检查更新同样使用官网发布记录
 - 需要 **Android 7.0（API 24）及以上**；仅提供 arm64-v8a（64 位）安装包，暂不支持 32 位 armv7 或 x86 / x86_64 模拟器
 
 安装后开启弹幕：

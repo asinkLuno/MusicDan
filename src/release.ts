@@ -1,4 +1,4 @@
-// 设置页“版本与更新”的纯逻辑：版本号比较与 GitHub Release 说明解析。
+// 设置页“版本与更新”的纯逻辑：版本号比较与 官网发布说明解析。
 // 不依赖 DOM / Tamagui，便于 node --test 直接测试。
 
 export interface ReleaseInfo { version: string; pageUrl: string; apkUrl: string | null; notes: string }
