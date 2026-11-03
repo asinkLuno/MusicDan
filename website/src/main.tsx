@@ -10,9 +10,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-const overlay = '/screenshots/november-rain-danmaku.png';
-const danmaku = '/screenshots/app-danmaku.png';
-const search = '/screenshots/november-rain-search.png';
+const overlay = '/screenshots/november-rain-danmaku.webp';
+const danmaku = '/screenshots/app-danmaku.webp';
+const search = '/screenshots/november-rain-search.webp';
 import './index.css';
 
 const repository = 'https://github.com/asinkLuno/MusicDan';
