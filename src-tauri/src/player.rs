@@ -16,6 +16,7 @@ pub struct Settings {
     pub comment_limit: Option<u32>,
     pub comment_refresh_percent: u32,
     pub keep_screen_on_fullscreen: bool,
+    pub pin_long_comments: bool,
 }
 impl Default for Settings {
     fn default() -> Self {
@@ -25,6 +26,7 @@ impl Default for Settings {
             comment_limit: Some(1000),
             comment_refresh_percent: 10,
             keep_screen_on_fullscreen: false,
+            pin_long_comments: true,
         }
     }
 }

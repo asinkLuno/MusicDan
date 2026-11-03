@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { commentFontSize, commentKey, crossingDuration, makePlan, visibleRange } from './plan.ts';
+import { commentFontSize, commentKey, crossingDuration, makePlan, pinDurationMs, readingDurationMs, visibleRange } from './plan.ts';
 import { defaults } from './types.ts';
 const comments = Array.from({ length: 500 }, (_, i) => ({ commentId: i, content: `评论 ${i}`, liked_count: i, time: i }));
 test('auto tracks fit the viewport and retain every comment even when overlapping', () => {
@@ -61,4 +61,24 @@ test('frequent merged comments grow in size with a bounded maximum', () => {
   assert.ok(commentFontSize(16, 4) > commentFontSize(16, 2));
   assert.equal(commentFontSize(16, 1000), 32);
   assert.equal(commentFontSize(16, 0), 16);
+});
+test('comments that read slower than they fly get pinned to the top queue', () => {
+  const short = { commentId: 1, content: '好听', liked_count: 1, time: 1 };
+  const long = { commentId: 2, content: '这段旋律从第一次听到现在已经循环了整整一个星期，每次副歌起来还是起鸡皮疙瘩', liked_count: 2, time: 2 };
+  const plan = makePlan([short, long], 60000, 600, defaults, 360);
+  assert.deepEqual(plan.list.map(c => c.content), ['好听']);
+  assert.deepEqual(plan.pinned.list.map(c => c.content), [long.content]);
+  assert.equal(plan.pinned.spacing, 60000);
+});
+test('pinned mode off keeps every comment in the flow', () => {
+  const long = { commentId: 1, content: '长'.repeat(60), liked_count: 1, time: 1 };
+  const plan = makePlan([long], 60000, 600, { ...defaults, pinLongComments: false }, 360);
+  assert.equal(plan.list.length, 1);
+  assert.equal(plan.pinned.list.length, 0);
+});
+test('pin dwell grows with length and stays bounded; reading time grows with content', () => {
+  assert.equal(pinDurationMs('好听'), 6000);
+  assert.ok(pinDurationMs('长'.repeat(200)) === 12000);
+  assert.ok(pinDurationMs('长'.repeat(50)) > pinDurationMs('好听'));
+  assert.ok(readingDurationMs('x'.repeat(50)) > readingDurationMs('x'.repeat(10)));
 });

@@ -123,6 +123,7 @@ export async function demoInvoke<T>(command: string, args?: Record<string, unkno
       break;
     }
     case 'plugin:media|set_keep_screen_on': break;
+    case 'plugin:media|haptic_feedback': break;
     case 'check_update': result = { currentVersion: demoRelease.version, latest: demoRelease, currentRelease: demoRelease } satisfies UpdateStatus; break;
     case 'plugin:media|open_url': break;
     default: throw new Error(`浏览器演示暂不支持：${command}`);

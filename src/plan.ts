@@ -1,6 +1,6 @@
 import type { Comment, Settings } from './types.ts';
 /** Fit tracks to the viewport; dense comments overlap rather than being discarded. */
-export function makePlan(comments: Comment[], duration: number, height: number, cfg: Settings) {
+export function makePlan(comments: Comment[], duration: number, height: number, cfg: Settings, width = 360) {
   const lanes = Math.max(1, Math.floor(height / (cfg.fontSize * 1.8)));
   const seen = new Set<number>();
   const groups = new Map<string, Comment>();
@@ -15,7 +15,37 @@ export function makePlan(comments: Comment[], duration: number, height: number, 
   const unique = [...groups.values()];
   if (cfg.commentLimit != null) unique.sort((a, b) => b.liked_count - a.liked_count || a.time - b.time);
   const list = (cfg.commentLimit == null ? unique : unique.slice(0, cfg.commentLimit)).sort((a, b) => a.time - b.time || a.commentId - b.commentId);
-  return { list, lanes, spacing: duration / Math.max(1, list.length) };
+  // 阅读时间超过穿屏时间的评论单独成队，在顶部驻留显示；其余继续穿屏
+  let crossing = crossingDuration(width, cfg.fontSize, lanes, list.length, duration);
+  let flow = list;
+  const pinned: Comment[] = [];
+  if (cfg.pinLongComments) {
+    for (let pass = 0; pass < 3; pass++) {
+      const tooFast = flow.filter(comment => readingDurationMs(comment.content) > crossing);
+      if (!tooFast.length) break;
+      pinned.push(...tooFast);
+      flow = flow.filter(comment => readingDurationMs(comment.content) <= crossing);
+      crossing = crossingDuration(width, cfg.fontSize, lanes, flow.length, duration);
+    }
+  }
+  return {
+    list: flow,
+    lanes,
+    spacing: duration / Math.max(1, flow.length),
+    crossing,
+    pinned: { list: pinned, spacing: duration / Math.max(1, pinned.length) },
+  };
+}
+
+/** 读完一条评论所需的时间：起读开销 + 按字数的阅读速度 */
+export function readingDurationMs(content: string): number {
+  const chars = Array.from(content.replaceAll('\n', ' ').trim()).length;
+  return 1200 + chars * 140;
+}
+
+/** 驻留时长随评论长度伸缩，上下限保证可读 */
+export function pinDurationMs(content: string): number {
+  return Math.min(12000, Math.max(6000, 4000 + Array.from(content).length * 80));
 }
 export function visibleRange(position: number, crossing: number, spacing: number, count: number): [number, number] {
   return [Math.max(0, Math.ceil((position - crossing) / spacing)), Math.min(count - 1, Math.floor(position / spacing))];

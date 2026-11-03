@@ -27,7 +27,8 @@ let updateCache: UpdateStatus | null = null;
 
 function Button(props: React.ComponentProps<typeof AnimatedButton>) {
   const { reduceMotion } = useMedia();
-  return <AnimatedButton {...props} transition={reduceMotion ? undefined : 'quickerLessBouncy'} scale={reduceMotion ? 1 : '1 hover:1.015 press:0.97'}/>;
+  // 调用方显式传入的 transition 优先（例如底部导航的颜色过渡）
+  return <AnimatedButton {...props} transition={props.transition ?? (reduceMotion ? undefined : 'quickerLessBouncy')} scale={reduceMotion ? 1 : '1 hover:1.015 press:0.97'}/>;
 }
 
 function App() {
@@ -312,6 +313,16 @@ function App() {
             <SettingSlider id="font-size" label="字号" value={cfg.fontSize} min={12} max={32} unit="px" onChange={v => change({ fontSize: v })}/>
             <Separator/>
             <SettingSlider id="opacity" label="不透明度" value={Math.round(cfg.opacity * 100)} min={20} max={80} unit="%" onChange={v => change({ opacity: v / 100 })}/>
+            <Separator/>
+            <XStack gap="3" minHeight={44} alignItems="center">
+              <Label htmlFor="pin-long-comments" flex={1}>长评驻留顶部</Label>
+              <Switch id="pin-long-comments" size="sm" aria-label="长评驻留顶部"
+                transition={media.reduceMotion ? undefined : 'quickerLessBouncy'}
+                checked={cfg.pinLongComments} onCheckedChange={value => change({ pinLongComments: value })}>
+                <Switch.Thumb transition={media.reduceMotion ? undefined : 'quickLessBouncy'}/>
+              </Switch>
+            </XStack>
+            <Paragraph size="sm" color="color-10">来不及读完的长评不再快速穿屏，改为在顶部居中停留数秒后淡出；是否驻留由穿屏速度和评论长度自动判定。</Paragraph>
             <Paragraph size="sm" color="color-10">轨道数量与穿屏速度随屏幕和评论量自动调整，允许弹幕重叠。</Paragraph>
           </Card>
         </YStack>
@@ -325,7 +336,16 @@ function App() {
       <Separator/>
       <XStack render="nav" aria-label="主导航" width="100%" maxWidth={850} alignSelf="center" paddingHorizontal="4" paddingVertical="2" gap="2" justifyContent="center">
         {([{ id: 'danmaku', label: '弹幕', icon: MessagesSquare }, { id: 'search', label: '搜索匹配', icon: Search }, { id: 'settings', label: '设置', icon: SettingsIcon }]).map(({ id, label, icon: Icon }) =>
-          <Button key={id} size="sm" minHeight={44} minWidth={0} paddingHorizontal="2" gap="2" flex={1} icon={<Icon size={18}/>} theme={tab === id ? 'accent' : undefined} variant={tab === id ? undefined : 'quiet'} aria-current={tab === id ? 'page' : undefined} onPress={() => setTab(id)}>{label}</Button>)}
+          <Button key={id} size="sm" minHeight={44} minWidth={0} paddingHorizontal="2" gap="2" flex={1} icon={<Icon size={18}/>}
+            theme={tab === id ? 'accent' : undefined}
+            backgroundColor={tab === id ? 'background' : 'transparent'}
+            borderColor={tab === id ? 'border-color' : 'transparent'}
+            transition={media.reduceMotion ? undefined : 'quickLessBouncy'}
+            aria-current={tab === id ? 'page' : undefined}
+            onPress={() => {
+              setTab(id);
+              void invoke('plugin:media|haptic_feedback', { kind: 'tick' }).catch(() => {});
+            }}>{label}</Button>)}
       </XStack>
     </YStack>}
   </YStack>;
