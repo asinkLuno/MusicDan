@@ -15,14 +15,16 @@ pub struct Settings {
     pub opacity: f32,
     pub comment_limit: Option<u32>,
     pub comment_refresh_percent: u32,
+    pub keep_screen_on_fullscreen: bool,
 }
 impl Default for Settings {
     fn default() -> Self {
         Self {
             font_size: 16.,
             opacity: 0.8,
-            comment_limit: None,
+            comment_limit: Some(1000),
             comment_refresh_percent: 10,
+            keep_screen_on_fullscreen: false,
         }
     }
 }
@@ -411,14 +413,20 @@ mod tests {
     }
 
     #[test]
-    fn old_settings_default_to_unlimited_and_limits_survive_round_trip() {
+    fn settings_default_to_1000_and_explicit_limits_survive_round_trip() {
         let old: Settings = serde_json::from_value(serde_json::json!({"fontSize": 20, "density": 8})).unwrap();
-        assert_eq!(old.comment_limit, None);
+        assert_eq!(old.comment_limit, Some(1000));
+        assert!(!old.keep_screen_on_fullscreen);
         let mut settings = Settings::default();
-        assert_eq!(settings.comment_limit, None);
+        assert_eq!(settings.comment_limit, Some(1000));
+        let unlimited: Settings = serde_json::from_value(serde_json::json!({"commentLimit": null})).unwrap();
+        assert_eq!(unlimited.comment_limit, None);
         settings.comment_limit = Some(50_000);
+        settings.keep_screen_on_fullscreen = true;
         let saved = serde_json::to_value(&settings).unwrap();
         assert_eq!(saved["commentLimit"], 50_000);
+        assert_eq!(saved["keepScreenOnFullscreen"], true);
+        assert!(serde_json::from_value::<Settings>(saved.clone()).unwrap().keep_screen_on_fullscreen);
         assert_eq!(serde_json::from_value::<Settings>(saved).unwrap().comment_limit, Some(50_000));
     }
 
