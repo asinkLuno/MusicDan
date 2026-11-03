@@ -8,7 +8,11 @@ import { musicAtmosphere } from './tamagui.config';
 import { formatTime, invoke } from './types';
 import type { Snapshot } from './types';
 
-const ROW_HEIGHT = 144;
+// Row pitch follows the lyric font size so lines stay close: one focused line
+// (LYRIC_FONT_SIZE × LYRIC_LINE_HEIGHT) plus roughly one blank line of air.
+const LYRIC_FONT_SIZE = 28;
+const LYRIC_LINE_HEIGHT = 1.36;
+const ROW_HEIGHT = Math.round(LYRIC_FONT_SIZE * LYRIC_LINE_HEIGHT * 2.5);
 
 export function LyricsBackground({ snapshot, songId, onError }: {
   snapshot: Snapshot | null; songId?: number; onError: (error: unknown) => void;
@@ -177,7 +181,7 @@ const LyricRow = memo(function LyricRow({ line, translation, active, nearby, sel
     paddingHorizontal={28} gap="3" alignItems="center" justifyContent="center"
     transition={reduceMotion ? 'none' : 'quickLessBouncy'} scale={focused ? 1 : 0.94}
     opacity={focused ? 1 : nearby ? 0.38 : 0.16}>
-    <Text fontSize={focused ? 28 : 23} lineHeight={1.36} fontWeight={focused ? '700' : '500'}
+    <Text fontSize={focused ? LYRIC_FONT_SIZE : 23} lineHeight={LYRIC_LINE_HEIGHT} fontWeight={focused ? '700' : '500'}
       transition={reduceMotion ? 'none' : 'quickLessBouncy'}
       backgroundImage={focused ? musicAtmosphere.lyricInk : undefined} backgroundClip={focused ? 'text' : undefined}
       textShadowColor="lyricGlow" textShadowRadius={focused ? 8 : 0}
