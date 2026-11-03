@@ -8,7 +8,16 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
     "test": "node --experimental-strip-types --test src/*.test.ts",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "fixtures:refresh": "node scripts/refresh-ncm-fixture.mjs",
+    "test:fixtures": "node --experimental-strip-types --test scripts/ncm-preview.test.mjs",
+    "fixtures:add-version": "node scripts/add-ncm-version.mjs",
+    "fixtures:refresh-lyrics": "node scripts/refresh-ncm-lyrics.mjs",
+    "screenshots:release": "node scripts/capture-release.mjs",
+    "build:release-site": "node scripts/build-release-site.mjs",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@tamagui/config": "^3.1.10",
@@ -21,11 +30,16 @@
     "tamagui": "^3.1.10"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tauri-apps/cli": "^2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "latest",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "prettier": "^3.9.10",
     "typescript": "^5",
+    "typescript-eslint": "^8.72.1",
     "vite": "latest"
   }
 }

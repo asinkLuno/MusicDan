@@ -1,0 +1,11 @@
+{
+  "singleQuote": true,
+  "semi": true,
+  "printWidth": 120,
+  "overrides": [
+    {
+      "files": ["website/src/components/ui/**", "website/src/lib/**"],
+      "options": { "singleQuote": false, "semi": false }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+dist
+website/dist
+node_modules
+src-tauri
+plugins
+android-signing
+artifacts
+docs
+public
+themes
+tests/fixtures
+yarn.lock

@@ -7,7 +7,7 @@ export type Segment = { type: 'text'; text: string } | { type: 'emote'; name: st
 /** 把 "打卡[爱心]" 切成文字段和表情段；映射表里没有的 [xxx] 原样保留为文字 */
 export function parseSegments(content: string): Segment[] {
   const segs: Segment[] = [];
-  const re = /\[([^\[\]]{1,12})\]/g;
+  const re = /\[([^\][]{1,12})\]/g;
   let last = 0;
   for (let m: RegExpExecArray | null; (m = re.exec(content)); ) {
     if (!Object.hasOwn(EMOTE_ID, m[1])) continue; // 未收录的代码：留在文本里
