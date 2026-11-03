@@ -2,6 +2,8 @@
 set -euo pipefail
 
 # Run on the ECS host from an extracted deployment bundle containing site/.
+# 官网静态页与 /releases 下的 APK 均为静态文件；更新由本仓库的
+# .githooks/pre-push（scripts/deploy-site.mjs）在推送 releases 分支时完成。
 bundle=$(cd -- "$(dirname -- "$0")" && pwd)
 test "$(id -u)" -eq 0
 test -f "$bundle/site/index.html"
@@ -11,11 +13,7 @@ test -f /root/caddy/docker-compose.yml
 if ! id musicdan > /dev/null 2>&1; then
   useradd --system --home-dir /srv/musicdan --no-create-home --shell /usr/sbin/nologin musicdan
 fi
-install -d -o musicdan -g musicdan -m 755 /srv/musicdan /srv/musicdan/public
-install -d -m 755 /opt/musicdan
-install -m 644 "$bundle/sync-releases.py" /opt/musicdan/sync-releases.py
-install -m 644 "$bundle/musicdan-sync.service" /etc/systemd/system/musicdan-sync.service
-install -m 644 "$bundle/musicdan-sync.timer" /etc/systemd/system/musicdan-sync.timer
+install -d -o musicdan -g musicdan -m 755 /srv/musicdan /srv/musicdan/public /srv/musicdan/public/releases /srv/musicdan/public/latest
 install -m 644 "$bundle/Caddyfile" /srv/musicdan/Caddyfile
 
 site=$(mktemp -d /srv/musicdan/site-XXXXXXXX)
@@ -54,8 +52,10 @@ if ! docker run --rm --network none \
   exit 1
 fi
 
+# 兼容旧安装：移除已废弃的自动同步服务（现由本地钩子在推送时部署）
+systemctl disable --now musicdan-sync.timer musicdan-sync.service 2>/dev/null || true
+rm -f /etc/systemd/system/musicdan-sync.service /etc/systemd/system/musicdan-sync.timer
 systemctl daemon-reload
-systemctl enable --now musicdan-sync.timer
-systemctl start --no-block musicdan-sync.service
+
 docker compose -f /root/caddy/docker-compose.yml up -d caddy
-echo 'MusicDan site deployed; release sync is running. Check systemctl status musicdan-sync.service.'
+echo 'MusicDan site deployed; APK 更新由本地推送钩子完成，服务器不再运行同步服务。'

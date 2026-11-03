@@ -17,7 +17,8 @@
     "build:release-site": "node scripts/build-release-site.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "release": "node scripts/release.mjs"
   },
   "dependencies": {
     "@tamagui/config": "^3.1.10",

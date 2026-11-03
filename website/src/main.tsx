@@ -43,7 +43,7 @@ function validRelease(value: unknown): value is Release {
   return typeof release.version === 'string' && typeof release.name === 'string'
     && typeof release.size === 'number' && release.size > 0
     && typeof release.sha256 === 'string' && /^[a-f0-9]{64}$/.test(release.sha256)
-    && typeof release.download_url === 'string' && /^\/releases\/[\w.-]+\/MusicDan_[\w.-]+_arm64\.apk$/.test(release.download_url)
+    && typeof release.download_url === 'string' && /^\/releases\/(?:latest\.apk|[\w.-]+\/MusicDan_[\w.-]+_arm64\.apk)$/.test(release.download_url)
     && typeof release.github_url === 'string' && release.github_url.startsWith(`${repository}/releases/download/`)
     && typeof release.release_url === 'string' && release.release_url.startsWith(`${repository}/releases/tag/`)
     && typeof release.published_at === 'string' && Number.isFinite(Date.parse(release.published_at));
