@@ -1,6 +1,6 @@
 # MusicDan 应用图标
 
-采用确认的 Sarasa Gothic 多语言文字音符，静态保留右侧拖影，搭配深紫色背景与薰衣草色柔光。
+采用确认的 Sarasa Gothic 多语言文字音符，每一行文字的右侧都保留渐淡拖影（上方行更长更实，下方行更短更虚），搭配深紫色背景与薰衣草色柔光。
 
 `icon.svg` / `icon.png` 是桌面与旧版 Android 图标源文件；`foreground.svg` / `foreground.png` 是 Android 自适应图标透明前景；`background.png` 是自适应背景。
 
@@ -22,4 +22,4 @@ yarn tauri icon docs/brand/app-icon/icons.json
 
 渐变在紫白之间经过淡蓝与冰蓝高光，60% 处达到暖白；文字叠加轻微蓝色光晕，保留右侧白色区域。
 
-音符主体使用 27 种语言，每种语言与拼写只出现一次；中日汉字统一为繁体「音樂」，不使用零散汉字。语种对照见 `../logo-exploration/type-note/languages.json`；词义参考 [Wiktionary music translations](https://en.wiktionary.org/wiki/music#Translations)。拖影仅为对应文字的模糊残像。
+音符主体使用 27 种语言，每种语言与拼写只出现一次；中日汉字统一为繁体「音樂」，不使用零散汉字。语种对照见 `../logo-exploration/type-note/languages.json`；词义参考 [Wiktionary music translations](https://en.wiktionary.org/wiki/music#Translations)。拖影仅为对应文字的模糊残像，按行整体生成、按垂直位置渐变：顶部行位移更大、更实（三层位移约 8/16/26、不透明度约 0.26/0.14/0.065），底部行更短更虚（约 3.5/8/13、0.08/0.04/0.016）；多字行的拖影裁剪到行尾之后，避免与同行其他单词重叠，靠近右缘的行会按画布与圆角边界收缩。
