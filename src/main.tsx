@@ -20,7 +20,7 @@ const AnimatedButton = styled(TamaguiButton, {
   minHeight: 44,
 });
 
-// GitHub 直连不可用时的备用下载入口（官网由自有服务器提供）
+// 官网是应用发布与下载的统一入口
 const DOWNLOAD_PAGE = 'https://musicdan.syncmoon.ink/';
 // 设置页多次进出时复用检查结果，避免重复请求
 let updateCache: UpdateStatus | null = null;

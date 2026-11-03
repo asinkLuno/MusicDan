@@ -63,6 +63,7 @@ pub async fn check_update(app: AppHandle) -> Result<UpdateStatus, String> {
     let current_version = app.package_info().version.to_string();
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(15))
+        .redirect(reqwest::redirect::Policy::none())
         .user_agent("MusicDan-Update-Check")
         .build()
         .map_err(|error| format!("无法发起更新检查：{error}"))?;
