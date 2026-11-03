@@ -101,6 +101,10 @@ jobs:
           keytool -list -keystore android-signing/musicdan.keystore -alias "$KS_ALIAS" -storepass:env KS_STORE_PASS > /dev/null
           python3 scripts/android-signing-properties.py
 
+      - name: Read release version
+        id: version
+        run: echo "version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+
       - name: Build per-ABI APKs and upload to draft release
         uses: tauri-apps/tauri-action@v1
         env:
@@ -113,15 +117,34 @@ jobs:
           tagName: build-${{ github.run_number }}
           releaseName: 'MusicDan v__VERSION__ · Build ${{ github.run_number }}'
           releaseBody: |
-            Android release APK（CI 自动构建并签名，仅 arm64-v8a）。
+            ## 📱 Android 用户请下载这个文件
 
-            本次更新：
+            **[`MusicDan_${{ steps.version.outputs.version }}_arm64.apk`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.run_number }}/MusicDan_${{ steps.version.outputs.version }}_arm64.apk)**
+
+            ## ✨ Build ${{ github.run_number }} 更新内容
+
+            Build ${{ github.run_number }} 使用 v${{ steps.version.outputs.version }} 作为版本名，包含自 v0.3.0 · Build 13 以来的以下改动。
+
+            ### 背景歌词
+
             - 歌词当前行增加柔和发光和平滑滚动，首句、末句保持居中。
             - 支持上下滑动浏览歌词，居中吸附选中句；左侧播放键定位播放，右侧显示对应时间。
             - 浏览结束后自动恢复歌词跟随，也可点击“回到当前”。
+
+            ### 全屏与播放设置
+
             - 全屏显示歌曲名、歌手和专辑，新增可保存的“全屏时保持屏幕常亮”设置。
+            - 常亮默认关闭；开启后仅在全屏前台生效，退出全屏或切到后台恢复系统息屏行为。
+
+            ### 性能与行为
+
             - 默认弹幕显示上限调整为 1000 条，仍可自定义或设为不限。
             - 优化弹幕帧调度和表情缓存，Android 返回键优先退出全屏或回到弹幕页。
+
+            ## 📋 系统要求
+
+            - 需要 **Android 7.0（API 24）及以上**。
+            - 仅提供 arm64-v8a（64 位）安装包；暂不提供 32 位 armv7 和模拟器（x86/x86_64）的包。
           releaseDraft: true
           prerelease: false
           uploadUpdaterJson: false
