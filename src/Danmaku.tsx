@@ -210,10 +210,6 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
       context.clearRect(0, 0, size.width, size.height);
       if (playing && !document.hidden) {
         const position = clock.current.position(frameTime);
-        // 驻留弹幕占据顶部一到两行轨道，穿屏流从其下方开始铺
-        const usable = pinList.length > 0 ? (lanes > 2 ? 2 : lanes > 1 ? 1 : 0) : 0;
-        const flowLanes = lanes - usable;
-        const laneBase = usable;
         if (list.length) {
           const [start, end] = visibleRange(position, crossing, spacing, list.length);
           context.globalAlpha = settings.opacity;
@@ -227,11 +223,11 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
             const sprite = spriteFor(i);
             const progress = (position - i * spacing) / crossing;
             const x = size.width - (size.width + sprite.width) * progress;
-            const y = ((i % flowLanes) + laneBase + .5) * height / lanes - sprite.height / 2;
+            const y = ((i % lanes) + .5) * height / lanes - sprite.height / 2;
             drawSprite(sprite, x, y);
           }
         }
-        // 长评驻留：顶部居中，淡入停留淡出，逐条接续
+        // 长评驻留：顶部/底部交替居中（避开中央正在显示的歌词），淡入停留淡出，逐条接续
         const pinIndex = activePinned(position);
         if (pinIndex >= 0) {
           const elapsed = position - pinEnters[pinIndex];
@@ -244,8 +240,9 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
             }
           }
           const sprite = pinnedSpriteFor(pinIndex);
+          const y = pinIndex % 2 === 0 ? 4 : height - sprite.height - 4;
           context.globalAlpha = fade * settings.opacity;
-          drawSprite(sprite, (size.width - sprite.width) / 2, 4);
+          drawSprite(sprite, (size.width - sprite.width) / 2, y);
         }
       }
       if (playing && (list.length || pinList.length) && !document.hidden) animation = requestAnimationFrame(draw);

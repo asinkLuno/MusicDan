@@ -322,7 +322,7 @@ function App() {
                 <Switch.Thumb transition={media.reduceMotion ? undefined : 'quickLessBouncy'}/>
               </Switch>
             </XStack>
-            <Paragraph size="sm" color="color-10">来不及读完的长评不再快速穿屏，改为在顶部居中停留数秒后淡出；是否驻留由穿屏速度和评论长度自动判定。</Paragraph>
+            <Paragraph size="sm" color="color-10">来不及读完的长评不再快速穿屏，改为在顶部或底部居中停留数秒后淡出，不遮挡当前歌词；是否驻留由穿屏速度和评论长度自动判定。</Paragraph>
             <Paragraph size="sm" color="color-10">轨道数量与穿屏速度随屏幕和评论量自动调整，允许弹幕重叠。</Paragraph>
           </Card>
         </YStack>
