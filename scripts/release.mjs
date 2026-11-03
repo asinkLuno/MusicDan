@@ -238,7 +238,8 @@ async function publishGitHub(buildNumber, sha, apk) {
   const tag = `build-${buildNumber}`;
   const body = await releaseBody(tag);
   // pre-push 阶段提交尚未在远端：先推送 releases 分支供 Release 标签引用
-  run('git', ['push', 'origin', `${sha}:refs/heads/releases`]);
+  // （--no-verify：钩子会再次触发本脚本造成递归发布，内部推送必须跳过钩子）
+  run('git', ['push', '--no-verify', 'origin', `${sha}:refs/heads/releases`]);
   console.log(`[github] 创建草稿 Release ${tag}`);
   const notesFile = path.join(await mkdtemp(path.join(tmpdir(), 'musicdan-rel-')), 'body.md');
   await writeFile(notesFile, body);
@@ -257,7 +258,7 @@ async function publishGitHub(buildNumber, sha, apk) {
   if (!run('git', ['tag', '--list', `v${version}`]).trim()) {
     run('git', ['tag', `v${version}`, sha]);
   }
-  run('git', ['push', 'origin', `v${version}`, 'latest', '--force']);
+  run('git', ['push', '--no-verify', 'origin', `v${version}`, 'latest', '--force']);
   const published = githubApi(`repos/${REPO_SLUG}/releases/tags/${tag}`);
   return { tag, releaseId: published.id, publishedAt: published.published_at };
 }
