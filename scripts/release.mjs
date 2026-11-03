@@ -208,7 +208,7 @@ async function buildApk(buildNumber) {
 
 /** GitHub Release 说明：下载小节与系统要求按 AGENTS.md 模板生成，更新内容读 release-notes.md */
 async function releaseBody(tag) {
-  const notes = (await readFile(new URL('release-notes.md', root), 'utf8')).trim();
+  const notes = (await readFile(path.join(root, 'release-notes.md'), 'utf8')).trim();
   if (!notes || !notes.includes('更新内容')) throw new Error('release-notes.md 为空或缺少“更新内容”：请填写本次版本的更新说明');
   return [
     '## 📱 Android 用户请下载这个文件',
