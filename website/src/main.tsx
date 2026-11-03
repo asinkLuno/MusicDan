@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ArrowDownToLine, AudioLines, Code2, Layers, MessageCircle, Music2, Search, ShieldCheck } from 'lucide-react';
+import { MotionConfig, motion } from 'motion/react';
+import { ArrowDownToLine, AudioLines, Code2, Layers, MessageCircle, Search, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +16,12 @@ const search = '/screenshots/november-rain-search.png';
 import './index.css';
 
 const repository = 'https://github.com/asinkLuno/MusicDan';
+const reveal = {
+  initial: { opacity: 0, y: 24 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, amount: 0.2 },
+  transition: { duration: 0.6, ease: 'easeOut' },
+} as const;
 type Release = {
   version: string;
   name: string;
@@ -84,15 +91,14 @@ function App() {
       <main className="mx-auto max-w-6xl space-y-20 px-6 pb-12 sm:px-10 sm:pb-20">
         <section aria-labelledby="intro-title" className="grid items-center gap-12 py-10 md:grid-cols-2 md:gap-16 md:py-16">
           <div className="space-y-7">
-            <Badge variant="secondary"><Music2 aria-hidden="true" /> 为 Android 的每一次播放</Badge>
             <h1 id="intro-title" className="text-5xl leading-tight font-semibold tracking-tight sm:text-6xl">让热评，<br />跟着音乐走。</h1>
-            <p className="max-w-md text-lg leading-relaxed text-muted-foreground">有人听旋律，有人听故事。MusicDan 把网易云音乐评论变成弹幕，让你在喜欢的音乐 App 里，也能看见同一首歌的共鸣。</p>
+            <p className="max-w-md text-lg leading-relaxed text-muted-foreground">MusicDan 把网易云音乐评论变成弹幕，让你在喜欢的音乐 App 里，也能看见同一首歌的共鸣。</p>
             <div className="flex flex-wrap gap-3">
               <Button asChild size="lg"><a href="#download"><ArrowDownToLine aria-hidden="true" /> 下载 Android 版</a></Button>
               <Button asChild size="lg" variant="outline"><a href="#experience">看看实际效果</a></Button>
             </div>
           </div>
-          <div className="mx-auto w-full max-w-sm">
+          <motion.div className="mx-auto w-full max-w-sm" {...reveal}>
             <Card className="gap-0 p-0">
               <CardContent className="p-0">
                 <AspectRatio ratio={6 / 13}>
@@ -100,19 +106,19 @@ function App() {
                 </AspectRatio>
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
         </section>
 
         <section id="experience" aria-labelledby="experience-title" className="space-y-8">
-          <div className="max-w-xl space-y-3">
-            <h2 id="experience-title" className="text-3xl font-semibold tracking-tight">音乐照常放，故事一起看。</h2>
+          <motion.div className="max-w-xl space-y-3" {...reveal}>
+            <h2 id="experience-title" className="text-3xl font-semibold tracking-tight">本地音乐，在线评论</h2>
             <p className="leading-relaxed text-muted-foreground">不用换播放器。自动识别正在播放的歌曲，把散落在评论区的文字带到你眼前。</p>
-          </div>
-          <div className="grid gap-6 md:grid-cols-2">
+          </motion.div>
+          <motion.div className="grid gap-6 md:grid-cols-2" {...reveal}>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl"><Layers aria-hidden="true" className="size-5" /> 弹幕，浮在音乐之上</CardTitle>
-                <CardDescription className="leading-relaxed">透明悬浮，触摸穿透。看歌词、切歌都照常操作；也可以回到 MusicDan，全屏沉浸在评论里。</CardDescription>
+                <CardDescription className="leading-relaxed">支持反向控制原音乐 App。</CardDescription>
               </CardHeader>
               <CardContent>
                 <AspectRatio ratio={6 / 13} className="overflow-hidden rounded-lg bg-muted">
@@ -133,10 +139,10 @@ function App() {
               </CardContent>
               <CardFooter><AudioLines aria-hidden="true" className="mr-2 size-4" /> 字号、不透明度、显示上限随时调整</CardFooter>
             </Card>
-          </div>
+          </motion.div>
         </section>
 
-        <section id="download" aria-labelledby="download-title">
+        <motion.section id="download" aria-labelledby="download-title" {...reveal}>
           <Card>
             <CardHeader className="gap-3">
               <CardTitle id="download-title" role="heading" aria-level={2} className="text-3xl">下一首歌，和大家一起听。</CardTitle>
@@ -203,7 +209,7 @@ function App() {
               </Accordion>
             </CardContent>
           </Card>
-        </section>
+        </motion.section>
 
         <footer className="flex flex-wrap items-center justify-between gap-4 border-t pt-6 text-sm text-muted-foreground">
           <p>MusicDan · 让喜欢的歌，多一点共鸣。</p>
@@ -214,4 +220,8 @@ function App() {
   );
 }
 
-createRoot(document.getElementById('root')!).render(<App />);
+createRoot(document.getElementById('root')!).render(
+  <MotionConfig reducedMotion="user">
+    <App />
+  </MotionConfig>,
+);
