@@ -1,6 +1,6 @@
 [package]
 name = "musicdan"
-version = "0.4.3"
+version = "0.5.0"
 description = "把音乐热评变成跟着歌曲走的弹幕，支持跨应用悬浮"
 authors = ["guozr"]
 edition = "2021"
