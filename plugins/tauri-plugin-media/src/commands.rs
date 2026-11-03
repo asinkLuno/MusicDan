@@ -50,3 +50,9 @@ pub(crate) async fn control_playback<R: Runtime>(app: AppHandle<R>, control: Pla
 pub(crate) async fn haptic_feedback<R: Runtime>(app: AppHandle<R>, kind: HapticKind) -> Result<()> {
     app.media().haptic_feedback(kind)
 }
+
+/// 用系统浏览器打开链接（设置页“检查更新”后跳转下载）
+#[command]
+pub(crate) async fn open_url<R: Runtime>(app: AppHandle<R>, url: String) -> Result<()> {
+    app.media().open_url(&url)
+}

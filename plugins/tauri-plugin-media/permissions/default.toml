@@ -10,4 +10,5 @@ permissions = [
     "allow-get-now-playing",
     "allow-is-permission-granted",
     "allow-open-permission-settings",
+    "allow-open-url",
 ]

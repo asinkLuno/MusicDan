@@ -8,6 +8,7 @@ const COMMANDS: &[&str] = &[
     "get_now_playing",
     "is_permission_granted",
     "open_permission_settings",
+    "open_url",
 ];
 
 fn main() {

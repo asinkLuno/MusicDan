@@ -49,4 +49,8 @@ impl<R: Runtime> Media<R> {
     pub fn open_permission_settings(&self) -> crate::Result<()> {
         Err(crate::Error::Plugin("media 插件仅支持 Android 平台".into()))
     }
+
+    pub fn open_url(&self, _url: &str) -> crate::Result<()> {
+        Err(crate::Error::Plugin("仅支持 Android".into()))
+    }
 }

@@ -44,7 +44,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::set_overlay,
             commands::get_now_playing,
             commands::is_permission_granted,
-            commands::open_permission_settings
+            commands::open_permission_settings,
+            commands::open_url
         ])
         .setup(|app, api| {
             #[cfg(mobile)]

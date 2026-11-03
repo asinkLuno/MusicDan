@@ -1,5 +1,6 @@
 mod ncm;
 mod player;
+mod update;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -19,7 +20,8 @@ pub fn run() {
             player::update_settings,
             player::set_song_match,
             player::set_song_matches,
-            player::retry_match
+            player::retry_match,
+            update::check_update
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -28,6 +28,7 @@ import com.musicdan.media.permission.MediaPermissions
  * - isPermissionGranted: 查询「通知使用权」是否已授予
  * - openPermissionSettings: 跳转系统通知使用权设置页
  * - getNowPlaying: 返回当前播放的歌曲信息（标题/歌手/专辑/进度/播放状态）
+ * - openUrl: 用系统浏览器打开网页链接（检查更新后跳转下载）
  */
 @TauriPlugin
 class MediaPlugin(private val activity: Activity) : Plugin(activity) {
@@ -95,6 +96,25 @@ class MediaPlugin(private val activity: Activity) : Plugin(activity) {
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         activity.startActivity(intent)
         invoke.resolve(JSObject())
+    }
+
+    /** openUrl: 用系统浏览器打开网页链接（设置页检查更新后跳转下载） */
+    @Command
+    fun openUrl(invoke: Invoke) {
+        val url = invoke.getArgs().optString("url")
+        if (!url.startsWith("https://") && !url.startsWith("http://")) {
+            invoke.reject("仅支持打开网页链接")
+            return
+        }
+        try {
+            activity.startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+            invoke.resolve(JSObject())
+        } catch (e: Exception) {
+            invoke.reject(e.message ?: "无法打开链接")
+        }
     }
 
     /**

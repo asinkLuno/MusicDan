@@ -79,4 +79,11 @@ impl<R: Runtime> Media<R> {
             .map(|_| ())
             .map_err(Into::into)
     }
+
+    pub fn open_url(&self, url: &str) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin::<EmptyResponse>("openUrl", serde_json::json!({ "url": url }))
+            .map(|_| ())
+            .map_err(Into::into)
+    }
 }

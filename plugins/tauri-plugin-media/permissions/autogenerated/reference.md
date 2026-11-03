@@ -13,6 +13,7 @@
 - `allow-get-now-playing`
 - `allow-is-permission-granted`
 - `allow-open-permission-settings`
+- `allow-open-url`
 
 ## Permission Table
 
@@ -175,6 +176,32 @@ Enables the open_permission_settings command without any pre-configured scope.
 <td>
 
 Denies the open_permission_settings command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`media:allow-open-url`
+
+</td>
+<td>
+
+Enables the open_url command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`media:deny-open-url`
+
+</td>
+<td>
+
+Denies the open_url command without any pre-configured scope.
 
 </td>
 </tr>

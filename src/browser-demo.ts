@@ -1,5 +1,6 @@
 import { defaults, type Comment, type Snapshot, type Song } from './types';
 import { fixtureComments, type DemoFixture } from './demoFixture';
+import type { ReleaseInfo, UpdateStatus } from './release';
 
 // Simulate native playback only. Real content is recorded in a stable test fixture.
 const options = new URLSearchParams(window.location.search);
@@ -21,6 +22,30 @@ let error: string | null = null;
 let initialized: Promise<void> | undefined;
 let fixturePromise: Promise<DemoFixture> | undefined;
 let manualMatch = false;
+// 设置页“版本与更新”演示数据：与 v0.4.3 真实发布说明一致，检查结果为已是最新版本
+const demoRelease: ReleaseInfo = {
+  version: '0.4.3',
+  pageUrl: 'https://github.com/asinkLuno/MusicDan/releases/tag/build-17',
+  apkUrl: 'https://github.com/asinkLuno/MusicDan/releases/download/build-17/MusicDan_0.4.3_arm64.apk',
+  notes: [
+    '## 📱 Android 用户请下载这个文件',
+    '',
+    '**[`MusicDan_0.4.3_arm64.apk`](https://github.com/asinkLuno/MusicDan/releases/download/build-17/MusicDan_0.4.3_arm64.apk)**',
+    '',
+    '## ✨ v0.4.3 更新内容',
+    '',
+    '包含自 v0.4.2 发布以来的以下改动。',
+    '',
+    '### 歌词',
+    '',
+    '- 收紧歌词行距：行与行的间隔改为按歌词字号计算，长段歌词阅读更连贯。',
+    '',
+    '## 📋 系统要求',
+    '',
+    '- 需要 **Android 7.0（API 24）及以上**。',
+    '- 仅提供 arm64-v8a（64 位）安装包；暂不提供 32 位 armv7 和模拟器（x86/x86_64）的包。',
+  ].join('\n'),
+};
 function fixture(): Promise<DemoFixture> {
   return fixturePromise ??= (async () => {
     const response = await fetch(`/__musicdan_preview/fixture?name=${scenario}`);
@@ -98,6 +123,8 @@ export async function demoInvoke<T>(command: string, args?: Record<string, unkno
       break;
     }
     case 'plugin:media|set_keep_screen_on': break;
+    case 'check_update': result = { currentVersion: demoRelease.version, latest: demoRelease, currentRelease: demoRelease } satisfies UpdateStatus; break;
+    case 'plugin:media|open_url': break;
     default: throw new Error(`浏览器演示暂不支持：${command}`);
   }
   return result as T;

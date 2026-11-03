@@ -8,6 +8,8 @@ import { PlaybackControls } from './PlaybackControls';
 import { LyricsBackground } from './Lyrics';
 import { Danmaku } from './Danmaku';
 import { MarqueeText } from './MarqueeText';
+import { compareVersions, parseReleaseNotes } from './release';
+import type { ReleaseInfo, UpdateStatus } from './release';
 import { defaults, durationsMatch, formatTime, invoke, trackKey } from './types';
 import type { Settings, Snapshot, Song } from './types';
 import '@tamagui/core/reset.css';
@@ -17,6 +19,11 @@ const AnimatedButton = styled(TamaguiButton, {
   scale: '1 hover:1.015 press:0.97',
   minHeight: 44,
 });
+
+// GitHub 直连不可用时的备用下载入口（官网由自有服务器提供）
+const DOWNLOAD_PAGE = 'https://musicdan.syncmoon.ink/';
+// 设置页多次进出时复用检查结果，避免重复请求
+let updateCache: UpdateStatus | null = null;
 
 function Button(props: React.ComponentProps<typeof AnimatedButton>) {
   const { reduceMotion } = useMedia();
@@ -308,6 +315,10 @@ function App() {
             <Paragraph size="sm" color="color-10">轨道数量与穿屏速度随屏幕和评论量自动调整，允许弹幕重叠。</Paragraph>
           </Card>
         </YStack>
+        <YStack render="section" aria-labelledby="version-title" gap="3">
+          <H3 id="version-title" fontSize="sm" color="color-10" paddingHorizontal="1">版本与更新</H3>
+          <VersionSection/>
+        </YStack>
       </YStack>}
     </YStack>
     {!full && <YStack flexShrink={0}>
@@ -387,6 +398,76 @@ function SettingSlider({ id, label, value, min, max, unit, onChange }: { id: str
       <Slider.Thumb index={0} aria-label={label}/>
     </Slider>
   </YStack>;
+}
+
+/** Release 说明（已按发布规范裁剪）渲染为设置页段落 */
+function ReleaseNotes({ label, release }: { label: string; release?: ReleaseInfo | null }) {
+  if (!release?.notes) return null;
+  const blocks = parseReleaseNotes(release.notes);
+  if (!blocks.length) return null;
+  return <YStack gap="2">
+    <Paragraph size="sm" fontWeight="700">{label}</Paragraph>
+    {blocks.map((block, index) => block.kind === 'heading'
+      ? <Paragraph key={index} size="sm" fontWeight="600" paddingTop={index ? '1' : undefined}>{block.text}</Paragraph>
+      : block.kind === 'item'
+        ? <XStack key={index} gap="2" alignItems="flex-start"><Text fontSize="sm" color="color-10">·</Text><Paragraph size="sm" flex={1}>{block.text}</Paragraph></XStack>
+        : <Paragraph key={index} size="sm" color="color-10">{block.text}</Paragraph>)}
+  </YStack>;
+}
+
+/** 设置页“版本与更新”：当前版本号、检查更新、本版本的更新内容 */
+function VersionSection() {
+  const [status, setStatus] = useState<UpdateStatus | null>(updateCache);
+  const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>(updateCache ? 'ready' : 'loading');
+  const [checkError, setCheckError] = useState('');
+  const [downloadError, setDownloadError] = useState('');
+  const check = useCallback(async () => {
+    setPhase('loading'); setCheckError(''); setDownloadError('');
+    try {
+      const next = await invoke<UpdateStatus>('check_update');
+      updateCache = next;
+      setStatus(next);
+      setPhase('ready');
+    } catch (e) {
+      setCheckError(e instanceof Error ? e.message : String(e));
+      setPhase('error');
+    }
+  }, []);
+  useEffect(() => { if (!updateCache) void check(); }, [check]);
+  const latest = status?.latest ?? null;
+  const hasUpdate = !!status && !!latest && compareVersions(status.currentVersion, latest.version) < 0;
+  const openUrl = async (url: string) => {
+    setDownloadError('');
+    try { await invoke('plugin:media|open_url', { url }); }
+    catch (e) { setDownloadError(e instanceof Error ? e.message : String(e)); }
+  };
+  const download = () => { if (latest) void openUrl(latest.apkUrl || latest.pageUrl); };
+  return <Card padding="4" gap="3" borderRadius="6" borderWidth={1} borderColor="border-color">
+    <XStack gap="3" minHeight={44} alignItems="center" justifyContent="space-between">
+      <Paragraph flex={1}>当前版本</Paragraph>
+      <Text fontSize="xs" color="color-10">{status ? `v${status.currentVersion}` : '…'}</Text>
+      <Button size="sm" disabled={phase === 'loading'} onPress={() => void check()}>{phase === 'loading' ? '检查中…' : '检查更新'}</Button>
+    </XStack>
+    {phase === 'error' && <YStack gap="2">
+      <Paragraph size="sm" color="color-10">检查更新失败：{checkError}</Paragraph>
+      <Button size="sm" variant="quiet" alignSelf="flex-start" onPress={() => void openUrl(DOWNLOAD_PAGE)}>打开下载页</Button>
+    </YStack>}
+    {phase === 'ready' && hasUpdate && latest && <YStack gap="2">
+      <XStack gap="3" minHeight={44} alignItems="center" justifyContent="space-between">
+        <Paragraph flex={1} fontWeight="600">发现新版本 v{latest.version}</Paragraph>
+        <Button size="sm" theme="accent" onPress={download}>下载新版本</Button>
+      </XStack>
+      {downloadError && <Paragraph size="sm" color="color-10">打开下载链接失败：{downloadError}</Paragraph>}
+    </YStack>}
+    {phase === 'ready' && latest && !hasUpdate && <Paragraph size="sm" color="color-10">已是最新版本</Paragraph>}
+    {phase === 'ready' && !latest && <Paragraph size="sm" color="color-10">暂时无法获取更新信息</Paragraph>}
+    {downloadError && phase !== 'ready' && <Paragraph size="sm" color="color-10">打开下载链接失败：{downloadError}</Paragraph>}
+    <Separator/>
+    {status?.currentRelease
+      ? <ReleaseNotes label={`v${status.currentVersion} 更新内容`} release={status.currentRelease}/>
+      : <Paragraph size="sm" color="color-10">暂无本版本的更新说明</Paragraph>}
+    {phase === 'ready' && hasUpdate && latest && <ReleaseNotes label={`v${latest.version} 更新内容`} release={latest}/>}
+  </Card>;
 }
 
 createRoot(document.getElementById('root')!).render(<TamaguiProvider config={tamaguiConfig} defaultTheme="dark"><App/></TamaguiProvider>);
