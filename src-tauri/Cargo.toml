@@ -1,9 +1,9 @@
 [package]
-name = "app"
-version = "0.4.1"
-description = "A Tauri App"
-authors = ["you"]
-edition = "2024"
+name = "musicdan"
+version = "0.4.2"
+description = "把音乐热评变成跟着歌曲走的弹幕，支持跨应用悬浮"
+authors = ["guozr"]
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
