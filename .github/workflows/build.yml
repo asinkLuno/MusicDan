@@ -43,6 +43,9 @@ jobs:
         with:
           node-version: '24.22.1'
           cache: yarn
+          cache-dependency-path: |
+            yarn.lock
+            website/yarn.lock
 
       - name: Pin Yarn Classic
         run: corepack enable && corepack prepare yarn@1.22.22 --activate
@@ -81,6 +84,51 @@ jobs:
 
       - name: Test frontend
         run: yarn test
+
+      - name: Test offline screenshot fixtures
+        run: yarn test:fixtures
+
+      - name: Install landing page dependencies
+        run: yarn --cwd website install --frozen-lockfile
+
+      - name: Install Chinese fonts for screenshots
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+
+      - name: Re-capture app screenshots and build release landing page
+        run: |
+          set -euo pipefail
+          yarn dev > "$RUNNER_TEMP/musicdan-preview.log" 2>&1 &
+          preview_pid=$!
+          google-chrome --headless --disable-gpu --no-sandbox --no-first-run \
+            --remote-debugging-port=9229 --remote-debugging-address=127.0.0.1 \
+            --user-data-dir="$RUNNER_TEMP/musicdan-chrome" about:blank > "$RUNNER_TEMP/musicdan-chrome.log" 2>&1 &
+          chrome_pid=$!
+          trap 'kill "$preview_pid" "$chrome_pid" 2>/dev/null || true' EXIT
+          ready=false
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:1420/ > /dev/null && curl -fsS http://127.0.0.1:9229/json/version > /dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            cat "$RUNNER_TEMP/musicdan-preview.log" "$RUNNER_TEMP/musicdan-chrome.log"
+            exit 1
+          fi
+          yarn build:release-site
+
+      - name: Save fresh screenshots and landing page bundle
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: release-landing-page
+          path: |
+            artifacts/previews/app-*.png
+            artifacts/previews/november-rain-*.png
+            artifacts/previews/screenshots.json
+            artifacts/releases/*.tar.gz
+          if-no-files-found: error
+          compression-level: 0
 
       - name: Restore release signing from Secrets
         env:
@@ -168,6 +216,13 @@ jobs:
           path: src-tauri/gen/android/app/build/outputs/apk/**/release/*.apk
           if-no-files-found: error
           compression-level: 0
+
+      - name: Upload rebuilt landing page to draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APP_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release upload "build-$GITHUB_RUN_NUMBER" "artifacts/releases/MusicDan_${APP_VERSION}_website.tar.gz"
 
       - name: Publish completed build
         env:

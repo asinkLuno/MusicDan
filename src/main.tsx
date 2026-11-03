@@ -45,7 +45,6 @@ function App() {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const np = snapshot?.nowPlaying;
   const currentKey = np ? trackKey(np) : '';
-  const playbackDuration = np?.duration || snapshot?.song?.duration || 0;
   const merged = (snapshot?.songs?.length || 0) > 1;
   const lyricSongs = snapshot?.songs?.length ? snapshot.songs : snapshot?.song ? [snapshot.song] : [];
   const lyricKey = `${currentKey}:${lyricSongs.map(song => song.songId).sort((a, b) => a - b).join(',')}`;
@@ -355,7 +354,7 @@ const SearchResults = memo(function SearchResults({ songs, selectedSongs, onSele
   const selected = new Set(selectedSongs.map(song => song.songId));
   // Keep selected versions visible when a later search does not include them.
   const visibleSongs = [...selectedSongs.filter(song => !songs.some(result => result.songId === song.songId)), ...songs];
-  return visibleSongs.map(song => <Card key={song.songId} padding="4" borderRadius="6" borderWidth={1} borderColor={selected.has(song.songId) ? 'color-6' : 'border-color'} flexShrink={0}>
+  return visibleSongs.map(song => <Card key={song.songId} data-song-id={song.songId} padding="4" borderRadius="6" borderWidth={1} borderColor={selected.has(song.songId) ? 'color-6' : 'border-color'} flexShrink={0}>
     <XStack alignItems="center" gap="3">
       <Checkbox width={44} height={44} padding="0" flexShrink={0} borderWidth={0} borderRadius="4" backgroundColor="transparent hover:background-hover"
         aria-label={`选择 ${song.name} · ${song.album}`} checked={selected.has(song.songId)} disabled={disabled}

@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "0.4.1",
+  "sourceCommit": "6be41b7fdcf545cb198c5259278c1908a97659b4",
+  "generatedAt": "2026-11-03T05:16:53.094Z",
+  "screen": {
+    "width": 1080,
+    "height": 2340
+  },
+  "scenes": [
+    {
+      "name": "creep",
+      "position": 4000
+    },
+    {
+      "name": "november-rain",
+      "position": 433000
+    }
+  ],
+  "screenshots": {
+    "app-danmaku.png": {
+      "sha256": "aeca4909d218003b25811e517c1b1d4aa5bdd516f13585ba2da5081b9d9a3dce",
+      "width": 1080,
+      "height": 2340
+    },
+    "app-fullscreen.png": {
+      "sha256": "1f2e8107e5c1c340fab40d8ccdd49de5318d456ccdfba71d0bb43c9507a100c6",
+      "width": 1080,
+      "height": 2340
+    },
+    "app-search.png": {
+      "sha256": "1f18836acc5c7724f489b6d17217e69acd6ec3ee9853d5a62cfc9e08d1a43adb",
+      "width": 1080,
+      "height": 2340
+    },
+    "november-rain-danmaku.png": {
+      "sha256": "5ba9e0ca9777a0256f9df11553601d02486d17744d91cb6bd1998673512dd0c4",
+      "width": 1080,
+      "height": 2340
+    },
+    "november-rain-fullscreen.png": {
+      "sha256": "cc2633dd4693f32ff3eb649279a68b4b77bbeeac13e29eb5f945885bff0594f7",
+      "width": 1080,
+      "height": 2340
+    },
+    "november-rain-search.png": {
+      "sha256": "976d3eccb1f6509a8ed22c456c36abebd5694d084e1f92b390a7e3405fe72619",
+      "width": 1080,
+      "height": 2340
+    }
+  }
+}
