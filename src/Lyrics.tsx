@@ -22,6 +22,7 @@ export function LyricsBackground({ snapshot, songId, onError }: {
 }) {
   const { reduceMotion } = useMedia();
   const [result, setResult] = useState<{ id: number; data?: Lyrics; error?: string } | null>(null);
+  const [retry, setRetry] = useState(0);
   const [position, setPosition] = useState(0);
   const [height, setHeight] = useState(0);
   const [browsing, setBrowsing] = useState(false);
@@ -48,10 +49,6 @@ export function LyricsBackground({ snapshot, songId, onError }: {
       setRequested(null);
     }
   }, [snapshot, np, requested]);
-  useEffect(() => {
-    const tick = () => setPosition(clock.current.position(performance.now()));
-    tick(); const timer = setInterval(tick, 50); return () => clearInterval(timer);
-  }, []);
   useEffect(() => () => {
     clearTimeout(returnTimer.current);
     clearTimeout(snapTimer.current);
@@ -63,11 +60,23 @@ export function LyricsBackground({ snapshot, songId, onError }: {
     setResult(null);
     void invoke<Lyrics>('fetch_lyrics', { songId }).then(data => { if (!cancelled) setResult({ id: songId, data }); }, error => { if (!cancelled) setResult({ id: songId, error: String(error) }); });
     return () => { cancelled = true; };
-  }, [songId]);
+  }, [songId, retry]);
   const data = result && result.id === songId ? result.data : undefined;
   const parsed = useMemo(() => prepareLyrics(data), [data]);
+  useEffect(() => {
+    const tick = () => {
+      if (!document.hidden) setPosition(previous => {
+        const next = clock.current.position(performance.now());
+        return activeLine(parsed.lines, previous) === activeLine(parsed.lines, next) ? previous : next;
+      });
+    };
+    tick();
+    const timer = setInterval(tick, 100);
+    document.addEventListener('visibilitychange', tick);
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', tick); };
+  }, [parsed.lines]);
   const lineCount = parsed.lines.length;
-  const index = activeLine(parsed.lines, requested?.target ?? position);
+  const index = activeLine(parsed.lines, requested?.target ?? (np?.isPlaying ? position : np?.position ?? position));
   const center = Math.max(0, index);
   const canSeek = Boolean(np?.packageName && np.duration > 0 && ((np.playbackActions || 0) & 256)
     && (np.isPlaying || ((np.playbackActions || 0) & (4 | 512))));
@@ -171,11 +180,16 @@ export function LyricsBackground({ snapshot, songId, onError }: {
     } finally { submitting.current = false; setBusy(false); }
   }
 
-  if (!np || !songId || !parsed.lines.length) return null;
+  if (!np || !songId) return null;
+  if (!parsed.lines.length) return result?.id === songId && result.error
+    ? <YStack position="absolute" inset={0} alignItems="center" justifyContent="center" gap="3" padding="4">
+      <Text textAlign="center">歌词加载失败</Text>
+      <Button size="sm" onPress={() => setRetry(value => value + 1)}>重试歌词</Button>
+    </YStack>
+    : null;
   return <YStack position="absolute" inset={0} zIndex={0} overflow="hidden" aria-label="同步歌词"
-    backgroundColor="lyricSurface" backgroundImage={musicAtmosphere.lyrics}
-    onLayout={event => setHeight(event.nativeEvent.layout.height)}>
-    <ScrollView ref={scroll} flex={1} showsVerticalScrollIndicator={false} tabIndex={0}
+    backgroundColor="lyricSurface" backgroundImage={musicAtmosphere.lyrics}>
+    <ScrollView ref={scroll} flex={1} minHeight={0} onLayout={event => setHeight(event.nativeEvent.layout.height)} showsVerticalScrollIndicator={false} tabIndex={0}
       aria-label="上下滑动浏览歌词" scrollEventThrottle={16}
       onWheel={browse}
       onPointerDown={() => { dragging.current = true; browse(); }}
@@ -222,20 +236,23 @@ const LyricRow = memo(function LyricRow({ line, translation, active, nearby, sel
   lineIndex: number; onHeight: (lineIndex: number, height: number) => void;
 }) {
   const focused = active || selected;
+  // Measure the unscaled layout; the visual scale belongs to the inner row.
   return <YStack width="100%" maxWidth={720} alignSelf="center" flexShrink={0}
-    onLayout={event => onHeight(lineIndex, event.nativeEvent.layout.height)}
-    paddingHorizontal={28} paddingVertical={Math.round(LYRIC_FONT_SIZE * .55)} gap="3"
-    alignItems="center" justifyContent="center"
-    transition={reduceMotion ? 'none' : 'quickLessBouncy'} scale={focused ? 1 : 0.94}
-    opacity={focused ? 1 : nearby ? 0.38 : 0.16}>
-    <Text fontSize={focused ? LYRIC_FONT_SIZE : 23} lineHeight={LYRIC_LINE_HEIGHT} fontWeight={focused ? '700' : '500'}
-      transition={reduceMotion ? 'none' : 'quickLessBouncy'}
-      backgroundImage={focused ? musicAtmosphere.lyricInk : undefined} backgroundClip={focused ? 'text' : undefined}
-      textShadowColor="lyricGlow" textShadowRadius={focused ? 8 : 0}
-      textShadowOffset={{ width: 0, height: 0 }}
-      color={focused ? 'transparent' : nearby ? 'lyricNearby' : 'lyricRest'} textAlign="center" numberOfLines={2}>{line.text}</Text>
-    {translation && <Text fontSize={focused ? TRANSLATION_FONT_SIZE : TRANSLATION_FONT_SIZE - 3} lineHeight={1.4}
-      color="lyricTranslation" opacity={focused ? 0.76 : 0.65}
-      textAlign="center" numberOfLines={2}>{translation}</Text>}
+    onLayout={event => onHeight(lineIndex, event.nativeEvent.layout.height)}>
+    <YStack width="100%"
+      paddingHorizontal={28} paddingVertical={Math.round(LYRIC_FONT_SIZE * .55)} gap="3"
+      alignItems="center" justifyContent="center"
+      transition={reduceMotion ? 'none' : 'quickLessBouncy'} scale={focused ? 1 : 0.94}
+      opacity={focused ? 1 : nearby ? 0.38 : 0.16}>
+      <Text fontSize={focused ? LYRIC_FONT_SIZE : 23} lineHeight={LYRIC_LINE_HEIGHT} fontWeight={focused ? '700' : '500'}
+        transition={reduceMotion ? 'none' : 'quickLessBouncy'}
+        backgroundImage={focused ? musicAtmosphere.lyricInk : undefined} backgroundClip={focused ? 'text' : undefined}
+        textShadowColor="lyricGlow" textShadowRadius={focused ? 8 : 0}
+        textShadowOffset={{ width: 0, height: 0 }}
+        color={focused ? 'transparent' : nearby ? 'lyricNearby' : 'lyricRest'} textAlign="center">{line.text}</Text>
+      {translation && <Text fontSize={focused ? TRANSLATION_FONT_SIZE : TRANSLATION_FONT_SIZE - 3} lineHeight={1.4}
+        color="lyricTranslation" opacity={focused ? 0.76 : 0.65}
+        textAlign="center">{translation}</Text>}
+    </YStack>
   </YStack>;
 });

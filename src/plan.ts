@@ -17,23 +17,19 @@ export function makePlan(comments: Comment[], duration: number, height: number, 
   const list = (cfg.commentLimit == null ? unique : unique.slice(0, cfg.commentLimit)).sort((a, b) => a.time - b.time || a.commentId - b.commentId);
   // 阅读时间超过穿屏时间的评论单独成队，在顶部驻留显示；其余继续穿屏
   let crossing = crossingDuration(width, cfg.fontSize, lanes, list.length, duration);
-  let flow = list;
+  const flow: Comment[] = [];
   const pinned: Comment[] = [];
-  if (cfg.pinLongComments) {
-    for (let pass = 0; pass < 3; pass++) {
-      const tooFast = flow.filter(comment => readingDurationMs(comment.content) > crossing);
-      if (!tooFast.length) break;
-      pinned.push(...tooFast);
-      flow = flow.filter(comment => readingDurationMs(comment.content) <= crossing);
-      crossing = crossingDuration(width, cfg.fontSize, lanes, flow.length, duration);
-    }
+  for (const comment of list) {
+    if (cfg.pinLongComments && readingDurationMs(comment.content) > crossing) pinned.push(comment);
+    else flow.push(comment);
   }
+  crossing = crossingDuration(width, cfg.fontSize, lanes, flow.length, duration);
   return {
     list: flow,
     lanes,
     spacing: duration / Math.max(1, flow.length),
     crossing,
-    pinned: { list: pinned, spacing: duration / Math.max(1, pinned.length) },
+    pinned: { list: pinned },
   };
 }
 

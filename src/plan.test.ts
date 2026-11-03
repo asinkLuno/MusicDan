@@ -68,7 +68,7 @@ test('comments that read slower than they fly get pinned to the top queue', () =
   const plan = makePlan([short, long], 60000, 600, defaults, 360);
   assert.deepEqual(plan.list.map(c => c.content), ['好听']);
   assert.deepEqual(plan.pinned.list.map(c => c.content), [long.content]);
-  assert.equal(plan.pinned.spacing, 60000);
+  assert.equal(plan.crossing, crossingDuration(360, defaults.fontSize, plan.lanes, plan.list.length, 60000));
 });
 test('pinned mode off keeps every comment in the flow', () => {
   const long = { commentId: 1, content: '长'.repeat(60), liked_count: 1, time: 1 };

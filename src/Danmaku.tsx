@@ -7,7 +7,7 @@ import { danmakuEffects } from './tamagui.config';
 import { PlaybackClock } from './playbackClock';
 
 type SpriteLine = { segs: Segment[]; widths: number[]; width: number };
-type Sprite = { lines: SpriteLine[]; lineHeight: number; font: string; badgeFont: string; fontSize: number; height: number; emoteSize: number; effect: 'high' | 'top' | null; badge: string; width: number; tiles: Map<number, HTMLCanvasElement>; invalidate: () => void };
+type Sprite = { pageCount: number; pageIndex: number; lines: SpriteLine[]; lineHeight: number; font: string; badgeFont: string; fontSize: number; height: number; emoteSize: number; effect: 'high' | 'top' | null; badge: string; width: number; tiles: Map<number, HTMLCanvasElement>; invalidate: () => void };
 
 export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; settings: Settings }) {
   const theme = useTheme();
@@ -16,6 +16,8 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const clock = useRef(new PlaybackClock());
   const playing = snapshot?.nowPlaying?.isPlaying ?? false;
+  const opacity = useRef(settings.opacity);
+  opacity.current = settings.opacity;
   const wake = useRef<(() => void) | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   useEffect(() => {
@@ -85,7 +87,7 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
       return lines;
     }
 
-    function makeSprite(comment: Comment, maxWidth?: number): Sprite {
+    function makeSprite(comment: Comment, maxWidth?: number, pageIndex = 0): Sprite {
       const fontSize = commentFontSize(settings.fontSize, comment.occurrences);
       const lineHeight = Math.round(fontSize * 1.3);
       const font = `500 ${fontSize}px system-ui, sans-serif`;
@@ -101,15 +103,19 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
       const measuredBadge = badge ? context.measureText(badge).width : 0;
       context.font = font;
       const badgeWidth = badge ? fontSize * .25 + measuredBadge : 0;
-      const lines = maxWidth != null && textWidth + badgeWidth > maxWidth
+      const allLines = maxWidth != null && textWidth + badgeWidth > maxWidth
         ? wrapLines(segs, widths, Math.max(1, maxWidth - badgeWidth))
         : [{ segs, widths, width: textWidth }];
-      const width = Math.ceil(Math.max(...lines.map((line, index) => line.width + (index === lines.length - 1 ? badgeWidth : 0))));
+      const rowsPerPage = maxWidth == null ? allLines.length : Math.max(1, Math.floor((height / 2 - padding * 2 - 8) / lineHeight));
+      const pageCount = Math.ceil(allLines.length / rowsPerPage);
+      const lines = allLines.slice(pageIndex * rowsPerPage, (pageIndex + 1) * rowsPerPage);
+      const hasBadge = pageIndex === pageCount - 1;
+      const width = Math.ceil(Math.max(...lines.map((line, index) => line.width + (hasBadge && index === lines.length - 1 ? badgeWidth : 0))));
       const effect = comment.liked_count >= danmakuEffects.top.minLikes ? 'top' : comment.liked_count >= danmakuEffects.high.minLikes ? 'high' : null;
       const tiles = new Map<number, HTMLCanvasElement>();
       // An arriving emote only invalidates the comment that uses it.
       const invalidate = () => tiles.clear();
-      return { lines, lineHeight, font, badgeFont, fontSize, height: lines.length * lineHeight + padding * 2, emoteSize, effect, badge, width, tiles, invalidate };
+      return { pageCount, pageIndex, lines, lineHeight, font, badgeFont, fontSize, height: lines.length * lineHeight + padding * 2, emoteSize, effect, badge: hasBadge ? badge : '', width, tiles, invalidate };
     }
     function spriteFor(index: number) {
       let sprite = sprites.get(index);
@@ -120,9 +126,18 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
     const pinList = pinned.list;
     const pinEnters: number[] = [];
     { let acc = 0; for (const comment of pinList) { pinEnters.push(acc); acc += pinDurationMs(comment.content); } }
-    function pinnedSpriteFor(index: number) {
+    function pinnedSpriteFor(index: number, elapsed: number, dwell: number) {
       let sprite = pinnedSprites.get(index);
-      if (!sprite) { sprite = makeSprite(pinList[index], size.width - 24); pinnedSprites.set(index, sprite); }
+      if (!sprite) {
+        sprite = makeSprite(pinList[index], size.width - 24);
+        pinnedSprites.set(index, sprite);
+      }
+      const page = Math.min(sprite.pageCount - 1, Math.floor(elapsed / dwell * sprite.pageCount));
+      if (sprite.pageIndex !== page) {
+        removeEmoteListener(sprite.invalidate);
+        sprite = makeSprite(pinList[index], size.width - 24, page);
+        pinnedSprites.set(index, sprite);
+      }
       return sprite;
     }
     function activePinned(position: number): number {
@@ -207,7 +222,7 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
         const position = clock.current.position(frameTime);
         if (list.length) {
           const [start, end] = visibleRange(position, crossing, spacing, list.length);
-          context.globalAlpha = settings.opacity;
+          context.globalAlpha = opacity.current;
           for (const [index, sprite] of sprites) {
             if (index < start || index > end) {
               removeEmoteListener(sprite.invalidate);
@@ -234,9 +249,9 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
               pinnedSprites.delete(index);
             }
           }
-          const sprite = pinnedSpriteFor(pinIndex);
+          const sprite = pinnedSpriteFor(pinIndex, elapsed, dwell);
           const y = pinIndex % 2 === 0 ? 4 : height - sprite.height - 4;
-          context.globalAlpha = fade * settings.opacity;
+          context.globalAlpha = fade * opacity.current;
           drawSprite(sprite, (size.width - sprite.width) / 2, y);
         }
       }
@@ -261,6 +276,6 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
       wake.current = null;
       document.removeEventListener('visibilitychange', resume);
     };
-  }, [size, playing, snapshot?.revision, snapshot?.nowPlaying?.duration, snapshot?.song?.duration, settings, textColor]);
+  }, [size, playing, snapshot?.revision, snapshot?.nowPlaying?.duration, snapshot?.song?.duration, settings.fontSize, settings.commentLimit, settings.pinLongComments, textColor]);
   return <View render="canvas" position="absolute" inset={0} width="100%" height="100%" pointerEvents="none" ref={element => { if (element instanceof HTMLCanvasElement) canvasRef.current = element; }} aria-label="实时弹幕" />;
 }

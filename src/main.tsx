@@ -185,10 +185,10 @@ function App() {
     </XStack>}
     <YStack key={tab} render="main" transition={media.reduceMotion ? undefined : "quickLessBouncy"} opacity={media.reduceMotion ? 1 : "1 enter:0"} y={media.reduceMotion ? 0 : "0 enter:8px"}
       flex={1} minHeight={0} width="100%" maxWidth={full ? undefined : 850} alignSelf="center"
-      padding={full ? '0' : media.sm ? '6' : '4'} gap="4" overflowY={tab === 'settings' ? 'auto' : 'hidden'}>
+      paddingHorizontal={media.sm ? '6' : '4'} paddingVertical={full ? '0' : media.sm ? '6' : '4'} gap="4" overflowY={tab === 'settings' ? 'auto' : 'hidden'}>
       {tab === 'danmaku' && <>
         {np && <YStack minWidth={0} gap="1" flexShrink={0}
-          paddingHorizontal={full ? '4' : '0'} paddingTop={full ? '3' : '0'}>
+          paddingTop={full ? '3' : '0'}>
           <MarqueeText text={np.title} kind="title"/>
           {np.artist ? <MarqueeText text={np.artist}/> : null}
           <MarqueeText text={`专辑 · ${np.album || snapshot?.song?.album || '未知专辑'}`} kind="caption"/>
