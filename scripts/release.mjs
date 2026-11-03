@@ -246,7 +246,9 @@ async function publishGitHub(buildNumber, sha, apk) {
   run('gh', ['release', 'create', tag, '--repo', REPO_SLUG, '--target', sha,
     '--draft', '--title', `MusicDan v${version}`, '--notes-file', notesFile]);
   run('gh', ['release', 'upload', tag, '--repo', REPO_SLUG, apk, siteBundle, '--clobber']);
-  const draft = githubApi(`repos/${REPO_SLUG}/releases/tags/${tag}`);
+  // 草稿还没有真正的 tag，GET /releases/tags/{tag} 查不到，只能从 Release 列表里找
+  const draft = githubApi(`repos/${REPO_SLUG}/releases`)
+    .find(item => item.draft && item.tag_name === tag);
   const uploaded = draft.assets.find(item => item.name === apkName);
   if (!uploaded) throw new Error('APK 上传后未在草稿 Release 中找到');
   if (uploaded.digest && uploaded.digest !== `sha256:${await sha256File(apk)}`) throw new Error('上传的 APK 摘要与本地不一致');
