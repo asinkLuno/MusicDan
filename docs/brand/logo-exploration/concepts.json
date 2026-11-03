@@ -1,0 +1,50 @@
+[
+  {
+    "num": "01",
+    "name": "共鸣音符",
+    "subtitle": "Note / conversation",
+    "description": "推荐方向。把评论气泡与一枚音符融合：上方是音乐，下方的短尾是发言。轮廓集中，适合 Android 桌面图标。",
+    "file": "01-musicdan.svg",
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" role=\"img\" aria-labelledby=\"title\"><title id=\"title\">MusicDan · 共鸣音符</title><path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M26 20h48a10 10 0 0 1 10 10v34a10 10 0 0 1-10 10H45L26 85V74a10 10 0 0 1-10-10V30a10 10 0 0 1 10-10Zm30 13v21.5a10 8 0 1 0 7 7.5V43l10-3V29Z\"/></svg>"
+  },
+  {
+    "num": "02",
+    "name": "弹幕节拍",
+    "subtitle": "Capsule / rhythm",
+    "description": "五条圆角胶囊形成 M 的节奏轮廓，把 Music 的首字母与错落的弹幕轨道结合。结构直接，缩小后仍保留节拍感。",
+    "file": "02-musicdan.svg",
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" role=\"img\" aria-labelledby=\"title\"><title id=\"title\">MusicDan · 弹幕节拍</title><g fill=\"currentColor\"><rect x=\"16\" y=\"34\" width=\"10\" height=\"40\" rx=\"5\"/><rect x=\"30.5\" y=\"22\" width=\"10\" height=\"36\" rx=\"5\"/><rect x=\"45\" y=\"38\" width=\"10\" height=\"29\" rx=\"5\"/><rect x=\"59.5\" y=\"22\" width=\"10\" height=\"36\" rx=\"5\"/><rect x=\"74\" y=\"34\" width=\"10\" height=\"40\" rx=\"5\"/></g></svg>"
+  },
+  {
+    "num": "03",
+    "name": "流动的 M",
+    "subtitle": "Line / monogram",
+    "description": "一条连续曲线写出 M，像旋律从低处升起再落下。偏重品牌字母识别，适合希望图标更克制的方向。",
+    "file": "03-musicdan.svg",
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" role=\"img\" aria-labelledby=\"title\"><title id=\"title\">MusicDan · 流动的 M</title><path d=\"M21 73V40c0-22 29-22 29 0v20-20c0-22 29-22 29 0v33\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"10\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>"
+  },
+  {
+    "num": "04",
+    "name": "留声一句",
+    "subtitle": "Disc / comment",
+    "description": "唱片外轮廓留出一个评论尾巴，中心小孔保留唱片的直觉。几何实体与负空间组合，安静且易于记忆。",
+    "file": "04-musicdan.svg",
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" role=\"img\" aria-labelledby=\"title\"><title id=\"title\">MusicDan · 留声一句</title><path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M50 16a34 34 0 1 1-9 66L20 87l5-21A34 34 0 0 1 50 16Zm0 23a11 11 0 1 0 0 22 11 11 0 0 0 0-22Z\"/></svg>"
+  },
+  {
+    "num": "05",
+    "name": "掠过的歌",
+    "subtitle": "Geometry / motion",
+    "description": "右侧圆角 D 同时呼应 Dan；左侧三道横线从不同位置进入，像评论掠过播放界面。强调弹幕的运动感。",
+    "file": "05-musicdan.svg",
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" role=\"img\" aria-labelledby=\"title\"><title id=\"title\">MusicDan · 掠过的歌</title><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"8\" stroke-linecap=\"round\"><path d=\"M45 23h8a27 27 0 0 1 0 54h-8V23Z\" stroke-linejoin=\"round\"/><path d=\"M18 35h16M12 50h22M22 65h12\"/></g></svg>"
+  },
+  {
+    "num": "06",
+    "name": "同频",
+    "subtitle": "Nodes / resonance",
+    "description": "两个圆点由平滑的波形连接，表达不同听众在同一首歌里产生共鸣。更有人情味，适合社区感较强的品牌方向。",
+    "file": "06-musicdan.svg",
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" role=\"img\" aria-labelledby=\"title\"><title id=\"title\">MusicDan · 同频</title><g fill=\"currentColor\"><circle cx=\"23\" cy=\"62\" r=\"10\"/><circle cx=\"77\" cy=\"38\" r=\"10\"/></g><path d=\"M23 62V42a13.5 13.5 0 0 1 27 0v16a13.5 13.5 0 0 0 27 0V38\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"8\" stroke-linecap=\"round\"/></svg>"
+  }
+]
