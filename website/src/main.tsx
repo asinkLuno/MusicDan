@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 const overlay = '/screenshots/november-rain-danmaku.png';
-const danmaku = '/screenshots/november-rain-fullscreen.png';
+const danmaku = '/screenshots/app-danmaku.png';
 const search = '/screenshots/november-rain-search.png';
 import './index.css';
 
@@ -116,10 +116,10 @@ function App() {
               </CardHeader>
               <CardContent>
                 <AspectRatio ratio={6 / 13} className="overflow-hidden rounded-lg bg-muted">
-                  <img src={danmaku} alt="MusicDan 应用内弹幕播放界面" width={1080} height={2340} loading="lazy" className="size-full object-contain" />
+                  <img src={danmaku} alt="MusicDan 播放 Creep 时的应用内弹幕，1000 条热评跟随进度滚动" width={1080} height={2340} loading="lazy" className="size-full object-contain" />
                 </AspectRatio>
               </CardContent>
-              <CardFooter><MessageCircle aria-hidden="true" className="mr-2 size-4" /> 热评优先，跟随播放进度滚动</CardFooter>
+              <CardFooter><MessageCircle aria-hidden="true" className="mr-2 size-4" /> 热评优先，上千条评论跟随播放进度滚动</CardFooter>
             </Card>
             <Card>
               <CardHeader>
