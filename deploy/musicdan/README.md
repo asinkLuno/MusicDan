@@ -64,3 +64,28 @@ docker logs --tail 50 caddy
 ```
 
 历史 `public/releases/build-N/` 目录保留作为回滚点；将 `public/latest` 原子切回对应目录即可同时回滚官网、APK 和发布记录。`--site-only` 单独部署的页面可通过 `/srv/musicdan/site` 切回旧目录。定期关注磁盘空间。
+
+## 日常发布操作手册
+
+发布入口统一为根目录的 `scripts/release.mjs`，以下命令调用同一流程：
+
+| 入口 | 用途 | 是否修改服务器 |
+| --- | --- | --- |
+| `yarn release:check` | 检查工作区、四处版本号和更新说明 | 否 |
+| `git push origin HEAD:releases` | 检查、构建并发布当前提交，然后推送代码 | 是 |
+| `yarn release` | 手动执行完整发布，用于重试 | 是 |
+| `yarn release:site` | 仅重新构建并替换官网 | 是 |
+| `yarn build:release-site` | 仅打包官网，需要预览服务与 Chrome 已启动 | 否 |
+
+正常发布顺序：
+
+1. 同步根 package.json、Tauri 配置、Cargo.toml 和 Cargo.lock 的应用版本。
+2. 更新 release-notes.md，仅保留当前版本说明；提交源码与说明。生成的 artifacts/previews 截图允许有改动，其余未提交或未跟踪文件会阻止发布。
+3. 运行 `yarn release:check`，再推送当前提交到 releases 分支。首次克隆需启用钩子并准备本地签名、SDK/NDK、Chrome、官网依赖及 macmini 访问。
+4. 检查官网 latest.json 的版本、source_commit 和固定 APK 下载地址。
+
+注意：pre-push 在 Git 推送完成**之前**发布服务器。若随后 Git 推送失败，官网可能已经上线；修复 Git 连接后重试相同提交即可。相同版本已存在时仅校验已有 APK 并跳过，修改应用必须提高版本号。
+
+服务器记录读取失败时修复连接后重试，禁止手工清空记录；并发冲突时等待另一发布完成后重试。上传或构建失败不会推进最新版本指针。官网单独部署使用独立目录，下一次完整发布会重新接管官网指针。
+
+回滚旧 public/latest 会同时回滚历史列表，因此回滚后不要直接发布新版本：必须先恢复完整历史记录并确认最大构建编号，否则可能重新使用已有编号。旧版本目录和签名材料必须保留。

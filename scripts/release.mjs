@@ -15,7 +15,7 @@ import path from 'node:path';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const ECS_INSTANCE = process.env.MUSICDAN_ECS_INSTANCE;
 const ECS_BASE = '/srv/musicdan';
-const MACMINI_STAGE = '/tmp/musicdan-deploy';
+const MACMINI_STAGE = `/tmp/musicdan-deploy-${process.pid}-${Date.now()}`;
 const WEBSITE = 'https://musicdan.syncmoon.ink';
 const ANDROID_BUILD_TOOLS = '37.0.0';
 const ANDROID_PROJECT = path.join(root, 'src-tauri/gen/android');
@@ -110,10 +110,10 @@ async function buildSiteBundle() {
 
 /** 上传官网包并原子切换 /srv/musicdan/site 符号链接；旧目录保留用于回滚 */
 async function deploySite() {
-  const siteDir = `site-${version}-${pushedSha ? pushedSha.slice(0, 7) : 'manual'}`;
+  const siteDir = `site-${version}-${Date.now()}-${process.pid}`;
   console.log(`[site] 上传并解压到 ${ECS_BASE}/${siteDir}`);
   await upload(siteBundle, '/tmp/');
-  ecs(`set -e; cd ${ECS_BASE}; rm -rf ${siteDir}; mkdir ${siteDir}; mv /tmp/${path.basename(siteBundle)} ${siteDir}.tar.gz; tar -xzf ${siteDir}.tar.gz -C ${siteDir}; rm ${siteDir}.tar.gz; chown -R musicdan:musicdan ${siteDir}; chmod 755 ${siteDir}`);
+  ecs(`set -e; cd ${ECS_BASE}; mkdir ${siteDir}; mv /tmp/${path.basename(siteBundle)} ${siteDir}.tar.gz; tar -xzf ${siteDir}.tar.gz -C ${siteDir}; rm ${siteDir}.tar.gz; chown -R musicdan:musicdan ${siteDir}; chmod 755 ${siteDir}`);
   ecs(`set -e; cd ${ECS_BASE}; ln -s ${siteDir} .site-next-$$; mv -Tf .site-next-$$ site`);
   console.log(`[site] 官网已切换到 ${siteDir}`);
 }
@@ -224,6 +224,27 @@ async function publishServer(apk, buildNumber, sha, previous) {
     await rm(work, { recursive: true, force: true });
   }
 }
+
+// Fail before tests, builds or remote writes when source metadata is inconsistent.
+async function preflight() {
+  if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('发布版本必须为 x.y.z');
+  const status = run('git', ['status', '--porcelain', '--untracked-files=normal', '--', '.', ':!artifacts/previews']);
+  if (status.trim()) throw new Error(`请先提交或暂存到 stash 后再发布（预览截图除外）：\n${status}`);
+  const tauri = JSON.parse(await readFile(path.join(root, 'src-tauri/tauri.conf.json'), 'utf8'));
+  const cargo = await readFile(path.join(root, 'src-tauri/Cargo.toml'), 'utf8');
+  const lock = await readFile(path.join(root, 'src-tauri/Cargo.lock'), 'utf8');
+  const cargoVersion = /\[package\][\s\S]*?^version\s*=\s*"([^"]+)"/m.exec(cargo)?.[1];
+  const lockVersion = /\[\[package\]\]\nname = "musicdan"\nversion = "([^"]+)"/.exec(lock)?.[1];
+  if ([tauri.version, cargoVersion, lockVersion].some(value => value !== version)) {
+    throw new Error('package.json、tauri.conf.json、Cargo.toml、Cargo.lock 版本必须一致');
+  }
+  const notes = await readFile(path.join(root, 'release-notes.md'), 'utf8');
+  if (!notes.includes(`## ✨ v${version} 更新内容`)) throw new Error('release-notes.md 标题与当前版本不符');
+  console.log(`[check] v${version} 源码与发布元数据检查通过`);
+}
+
+await preflight();
+if (args.includes('--check')) process.exit(0);
 
 if (siteOnly) {
   await buildSiteBundle();
