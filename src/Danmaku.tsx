@@ -44,8 +44,7 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
     const tileWidth = 512;
     const padding = 8;
     // Rasterize only visible text tiles, once; long comments do not allocate giant canvases.
-    const sprites = new Map<number, { segs: Segment[]; widths: number[]; font: string; badgeFont: string; fontSize: number; height: number; emoteSize: number; effect: 'high' | 'top' | null; badge: string; textWidth: number; width: number; tiles: Map<number, HTMLCanvasElement> }>();
-    const invalidateTiles = () => { for (const sprite of sprites.values()) sprite.tiles.clear(); };
+    const sprites = new Map<number, { segs: Segment[]; widths: number[]; font: string; badgeFont: string; fontSize: number; height: number; emoteSize: number; effect: 'high' | 'top' | null; badge: string; textWidth: number; width: number; tiles: Map<number, HTMLCanvasElement>; invalidate: () => void }>();
     function spriteFor(index: number) {
       let sprite = sprites.get(index);
       if (!sprite) {
@@ -68,7 +67,10 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
           context.font = font;
         }
         const effect = comment.liked_count >= danmakuEffects.top.minLikes ? 'top' : comment.liked_count >= danmakuEffects.high.minLikes ? 'high' : null;
-        sprite = { segs, widths, font, badgeFont, fontSize, height, emoteSize, effect, badge, textWidth, width: Math.ceil(width), tiles: new Map() };
+        const tiles = new Map<number, HTMLCanvasElement>();
+        // An arriving emote only invalidates the comment that uses it.
+        const invalidate = () => tiles.clear();
+        sprite = { segs, widths, font, badgeFont, fontSize, height, emoteSize, effect, badge, textWidth, width: Math.ceil(width), tiles, invalidate };
         sprites.set(index, sprite);
       }
       return sprite;
@@ -107,7 +109,7 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
             if (seg.type === 'text') {
               drawText(seg.text, cursor, spriteHeight / 2);
             } else {
-              const img = getEmoteImage(seg.url, invalidateTiles);
+              const img = getEmoteImage(seg.url, sprite.invalidate);
               if (img) ink.drawImage(img, cursor, (spriteHeight - emoteSize) / 2, emoteSize, emoteSize);
               else {
                 ink.save(); ink.beginPath(); ink.rect(cursor, 0, emoteSize, spriteHeight); ink.clip();
@@ -128,14 +130,19 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
       return image;
     }
     let animation = 0;
-    function draw() {
+    function draw(frameTime: number) {
       animation = 0;
       context.clearRect(0, 0, size.width, size.height);
       if (playing && list.length && !document.hidden) {
-        const position = clock.current.position(performance.now());
+        const position = clock.current.position(frameTime);
         const [start, end] = visibleRange(position, crossing, spacing, list.length);
         context.globalAlpha = settings.opacity;
-        for (const index of sprites.keys()) if (index < start || index > end) sprites.delete(index);
+        for (const [index, sprite] of sprites) {
+          if (index < start || index > end) {
+            removeEmoteListener(sprite.invalidate);
+            sprites.delete(index);
+          }
+        }
         for (let i = start; i <= end; i++) {
           const sprite = spriteFor(i);
           const spriteHeight = sprite.height;
@@ -155,15 +162,20 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
       if (playing && list.length && !document.hidden) animation = requestAnimationFrame(draw);
     }
     function resume() {
-      cancelAnimationFrame(animation);
-      draw();
+      // Polling updates the clock without interrupting the vsync frame already queued.
+      if (document.hidden) {
+        cancelAnimationFrame(animation);
+        animation = 0;
+      } else if (!animation) {
+        animation = requestAnimationFrame(draw);
+      }
     }
     wake.current = resume;
     document.addEventListener('visibilitychange', resume);
-    draw();
+    resume();
     return () => {
       cancelAnimationFrame(animation);
-      removeEmoteListener(invalidateTiles);
+      for (const sprite of sprites.values()) removeEmoteListener(sprite.invalidate);
       wake.current = null;
       document.removeEventListener('visibilitychange', resume);
     };

@@ -1,21 +1,53 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Text, YStack } from 'tamagui';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { Button, ScrollView, Text, useMedia, XStack, YStack } from 'tamagui';
+import { Play } from './icons';
 import { activeLine, prepareLyrics } from './lyrics';
-import type { Lyrics } from './lyrics';
+import type { LyricLine, Lyrics } from './lyrics';
 import { PlaybackClock } from './playbackClock';
-import { invoke } from './types';
+import { formatTime, invoke } from './types';
 import type { Snapshot } from './types';
 
-export function LyricsBackground({ snapshot, songId }: { snapshot: Snapshot | null; songId?: number }) {
+const ROW_HEIGHT = 144;
+
+export function LyricsBackground({ snapshot, songId, onError }: {
+  snapshot: Snapshot | null; songId?: number; onError: (error: unknown) => void;
+}) {
+  const { reduceMotion } = useMedia();
   const [result, setResult] = useState<{ id: number; data?: Lyrics; error?: string } | null>(null);
   const [position, setPosition] = useState(0);
+  const [height, setHeight] = useState(0);
+  const [browsing, setBrowsing] = useState(false);
+  const [selected, setSelected] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [requested, setRequested] = useState<{ target: number; sentAt: number } | null>(null);
+  const scroll = useRef<ScrollView>(null);
+  const offset = useRef(0);
+  const manual = useRef(false);
+  const dragging = useRef(false);
+  const submitting = useRef(false);
+  const initialized = useRef(false);
+  const returnTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const snapTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const requestTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const clock = useRef(new PlaybackClock());
+  const np = snapshot?.nowPlaying;
+
   useEffect(() => {
     clock.current.update(snapshot, performance.now(), Date.now());
-  }, [snapshot]);
+    if (requested && snapshot && np && snapshot.sampledAt > requested.sentAt
+      && Math.abs(np.position - requested.target) < 1000) {
+      clearTimeout(requestTimer.current);
+      setRequested(null);
+    }
+  }, [snapshot, np, requested]);
   useEffect(() => {
     const tick = () => setPosition(clock.current.position(performance.now()));
     tick(); const timer = setInterval(tick, 50); return () => clearInterval(timer);
+  }, []);
+  useEffect(() => () => {
+    clearTimeout(returnTimer.current);
+    clearTimeout(snapTimer.current);
+    clearTimeout(requestTimer.current);
   }, []);
   useEffect(() => {
     if (!songId) return;
@@ -26,20 +58,128 @@ export function LyricsBackground({ snapshot, songId }: { snapshot: Snapshot | nu
   }, [songId]);
   const data = result && result.id === songId ? result.data : undefined;
   const parsed = useMemo(() => prepareLyrics(data), [data]);
-  const index = activeLine(parsed.lines, position);
-  const first = Math.max(0, index - 1);
-  if (!snapshot?.nowPlaying || !songId || !parsed.lines.length) return null;
-  return <YStack position="absolute" inset={0} zIndex={0} pointerEvents="none"
-    padding="5" gap="5" alignItems="center" justifyContent="center" overflow="hidden" aria-label="同步背景歌词">
-    {parsed.lines.slice(first, first + 3).map((line, offset) => {
-      const active = first + offset === index;
-      const translation = parsed.translations.get(line.start);
-      return <YStack key={`${line.start}:${first + offset}`} width="100%" maxWidth={720}
-        gap="2" alignItems="center" flexShrink={0} opacity={active ? 0.6 : 0.2}>
-        <Text fontSize={active ? 'xl' : 'lg'} fontWeight={active ? '700' : '400'}
-          color="color" textAlign="center" numberOfLines={2}>{line.text || '♪'}</Text>
-        {translation && <Text fontSize="sm" color="color-10" textAlign="center" numberOfLines={2}>{translation}</Text>}
-      </YStack>;
-    })}
+  const index = activeLine(parsed.lines, requested?.target ?? position);
+  const center = Math.max(0, index);
+  const canSeek = Boolean(np?.packageName && np.duration > 0 && ((np.playbackActions || 0) & 256)
+    && (np.isPlaying || ((np.playbackActions || 0) & (4 | 512))));
+
+  useEffect(() => {
+    if (browsing || !height || !parsed.lines.length) return;
+    scroll.current?.scrollTo({ y: center * ROW_HEIGHT, animated: initialized.current && !reduceMotion });
+    initialized.current = true;
+  }, [center, browsing, height, parsed, reduceMotion]);
+
+  function follow() {
+    clearTimeout(returnTimer.current);
+    clearTimeout(snapTimer.current);
+    manual.current = false;
+    setBrowsing(false);
+  }
+  function scheduleReturn() {
+    clearTimeout(returnTimer.current);
+    clearTimeout(snapTimer.current);
+    if (dragging.current) return;
+    // Wait for touch momentum or wheel scrolling to settle, then center the nearest line.
+    snapTimer.current = setTimeout(() => {
+      const target = Math.max(0, Math.min(parsed.lines.length - 1, Math.round(offset.current / ROW_HEIGHT))) * ROW_HEIGHT;
+      if (manual.current && Math.abs(offset.current - target) > 1) {
+        scroll.current?.scrollTo({ y: target, animated: !reduceMotion });
+      }
+    }, 180);
+    returnTimer.current = setTimeout(follow, 5000);
+  }
+  function browse() {
+    if (!manual.current) scroll.current?.scrollTo({ y: offset.current, animated: false });
+    manual.current = true;
+    setBrowsing(true);
+    setSelected(Math.max(0, Math.min(parsed.lines.length - 1, Math.round(offset.current / ROW_HEIGHT))));
+    scheduleReturn();
+  }
+  function endDrag() {
+    dragging.current = false;
+    if (manual.current) scheduleReturn();
+  }
+  async function playSelected() {
+    const line = parsed.lines[selected];
+    if (!line || !np?.packageName || !canSeek || submitting.current) return;
+    const target = Math.max(0, Math.min(np.duration, line.start));
+    submitting.current = true;
+    setBusy(true);
+    setRequested({ target, sentAt: Date.now() });
+    follow();
+    clearTimeout(requestTimer.current);
+    requestTimer.current = setTimeout(() => setRequested(null), 2500);
+    try {
+      await invoke('plugin:media|control_playback', {
+        control: { packageName: np.packageName, action: 'seek', position: Math.round(target) },
+      });
+      if (!np.isPlaying) await invoke('plugin:media|control_playback', {
+        control: { packageName: np.packageName, action: 'play', position: null },
+      });
+    } catch (error) {
+      clearTimeout(requestTimer.current);
+      setRequested(null);
+      onError(error);
+    } finally { submitting.current = false; setBusy(false); }
+  }
+
+  if (!np || !songId || !parsed.lines.length) return null;
+  return <YStack position="absolute" inset={0} zIndex={0} overflow="hidden" aria-label="同步歌词"
+    onLayout={event => setHeight(event.nativeEvent.layout.height)}>
+    <ScrollView ref={scroll} flex={1} showsVerticalScrollIndicator={false} tabIndex={0}
+      aria-label="上下滑动浏览歌词" scrollEventThrottle={16}
+      onWheel={browse}
+      onPointerDown={() => { dragging.current = true; browse(); }}
+      onPointerUp={endDrag} onPointerCancel={endDrag} onPointerLeave={endDrag}
+      onKeyDown={event => {
+        if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)) browse();
+      }}
+      onScroll={event => {
+        offset.current = event.nativeEvent.contentOffset.y;
+        if (!manual.current) return;
+        setSelected(Math.max(0, Math.min(parsed.lines.length - 1, Math.round(offset.current / ROW_HEIGHT))));
+        scheduleReturn();
+      }}>
+      <YStack flexShrink={0} paddingVertical={Math.max(0, (height - ROW_HEIGHT) / 2)}>
+        {parsed.lines.map((line, lineIndex) => <LyricRow key={`${line.start}:${lineIndex}`}
+          line={line} translation={parsed.translations.get(line.start)} active={lineIndex === index}
+          selected={browsing && lineIndex === selected} reduceMotion={reduceMotion}/>)}
+      </YStack>
+    </ScrollView>
+    {browsing && <>
+      <XStack position="absolute" top="50%" left="3" right="3" height={44} y={-22}
+        alignItems="center" gap="2" pointerEvents="box-none">
+        <Button circular size="sm" width={44} height={44} minWidth={44} disabled={!canSeek || busy}
+          aria-label={`从 ${formatTime(parsed.lines[selected]?.start ?? 0)} 播放`}
+          onPress={() => void playSelected()} icon={<Play size={20}/>}/>
+        <YStack flex={1} height={1} backgroundColor="border-color" opacity={0.5} pointerEvents="none"/>
+        <Text fontSize="xs" color="color-10" pointerEvents="none">
+          {formatTime(parsed.lines[selected]?.start ?? 0)}
+        </Text>
+      </XStack>
+      <YStack position="absolute" bottom="2" alignSelf="center" gap="1" alignItems="center">
+        {!canSeek && <Text fontSize="xs" color="color-10">当前音乐 App 不支持从歌词定位播放</Text>}
+        <Button size="sm" onPress={follow}>回到当前</Button>
+      </YStack>
+    </>}
   </YStack>;
 }
+
+const LyricRow = memo(function LyricRow({ line, translation, active, selected, reduceMotion }: {
+  line: LyricLine; translation?: string; active: boolean; selected: boolean; reduceMotion: boolean;
+}) {
+  return <YStack width="100%" maxWidth={720} alignSelf="center" height={ROW_HEIGHT} flexShrink={0}
+    paddingHorizontal={64} gap="2" alignItems="center" justifyContent="center"
+    transition={reduceMotion ? 'none' : 'quickLessBouncy'} scale={active || selected ? 1 : 0.88}
+    opacity={selected ? 0.85 : active ? 0.6 : 0.2}>
+    <Text fontSize="xl" fontWeight={active || selected ? '700' : '400'}
+      transition={reduceMotion ? 'none' : 'quickLessBouncy'}
+      textShadowColor="accent-background" textShadowRadius={active ? 12 : 0}
+      textShadowOffset={{ width: 0, height: 0 }}
+      color="color" textAlign="center" numberOfLines={2}>{line.text || '♪'}</Text>
+    {translation && <Text fontSize="sm" color="color-10" textAlign="center" numberOfLines={2}
+      transition={reduceMotion ? 'none' : 'quickLessBouncy'}
+      textShadowColor="accent-background" textShadowRadius={active ? 6 : 0}
+      textShadowOffset={{ width: 0, height: 0 }}>{translation}</Text>}
+  </YStack>;
+});

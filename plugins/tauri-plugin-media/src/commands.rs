@@ -5,6 +5,11 @@ use crate::Result;
 use crate::models::*;
 
 #[command]
+pub(crate) async fn set_keep_screen_on<R: Runtime>(app: AppHandle<R>, enabled: bool) -> Result<()> {
+    app.media().set_keep_screen_on(enabled)
+}
+
+#[command]
 pub(crate) async fn get_now_playing<R: Runtime>(
     app: AppHandle<R>,
 ) -> Result<GetNowPlayingResponse> {

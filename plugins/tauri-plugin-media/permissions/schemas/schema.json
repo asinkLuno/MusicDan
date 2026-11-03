@@ -379,6 +379,18 @@
           "markdownDescription": "Denies the overlay_status command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_keep_screen_on command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-keep-screen-on",
+          "markdownDescription": "Enables the set_keep_screen_on command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_keep_screen_on command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-keep-screen-on",
+          "markdownDescription": "Denies the set_keep_screen_on command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_overlay command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-overlay",
@@ -391,10 +403,10 @@
           "markdownDescription": "Denies the set_overlay command without any pre-configured scope."
         },
         {
-          "description": "默认权限：允许查询当前播放、通知权限状态并跳转授权设置\n#### This default permission set includes:\n\n- `allow-haptic-feedback`\n- `allow-control-playback`\n- `allow-overlay-status`\n- `allow-open-overlay-settings`\n- `allow-set-overlay`\n- `allow-get-now-playing`\n- `allow-is-permission-granted`\n- `allow-open-permission-settings`",
+          "description": "默认权限：允许查询当前播放、通知权限状态并跳转授权设置\n#### This default permission set includes:\n\n- `allow-set-keep-screen-on`\n- `allow-haptic-feedback`\n- `allow-control-playback`\n- `allow-overlay-status`\n- `allow-open-overlay-settings`\n- `allow-set-overlay`\n- `allow-get-now-playing`\n- `allow-is-permission-granted`\n- `allow-open-permission-settings`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "默认权限：允许查询当前播放、通知权限状态并跳转授权设置\n#### This default permission set includes:\n\n- `allow-haptic-feedback`\n- `allow-control-playback`\n- `allow-overlay-status`\n- `allow-open-overlay-settings`\n- `allow-set-overlay`\n- `allow-get-now-playing`\n- `allow-is-permission-granted`\n- `allow-open-permission-settings`"
+          "markdownDescription": "默认权限：允许查询当前播放、通知权限状态并跳转授权设置\n#### This default permission set includes:\n\n- `allow-set-keep-screen-on`\n- `allow-haptic-feedback`\n- `allow-control-playback`\n- `allow-overlay-status`\n- `allow-open-overlay-settings`\n- `allow-set-overlay`\n- `allow-get-now-playing`\n- `allow-is-permission-granted`\n- `allow-open-permission-settings`"
         }
       ]
     }

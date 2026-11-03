@@ -20,6 +20,11 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 pub struct Media<R: Runtime>(PluginHandle<R>);
 
 impl<R: Runtime> Media<R> {
+    pub fn set_keep_screen_on(&self, enabled: bool) -> crate::Result<()> {
+        self.0.run_mobile_plugin::<EmptyResponse>("setKeepScreenOn", serde_json::json!({"enabled": enabled}))
+            .map(|_| ()).map_err(Into::into)
+    }
+
     pub fn haptic_feedback(&self, kind: HapticKind) -> crate::Result<()> {
         self.0.run_mobile_plugin::<EmptyResponse>("hapticFeedback", serde_json::json!({"kind": kind}))
             .map(|_| ()).map_err(Into::into)

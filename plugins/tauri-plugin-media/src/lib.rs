@@ -36,6 +36,7 @@ impl<R: Runtime, T: Manager<R>> crate::MediaExt<R> for T {
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("media")
         .invoke_handler(tauri::generate_handler![
+            commands::set_keep_screen_on,
             commands::haptic_feedback,
             commands::control_playback,
             commands::overlay_status,

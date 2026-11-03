@@ -29,7 +29,7 @@ function App() {
   const [tab, setTab] = useState('danmaku');
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [cfg, setCfg] = useState<Settings>(defaults);
-  const [commentLimitDraft, setCommentLimitDraft] = useState('');
+  const [commentLimitDraft, setCommentLimitDraft] = useState(String(defaults.commentLimit ?? ''));
   const [overlay, setOverlay] = useState({ granted: false, running: false, supported: true });
   const [error, setError] = useState('');
   const [full, setFull] = useState(false);
@@ -69,6 +69,11 @@ function App() {
   }, []);
   const fail = useCallback((e: unknown) => setError(e instanceof Error ? e.message : String(e)), []);
   useEffect(() => {
+    if (!full || tab !== 'danmaku' || !cfg.keepScreenOnFullscreen) return;
+    void invoke('plugin:media|set_keep_screen_on', { enabled: true }).catch(fail);
+    return () => { void invoke('plugin:media|set_keep_screen_on', { enabled: false }).catch(fail); };
+  }, [full, tab, cfg.keepScreenOnFullscreen, fail]);
+  useEffect(() => {
     let stopped = false;
     let revision: number | undefined;
     let timer: ReturnType<typeof setTimeout>;
@@ -86,6 +91,21 @@ function App() {
     void poll(); return () => { stopped = true; clearTimeout(timer); };
   }, []);
   useEffect(() => { const back = (e: KeyboardEvent) => { if (e.key === 'Escape') setFull(false); }; window.addEventListener('keydown', back); return () => window.removeEventListener('keydown', back); }, []);
+  // Android 返回键走 WebView 历史：离开弹幕 tab（或全屏）时压入一条历史记录，
+  // 第一次返回消费它并回到弹幕 tab，之后没有历史记录，原生返回键才退出应用。
+  useEffect(() => {
+    if (full || tab !== 'danmaku') {
+      const back = () => { if (full) setFull(false); else setTab('danmaku'); };
+      if (window.history.state?.musicdanBack) window.history.replaceState({ musicdanBack: true }, '');
+      else window.history.pushState({ musicdanBack: true }, '');
+      window.addEventListener('popstate', back);
+      return () => window.removeEventListener('popstate', back);
+    }
+    // 通过 Escape 或“应用选择”等应用内路径回到弹幕时，顺手消费掉压入的历史记录，
+    // 保证下一次返回键（而非再上一次）直接退出。
+    if (window.history.state?.musicdanBack) window.history.back();
+    return undefined;
+  }, [tab, full]);
   function change(patch: Partial<Settings>) {
     const next = { ...cfg, ...patch }; setCfg(next);
     if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -160,14 +180,15 @@ function App() {
       flex={1} minHeight={0} width="100%" maxWidth={full ? undefined : 850} alignSelf="center"
       padding={full ? '0' : media.sm ? '6' : '4'} gap="4" overflowY={tab === 'settings' ? 'auto' : 'hidden'}>
       {tab === 'danmaku' && <>
-        {!full && np && <YStack minWidth={0} gap="1" flexShrink={0}>
+        {np && <YStack minWidth={0} gap="1" flexShrink={0}
+          paddingHorizontal={full ? '4' : '0'} paddingTop={full ? '3' : '0'}>
           <MarqueeText text={np.title} kind="title"/>
           {np.artist ? <MarqueeText text={np.artist}/> : null}
           <MarqueeText text={`专辑 · ${np.album || snapshot?.song?.album || '未知专辑'}`} kind="caption"/>
         </YStack>}
         <Card flex={1} minHeight={100} borderRadius="8" borderWidth={1} borderColor="border-color" backgroundImage={musicAtmosphere.player} overflow="hidden" aria-label="弹幕播放器">
           <YStack position="relative" flex={1} minHeight={0} overflow="hidden">
-            <LyricsBackground snapshot={snapshot} songId={lyricSong?.songId}/>
+            <LyricsBackground key={`${currentKey}:${lyricSong?.songId}`} snapshot={snapshot} songId={lyricSong?.songId} onError={fail}/>
             <YStack position="absolute" inset={0} zIndex={1} pointerEvents="none">
               <Danmaku snapshot={snapshot} settings={cfg}/>
             </YStack>
@@ -263,6 +284,20 @@ function App() {
               change({ commentLimit: limit });
             }}>保存显示上限</Button>
             <Paragraph size="sm" color="color-10">后台始终全量抓取，每新增 1000 条更新弹幕。合并后的一组算一条，留空则全部显示；设置上限后优先显示高赞弹幕。修改显示上限无需重新抓取。</Paragraph>
+          </Card>
+        </YStack>
+        <YStack render="section" aria-labelledby="playback-settings-title" gap="3">
+          <H3 id="playback-settings-title" fontSize="sm" color="color-10" paddingHorizontal="1">播放设置</H3>
+          <Card padding="4" gap="3" borderRadius="6" borderWidth={1} borderColor="border-color">
+            <XStack gap="3" minHeight={44} alignItems="center">
+              <Label htmlFor="keep-screen-on-fullscreen" flex={1}>全屏时保持屏幕常亮</Label>
+              <Switch id="keep-screen-on-fullscreen" size="sm" aria-label="全屏时保持屏幕常亮"
+                transition={media.reduceMotion ? undefined : 'quickerLessBouncy'}
+                checked={cfg.keepScreenOnFullscreen} onCheckedChange={value => change({ keepScreenOnFullscreen: value })}>
+                <Switch.Thumb transition={media.reduceMotion ? undefined : 'quickLessBouncy'}/>
+              </Switch>
+            </XStack>
+            <Paragraph size="sm" color="color-10">开启后，全屏播放时屏幕保持常亮；退出全屏或切到后台后，按系统设置息屏。</Paragraph>
           </Card>
         </YStack>
         <YStack render="section" aria-labelledby="appearance-title" gap="3">

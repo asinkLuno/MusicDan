@@ -4,6 +4,7 @@
 
 #### This default permission set includes the following:
 
+- `allow-set-keep-screen-on`
 - `allow-haptic-feedback`
 - `allow-control-playback`
 - `allow-overlay-status`
@@ -200,6 +201,32 @@ Enables the overlay_status command without any pre-configured scope.
 <td>
 
 Denies the overlay_status command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`media:allow-set-keep-screen-on`
+
+</td>
+<td>
+
+Enables the set_keep_screen_on command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`media:deny-set-keep-screen-on`
+
+</td>
+<td>
+
+Denies the set_keep_screen_on command without any pre-configured scope.
 
 </td>
 </tr>

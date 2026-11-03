@@ -3,6 +3,7 @@ package com.musicdan.media
 import android.os.Build
 import android.os.SystemClock
 import android.view.HapticFeedbackConstants
+import android.view.WindowManager
 import android.net.Uri
 import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
@@ -39,6 +40,16 @@ class MediaPlugin(private val activity: Activity) : Plugin(activity) {
     private val executor = Executors.newSingleThreadExecutor()
 
     private var lastHapticTick = 0L
+
+    @Command
+    fun setKeepScreenOn(invoke: Invoke) {
+        val enabled = invoke.getArgs().getBoolean("enabled")
+        activity.runOnUiThread {
+            if (enabled) activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            else activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            invoke.resolve(JSObject())
+        }
+    }
 
     @Command
     fun hapticFeedback(invoke: Invoke) {

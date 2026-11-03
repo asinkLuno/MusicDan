@@ -14,6 +14,10 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 pub struct Media<R: Runtime>(AppHandle<R>);
 
 impl<R: Runtime> Media<R> {
+    pub fn set_keep_screen_on(&self, _enabled: bool) -> crate::Result<()> {
+        Ok(())
+    }
+
     pub fn haptic_feedback(&self, _kind: HapticKind) -> crate::Result<()> {
         Ok(())
     }
