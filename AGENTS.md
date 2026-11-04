@@ -10,7 +10,7 @@
 - 新记录包含 `build_number`、`version_code`、`source_commit`、版本名、文件大小、SHA-256 和更新说明。服务器只保留最近 3 个版本，安装包按 `public/releases/build-N/` 存放；发布成功后在发布锁内清理更早版本及废弃官网目录，不覆盖保留版本。
 - 所有附件上传并校验后，统一通过 `public/latest` 符号链接原子切换官网、APK、元数据。服务器发布锁和旧记录校验阻止并发覆盖；重复发布已存在版本时校验安装包后跳过。
 - 发布前同步 `package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 和 `src-tauri/Cargo.lock` 中的应用版本，并更新 `release-notes.md`。更新说明保存在官网发布记录和该版本目录中。
-- 本地构建依赖：`android-signing/musicdan.keystore` 与 `src-tauri/gen/android/keystore.properties`（签名材料只保存在本地，务必私有备份，不要提交或上传到任何远端）、Android SDK/NDK、Rust `aarch64-linux-android` target、macmini `workbench`。不再使用 Git 推送钩子触发发布。
+- 本地构建依赖：`android-signing/musicdan.keystore` 与 `src-tauri/gen/android/keystore.properties`（签名材料只保存在本地，务必私有备份，不要提交或上传到任何远端）、Android SDK/NDK、Rust `aarch64-linux-android` target、macmini `workbench`，以及环境变量 `MUSICDAN_ECS_INSTANCE`（服务器实例 ID，不写入仓库）。不再使用 Git 推送钩子触发发布。
 
 ### 发布说明格式
 

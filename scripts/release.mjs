@@ -30,6 +30,11 @@ function run(command, cliArgs, options = {}) {
   return execFileSync(command, cliArgs, { cwd: root, encoding: 'utf8', ...options });
 }
 
+function ecsInstance() {
+  if (!ECS_INSTANCE) throw new Error('请设置环境变量 MUSICDAN_ECS_INSTANCE（服务器实例 ID）');
+  return ECS_INSTANCE;
+}
+
 const version = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8')).version;
 const apkName = `MusicDan_${version}_arm64.apk`;
 
@@ -38,7 +43,7 @@ function ecs(command) {
   const quoted = `'${command.replaceAll("'", `'\\''`)}'`;
   const raw = run('ssh', [
     'macmini',
-    `/usr/local/bin/workbench exec --instance-id ${ECS_INSTANCE} --command ${quoted} --output json`,
+    `/usr/local/bin/workbench exec --instance-id ${ecsInstance()} --command ${quoted} --output json`,
   ]);
   const result = JSON.parse(raw);
   if (result.exit_code !== 0) {
@@ -60,7 +65,7 @@ function upload(localFile, ecsDir) {
     `${MACMINI_STAGE}/${path.basename(localFile)}`,
     `${ecsDir.replace(/\/$/, '')}/`,
     '--instance-id',
-    ECS_INSTANCE,
+    ecsInstance(),
   ]);
 }
 
