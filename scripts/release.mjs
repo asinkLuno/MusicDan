@@ -223,8 +223,9 @@ async function validateApk() {
     assert(signingDigest?.length === 64, '无法读取 release 签名证书');
   }
   const signature = run(path.join(tools, 'apksigner'), ['verify', '--print-certs', apk]);
+  const certificates = [...signature.matchAll(/certificate SHA-256 digest:\s*([a-f0-9]{64})/gi)];
   assert(
-    signature.toLowerCase().includes(`signer #1 certificate sha-256 digest: ${signingDigest}`),
+    certificates.length > 0 && certificates.every((match) => match[1].toLowerCase() === signingDigest),
     'APK 签名与 release keystore 不一致',
   );
   const badging = run(path.join(tools, 'aapt'), ['dump', 'badging', apk]);
