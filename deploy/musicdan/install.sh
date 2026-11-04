@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # Run on the ECS host from an extracted deployment bundle containing site/.
-# 官网静态页与 /releases 下的 APK 均为静态文件；更新由本仓库的
-# 在 main 分支运行 yarn release（scripts/release.mjs）完成。
+# 官网静态页与 /releases 下的 APK 均为静态文件。
+# 发布在 main 分支通过 yarn release 完成，APK 同时上传 GitHub Release。
 bundle=$(cd -- "$(dirname -- "$0")" && pwd)
 test "$(id -u)" -eq 0
 test -f "$bundle/site/index.html"

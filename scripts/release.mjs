@@ -1,332 +1,382 @@
-// 本地签名构建，直接发布官网与 APK；不调用 GitHub API 或推送 Git 标签。
-// yarn release：从 main 显式完整发布；--site-only：仅重建官网。
-// 服务器 releases.json 是构建编号和已发布版本的唯一来源。
-
-import { nextBuildNumber, releaseHistory, publishCommand, pruneCommand } from './release-state.mjs';
-import { spawn, execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+// main → annotated tag → APK → screenshots/site → ECS staging → GitHub Release → website.
+import assert from 'node:assert/strict';
+import { execFileSync, spawn } from 'node:child_process';
+import { createHash, randomUUID } from 'node:crypto';
 import net from 'node:net';
-import { globSync } from 'node:fs';
-import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { fileURLToPath } from 'node:url';
+import { existsSync, globSync } from 'node:fs';
+import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { setTimeout as delay } from 'node:timers/promises';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const ECS_INSTANCE = process.env.MUSICDAN_ECS_INSTANCE;
-const ECS_BASE = '/srv/musicdan';
-const MACMINI_STAGE = `/tmp/musicdan-deploy-${process.pid}-${Date.now()}`;
-const WEBSITE = 'https://musicdan.syncmoon.ink';
-const ANDROID_BUILD_TOOLS = '37.0.0';
-const ANDROID_PROJECT = path.join(root, 'src-tauri/gen/android');
-
+const base = '/srv/musicdan';
+const instance = process.env.MUSICDAN_ECS_INSTANCE;
+const workbench = '/usr/local/bin/workbench';
+const repo = 'asinkLuno/MusicDan';
+const android = path.join(root, 'src-tauri/gen/android');
+const sdk = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || path.join(homedir(), 'Library/Android/sdk');
+const chrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const args = process.argv.slice(2);
-if (args.includes('--pushed-sha')) throw new Error('推送触发发布已移除；请在 main 分支运行 yarn release');
-if (args.includes('--sync-server-only'))
-  throw new Error('--sync-server-only 已移除；请运行 yarn release，已发布版本会自动校验并跳过');
-const siteOnly = args.includes('--site-only');
-
-function run(command, cliArgs, options = {}) {
-  return execFileSync(command, cliArgs, { cwd: root, encoding: 'utf8', ...options });
-}
-
-function ecsInstance() {
-  if (!ECS_INSTANCE) throw new Error('请设置环境变量 MUSICDAN_ECS_INSTANCE（服务器实例 ID）');
-  return ECS_INSTANCE;
-}
-
-const version = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8')).version;
-const apkName = `MusicDan_${version}_arm64.apk`;
-
-/** 远程命令：ssh macmini workbench exec（命令整体加引号传递，避免 macmini shell 拆散分号） */
+assert(
+  args.every((arg) => arg === '--check'),
+  '仅支持 yarn release 或 yarn release:check',
+);
+const run = (command, argv, options = {}) => execFileSync(command, argv, { cwd: root, encoding: 'utf8', ...options });
+const git = (...argv) => run('git', argv).trim();
+const sha256 = (data) => createHash('sha256').update(data).digest('hex');
+const json = async (file) => JSON.parse(await readFile(file, 'utf8'));
+const save = (file, value) => writeFile(file, JSON.stringify(value, null, 2) + '\n');
+const digest = async (file) => sha256(await readFile(file));
+const shellQuote = (value) => `'${String(value).replaceAll("'", "'\\''")}'`;
 function ecs(command) {
-  const quoted = `'${command.replaceAll("'", `'\\''`)}'`;
-  const raw = run('ssh', [
-    'macmini',
-    `/usr/local/bin/workbench exec --instance-id ${ecsInstance()} --command ${quoted} --output json`,
-  ]);
-  const result = JSON.parse(raw);
-  if (result.exit_code !== 0) {
-    throw new Error(`远程命令失败（exit ${result.exit_code}）：${command}\n${result.stdout}${result.stderr}`);
-  }
-  if (result.stdout.trim()) console.log(result.stdout.trim());
+  const result = JSON.parse(
+    run(workbench, ['exec', '--instance-id', instance, '--command', command, '--timeout', '300', '--output', 'json']),
+  );
+  assert.equal(result.exit_code, 0, `服务器命令失败：${result.stderr}\n${result.stdout}`);
   return result.stdout;
 }
-
-/** 文件上传：先 scp 到 macmini 暂存，再经 workbench upload（OSS 中转）落到 ECS 目录，随后在 ECS 上 mv 到最终路径 */
-function upload(localFile, ecsDir) {
-  run('ssh', ['macmini', `mkdir -p ${MACMINI_STAGE}`]);
-  run('scp', ['-q', localFile, `macmini:${MACMINI_STAGE}/${path.basename(localFile)}`]);
-  run('ssh', [
-    'macmini',
-    '/usr/local/bin/workbench',
-    'upload',
-    '-f',
-    `${MACMINI_STAGE}/${path.basename(localFile)}`,
-    `${ecsDir.replace(/\/$/, '')}/`,
-    '--instance-id',
-    ecsInstance(),
-  ]);
+function gh(...argv) {
+  return run('gh', [...argv, '--repo', repo]);
+}
+function buildNumber(entry) {
+  const number =
+    entry.build_number ??
+    (entry.version_code == null
+      ? Number(/\/build-(\d+)(?:\/|$)/.exec(entry.release_url ?? entry.github_url ?? '')?.[1])
+      : entry.version_code - 1_000_000_000);
+  assert(Number.isSafeInteger(number) && number > 0 && number <= 1_100_000_000, '服务器构建编号无效，禁止归零');
+  return number;
+}
+function cleanSource(commit) {
+  assert.equal(git('branch', '--show-current'), 'main', '只能从 main 发布');
+  assert.equal(git('rev-parse', 'HEAD'), commit, '发布期间 HEAD 已变化');
+  assert.equal(
+    git('status', '--porcelain', '--untracked-files=normal', '--', '.', ':!artifacts/previews'),
+    '',
+    '请先提交源码与发布说明，工作区必须干净（生成截图除外）',
+  );
 }
 
-async function sha256File(file) {
-  const hash = createHash('sha256');
-  hash.update(await readFile(file));
-  return hash.digest('hex');
+const { version } = await json(path.join(root, 'package.json'));
+assert(/^\d+\.\d+\.\d+$/.test(version), '版本必须为 X.Y.Z');
+const tag = `v${version}`;
+const commit = git('rev-parse', 'HEAD');
+cleanSource(commit);
+run('yarn', ['quality'], { stdio: 'inherit' });
+const tauri = await json(path.join(root, 'src-tauri/tauri.conf.json'));
+const cargo = await readFile(path.join(root, 'src-tauri/Cargo.toml'), 'utf8');
+const lock = await readFile(path.join(root, 'src-tauri/Cargo.lock'), 'utf8');
+assert(
+  [
+    tauri.version,
+    /\[package\][\s\S]*?^version\s*=\s*"([^"]+)"/m.exec(cargo)?.[1],
+    /\[\[package\]\]\nname = "musicdan"\nversion = "([^"]+)"/.exec(lock)?.[1],
+  ].every((value) => value === version),
+  '四处应用版本必须一致',
+);
+const notes = await readFile(path.join(root, 'release-notes.md'), 'utf8');
+assert(
+  notes.startsWith(`## ✨ ${tag} 更新内容\n`) && notes.includes('更新基线：') && notes.includes('\n### '),
+  '更新说明的版本、基线或功能分组不完整',
+);
+assert(instance, '请设置 MUSICDAN_ECS_INSTANCE');
+for (const file of [
+  workbench,
+  chrome,
+  path.join(android, 'keystore.properties'),
+  path.join(root, 'android-signing/musicdan.keystore'),
+])
+  assert(existsSync(file), `缺少本地依赖：${file}`);
+const toolVersions = globSync('*/aapt', { cwd: path.join(sdk, 'build-tools') }).sort((a, b) =>
+  a.localeCompare(b, 'en', { numeric: true }),
+);
+assert(toolVersions.length, '请安装 Android SDK build-tools');
+const tools = path.dirname(path.join(sdk, 'build-tools', toolVersions.at(-1)));
+const ndks = (existsSync(path.join(sdk, 'ndk')) ? globSync('*', { cwd: path.join(sdk, 'ndk') }) : []).sort((a, b) =>
+  a.localeCompare(b, 'en', { numeric: true }),
+);
+const ndk = process.env.NDK_HOME || process.env.ANDROID_NDK_HOME || (ndks.length && path.join(sdk, 'ndk', ndks.at(-1)));
+assert(ndk && existsSync(ndk), '请配置 Android NDK');
+run('java', ['-version'], { stdio: 'ignore' });
+assert(
+  run('rustup', ['target', 'list', '--installed']).includes('aarch64-linux-android'),
+  '请安装 Rust aarch64-linux-android target',
+);
+run('gh', ['auth', 'status'], { stdio: 'ignore' });
+const repository = JSON.parse(run('gh', ['repo', 'view', repo, '--json', 'nameWithOwner,viewerPermission']));
+assert.equal(repository.nameWithOwner, repo);
+assert(['ADMIN', 'MAINTAIN', 'WRITE'].includes(repository.viewerPermission), '缺少 GitHub 发布权限');
+assert(
+  /github\.com[:/]asinkLuno\/MusicDan(?:\.git)?$/.test(git('remote', 'get-url', '--push', 'origin')),
+  'origin 必须指向 MusicDan 仓库',
+);
+git('fetch', 'origin', 'main');
+assert.equal(commit, git('rev-parse', 'FETCH_HEAD'), '请先将 main 同步到 origin/main');
+const previousRaw = ecs(`cat ${base}/public/releases.json`);
+const previous = JSON.parse(previousRaw);
+assert(Array.isArray(previous) && previous.length > 0, '服务器发布记录为空，禁止重置编号');
+const maximum = Math.max(...previous.map(buildNumber));
+const serverScript = await readFile(path.join(root, 'scripts/publish-release.py'), 'utf8');
+function server(action, directory) {
+  return ecs(
+    `python3 - ${shellQuote(action)} ${shellQuote(directory)} <<'MUSICDAN_PUBLISH'\n${serverScript}\nMUSICDAN_PUBLISH`,
+  );
 }
+server('check', base);
 
-function freePort(preferred) {
-  return new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.listen(preferred, '127.0.0.1', () => {
-      const { port } = server.address();
-      server.close(() => resolve(port));
+// The tag reserves the build number and source; failed builds reuse it without moving it.
+const remoteTag = git('ls-remote', '--tags', 'origin', `refs/tags/${tag}`, `refs/tags/${tag}^{}`);
+if (remoteTag) git('fetch', 'origin', `refs/tags/${tag}:refs/tags/${tag}`);
+let plan;
+if (git('tag', '--list', tag)) {
+  assert.equal(git('cat-file', '-t', `refs/tags/${tag}`), 'tag', '发布标签必须为附注标签');
+  assert.equal(git('rev-parse', `refs/tags/${tag}^{commit}`), commit, '同名标签指向另一提交，禁止覆盖');
+  plan = JSON.parse(git('for-each-ref', '--format=%(contents)', `refs/tags/${tag}`));
+  assert.equal(plan.source_commit, commit);
+  assert.equal(plan.version, version);
+  assert.equal(plan.notes_sha256, sha256(notes), '标签中的更新说明摘要不符');
+  buildNumber(plan);
+} else {
+  assert(!previous.some((entry) => entry.version === version), '该版本已在服务器发布，请提高版本号');
+  plan = {
+    version,
+    source_commit: commit,
+    build_number: maximum + 1,
+    version_code: 1_000_000_000 + maximum + 1,
+    notes_sha256: sha256(notes),
+    previous_sha256: sha256(previousRaw),
+    published_at: new Date().toISOString(),
+  };
+}
+assert.equal(plan.version_code, 1_000_000_000 + plan.build_number);
+assert(plan.version_code <= 2_100_000_000, 'versionCode 超出 Android 发布范围');
+const alreadyPublished = previous.find((entry) => entry.version === version);
+if (alreadyPublished) {
+  assert.equal(previous[0], alreadyPublished, '禁止将历史版本重新发布为 latest');
+  assert.equal(alreadyPublished.source_commit, commit);
+  assert.equal(alreadyPublished.build_number, plan.build_number);
+} else {
+  assert.equal(plan.previous_sha256, sha256(previousRaw), '服务器记录已变化，此标签不能继续发布');
+  assert.equal(plan.build_number, maximum + 1, '构建编号不再是下一个编号');
+}
+if (args.includes('--check')) {
+  console.log(`[check] ${tag} 预检通过；未打标、构建或发布`);
+  process.exit(0);
+}
+const output = path.join(root, 'artifacts/releases', tag);
+await mkdir(output, { recursive: true });
+if (!git('tag', '--list', tag)) {
+  const annotation = path.join(output, 'tag.json');
+  await save(annotation, plan);
+  git('tag', '-a', tag, commit, '-F', annotation);
+}
+git('push', 'origin', `refs/tags/${tag}`);
+const env = {
+  ...process.env,
+  ANDROID_HOME: sdk,
+  NDK_HOME: ndk,
+  MUSICDAN_BUILD_NUMBER: String(plan.build_number),
+  GITHUB_SHA: commit,
+};
+const apkName = `MusicDan_${version}_arm64.apk`;
+const apk = path.join(output, apkName);
+const bundleFile = path.join(output, 'bundle.json');
+const apkState = path.join(output, 'apk.json');
+let signingDigest;
+async function validateApk() {
+  if (!signingDigest) {
+    const report = run(path.join(android, 'gradlew'), [':app:signingReport', '--console=plain'], { cwd: android, env });
+    const releaseSigning = /Variant: release\r?\n(?:(?!Variant:)[\s\S])*/.exec(report)?.[0] ?? '';
+    assert.equal(
+      path.resolve(/Store: (.+)/.exec(releaseSigning)?.[1].trim() ?? ''),
+      path.join(root, 'android-signing/musicdan.keystore'),
+      'release 必须使用现有私有 keystore',
+    );
+    signingDigest = /SHA-256: ([A-Fa-f0-9:]+)/.exec(releaseSigning)?.[1].replaceAll(':', '').toLowerCase();
+    assert(signingDigest?.length === 64, '无法读取 release 签名证书');
+  }
+  const signature = run(path.join(tools, 'apksigner'), ['verify', '--print-certs', apk]);
+  assert(
+    signature.toLowerCase().includes(`signer #1 certificate sha-256 digest: ${signingDigest}`),
+    'APK 签名与 release keystore 不一致',
+  );
+  const badging = run(path.join(tools, 'aapt'), ['dump', 'badging', apk]);
+  assert(
+    badging.includes(`package: name='${tauri.identifier}' versionCode='${plan.version_code}' versionName='${version}'`),
+    'APK 的应用 ID 或版本不符',
+  );
+  assert(badging.includes("native-code: 'arm64-v8a'"), 'APK 缺少 arm64-v8a');
+}
+async function buildSite() {
+  const port = await new Promise((resolve, reject) => {
+    const socket = net.createServer();
+    socket.on('error', reject);
+    socket.listen(0, '127.0.0.1', () => {
+      const port = socket.address().port;
+      socket.close(() => resolve(port));
     });
-    server.on('error', (error) => reject(new Error(`端口 ${preferred} 不可用：${error.message}`)));
   });
-}
-
-const siteBundle = path.join(root, 'artifacts', 'releases', `MusicDan_${version}_website.tar.gz`);
-
-/** 本地重建截图并打包官网（website 的 prebuild 负责截图捕获） */
-async function buildSiteBundle() {
-  console.log(`[site] 重建截图与官网（v${version}）`);
-  const previewPort = await freePort(1420);
-  const chromePort = await freePort(9229);
-  const chromeProfile = await mkdtemp(path.join(tmpdir(), 'musicdan-chrome-'));
-  const preview = spawn('yarn', ['dev', '--port', String(previewPort)], { cwd: root, stdio: 'ignore', detached: true });
-  const chrome = spawn(
-    'google-chrome-stable',
-    [
-      '--headless',
-      '--disable-gpu',
-      '--no-sandbox',
-      '--no-first-run',
-      `--remote-debugging-port=${chromePort}`,
-      '--remote-debugging-address=127.0.0.1',
-      `--user-data-dir=${chromeProfile}`,
-    ],
+  const previewUrl = `http://127.0.0.1:${port}/`;
+  const profile = await mkdtemp(path.join(tmpdir(), 'musicdan-chrome-'));
+  const preview = spawn('yarn', ['dev', '--host', '127.0.0.1', '--port', String(port), '--strictPort'], {
+    cwd: root,
+    env,
+    stdio: 'inherit',
+    detached: true,
+  });
+  const browser = spawn(
+    chrome,
+    ['--headless', '--disable-gpu', '--no-first-run', '--remote-debugging-port=0', `--user-data-dir=${profile}`],
     { stdio: 'ignore', detached: true },
   );
+  let failure;
+  for (const child of [preview, browser]) {
+    child.on('error', (error) => {
+      failure = error;
+    });
+    child.on('exit', (code) => {
+      failure = new Error(`截图进程提前退出：${code}`);
+    });
+  }
   try {
-    const deadline = Date.now() + 60_000;
-    for (;;) {
-      const ready = await Promise.all([
-        fetch(`http://127.0.0.1:${previewPort}/`)
-          .then((response) => response.ok)
-          .catch(() => false),
-        fetch(`http://127.0.0.1:${chromePort}/json/version`)
-          .then((response) => response.ok)
-          .catch(() => false),
-      ]);
-      if (ready.every(Boolean)) break;
-      if (Date.now() > deadline) throw new Error('预览服务或 Chrome 调试端口未就绪');
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    let endpoint;
+    let ready = false;
+    for (let i = 0; i < 120; i++) {
+      if (failure) throw failure;
+      const portFile = path.join(profile, 'DevToolsActivePort');
+      if (existsSync(portFile)) endpoint = `http://127.0.0.1:${(await readFile(portFile, 'utf8')).split('\n')[0]}`;
+      ready = await fetch(previewUrl, { signal: AbortSignal.timeout(500) })
+        .then((r) => r.ok)
+        .catch(() => false);
+      if (endpoint && ready) break;
+      await delay(500);
     }
+    assert(endpoint && ready && !failure, 'Chrome 或应用预览启动失败');
     run('yarn', ['build:release-site'], {
-      env: {
-        ...process.env,
-        MUSICDAN_PREVIEW_URL: `http://127.0.0.1:${previewPort}/`,
-        CHROME_DEBUG_URL: `http://127.0.0.1:${chromePort}`,
-      },
+      env: { ...env, CHROME_DEBUG_URL: endpoint, MUSICDAN_PREVIEW_URL: previewUrl },
       stdio: 'inherit',
     });
   } finally {
-    for (const child of [preview, chrome]) {
+    for (const child of [preview, browser]) {
+      if (!child.pid) continue;
       try {
-        process.kill(-child.pid);
-      } catch {
-        /* already gone */
+        process.kill(-child.pid, 'SIGTERM');
+      } catch (error) {
+        if (error.code !== 'ESRCH') console.error('无法停止截图进程', error);
       }
     }
-    await rm(chromeProfile, { recursive: true, force: true }).catch(() => {});
+    await rm(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
   }
 }
-
-/** 上传官网包并原子切换 /srv/musicdan/site 符号链接；旧目录保留用于回滚 */
-async function deploySite() {
-  const siteDir = `site-${version}-${Date.now()}-${process.pid}`;
-  console.log(`[site] 上传并解压到 ${ECS_BASE}/${siteDir}`);
-  await upload(siteBundle, '/tmp/');
-  ecs(
-    `set -e; cd ${ECS_BASE}; mkdir ${siteDir}; mv /tmp/${path.basename(siteBundle)} ${siteDir}.tar.gz; tar -xzf ${siteDir}.tar.gz -C ${siteDir}; rm ${siteDir}.tar.gz; chown -R musicdan:musicdan ${siteDir}; chmod 755 ${siteDir}`,
-  );
-  ecs(`set -e; cd ${ECS_BASE}; ln -s ${siteDir} .site-next-$$; mv -Tf .site-next-$$ site`);
-  console.log(`[site] 官网已切换到 ${siteDir}`);
-}
-
-function buildTool(name) {
-  return path.join(
-    process.env.ANDROID_HOME || `${process.env.HOME}/Android/Sdk`,
-    'build-tools',
-    ANDROID_BUILD_TOOLS,
-    name,
-  );
-}
-
-/** 本地构建签名 APK，并做与 CI 相同的签名与元数据校验；返回规范命名的 APK 路径 */
-async function buildApk(buildNumber) {
-  const propertiesPath = path.join(ANDROID_PROJECT, 'keystore.properties');
-  const config = Object.fromEntries(
-    (await readFile(propertiesPath, 'utf8'))
-      .trim()
-      .split('\n')
-      .map((line) => {
-        const key = line.slice(0, line.indexOf('='));
-        return [key, line.slice(key.length + 1)];
-      }),
-  );
-  const storeFile = config.storeFile?.replace(/^~/, process.env.HOME ?? '');
-  if (
-    !storeFile ||
-    (await stat(storeFile)
-      .then(() => false)
-      .catch(() => true))
-  ) {
-    throw new Error(
-      `签名配置不可用：${storeFile || propertiesPath} 不存在。请恢复 android-signing/musicdan.keystore 并重跑 scripts/android-signing-properties.py`,
-    );
+if (!existsSync(bundleFile)) {
+  assert(!alreadyPublished, '已发布版本的本地产物缺失，请恢复 artifacts/releases 缓存，禁止重建覆盖');
+  if (existsSync(apkState)) {
+    const state = await json(apkState);
+    assert.equal(state.source_commit, commit);
+    assert.equal(state.build_number, plan.build_number);
+    assert.equal(state.sha256, await digest(apk));
+  } else {
+    console.log(`[build] ${tag} / versionCode ${plan.version_code}`);
+    await rm(path.join(android, 'app/build/outputs/apk'), { recursive: true, force: true });
+    run('yarn', ['tauri', 'android', 'build', '--apk', '--split-per-abi', '--target', 'aarch64'], {
+      env,
+      stdio: 'inherit',
+    });
+    const candidates = globSync('app/build/outputs/apk/**/release/*arm64*.apk', { cwd: android });
+    assert.equal(candidates.length, 1, '必须生成唯一的 arm64 release APK');
+    await copyFile(path.join(android, candidates[0]), apk);
+    await validateApk();
+    await save(apkState, { source_commit: commit, build_number: plan.build_number, sha256: await digest(apk) });
   }
-  let ndkHome = process.env.NDK_HOME || process.env.ANDROID_NDK_HOME || '';
-  if (!ndkHome) {
-    const ndkRoot = path.join(process.env.ANDROID_HOME || `${process.env.HOME}/Android/Sdk`, 'ndk');
-    const candidates = globSync('*/', { cwd: ndkRoot }).sort();
-    if (!candidates.length) throw new Error('未找到 Android NDK：请安装或设置 NDK_HOME');
-    ndkHome = path.join(ndkRoot, candidates.at(-1));
-  }
-  console.log(
-    `[apk] 本地构建 build-${buildNumber}（versionCode ${1_000_000_000 + buildNumber}，NDK ${path.basename(ndkHome)}）`,
-  );
-  run('yarn', ['tauri', 'android', 'build', '--apk', '--split-per-abi', '--target', 'aarch64'], {
-    env: { ...process.env, MUSICDAN_BUILD_NUMBER: String(buildNumber), NDK_HOME: ndkHome },
-    stdio: 'inherit',
-  });
-  const built = globSync('app/build/outputs/apk/**/release/*.apk', { cwd: ANDROID_PROJECT }).map((relative) =>
-    path.join(ANDROID_PROJECT, relative),
-  );
-  if (!built.length) throw new Error('构建完成但未找到 release APK');
-  const expectedVersionCode = `versionCode='${1_000_000_000 + buildNumber}'`;
-  for (const apk of built) {
-    run(buildTool('apksigner'), ['verify', apk]);
-    const badging = run(buildTool('aapt'), ['dump', 'badging', apk]);
-    if (!badging.includes(`package: name='ink.starmountain.musicdan' ${expectedVersionCode}`)) {
-      throw new Error(`${path.basename(apk)} 的 versionCode 不符（期望 ${expectedVersionCode}）`);
-    }
-    if (!badging.includes("native-code: 'arm64-v8a'")) throw new Error(`${path.basename(apk)} 未包含 arm64-v8a`);
-  }
-  const arm64 = built.find((apk) => path.basename(apk).includes('arm64'));
-  if (!arm64) throw new Error('未找到 arm64 APK');
-  // gradle 产物名是 app-arm64-release.apk，统一改为发布命名
-  const work = await mkdtemp(path.join(tmpdir(), 'musicdan-apk-'));
-  const canonical = path.join(work, apkName);
-  await rm(canonical, { force: true });
-  run('cp', [arm64, canonical]);
-  console.log(`[apk] 签名校验通过：${apkName}`);
-  return canonical;
-}
-
-/** 发布记录必须从服务器读取；网络错误不得当成空历史继续发布。 */
-function readServerState() {
-  return JSON.parse(ecs(`cat ${ECS_BASE}/public/releases.json`));
-}
-
-/** 先上传所有文件、核对摘要，最后切换公开下载与元数据。 */
-async function publishServer(apk, buildNumber, sha, previous) {
-  const sha256 = await sha256File(apk);
-  const siteSha256 = await sha256File(siteBundle);
-  const notes = (await readFile(path.join(root, 'release-notes.md'), 'utf8')).trim();
-  if (!notes.includes(`v${version} 更新内容`)) throw new Error('release-notes.md 与当前版本不符');
+  await validateApk();
+  await buildSite();
+  cleanSource(commit);
+  const siteName = `MusicDan_${version}_website.tar.gz`;
+  await copyFile(path.join(root, 'artifacts/releases', siteName), path.join(output, siteName));
+  await writeFile(path.join(output, 'release-notes.md'), notes);
   const entry = {
     version,
-    build_number: buildNumber,
-    version_code: 1_000_000_000 + buildNumber,
-    source_commit: sha,
+    tag,
+    build_number: plan.build_number,
+    version_code: plan.version_code,
+    source_commit: commit,
     name: apkName,
     size: (await stat(apk)).size,
-    sha256,
-    download_url: '/releases/latest.apk',
-    release_url: `/releases/build-${buildNumber}/release-notes.md`,
+    sha256: await digest(apk),
+    published_at: plan.published_at,
     notes,
-    published_at: new Date().toISOString(),
+    download_url: '/releases/latest.apk',
+    release_url: `/releases/build-${plan.build_number}/release-notes.md`,
+    github_url: `https://github.com/${repo}/releases/tag/${tag}`,
   };
-  const work = await mkdtemp(path.join(tmpdir(), 'musicdan-publish-'));
-  const stage = `${ECS_BASE}/.stage-${buildNumber}-${sha.slice(0, 12)}-${Date.now()}`;
-  try {
-    await writeFile(path.join(work, `${apkName}.sha256`), `${sha256}  ${apkName}\n`);
-    await writeFile(path.join(work, 'release.json'), JSON.stringify(entry, null, 2) + '\n');
-    await writeFile(path.join(work, 'releases.json'), JSON.stringify(releaseHistory(entry, previous), null, 2) + '\n');
-    await writeFile(path.join(work, 'release-notes.md'), notes + '\n');
-    ecs(`mkdir -p ${stage}`);
-    for (const file of [
-      apk,
-      siteBundle,
-      ...['release.json', 'releases.json', 'release-notes.md', `${apkName}.sha256`].map((name) =>
-        path.join(work, name),
-      ),
-    ]) {
-      console.log(`[server] 上传 ${path.basename(file)}`);
-      upload(file, stage);
+  await writeFile(path.join(output, `${apkName}.sha256`), `${entry.sha256}  ${apkName}\n`);
+  const history = [
+    entry,
+    ...previous
+      .toSorted((a, b) => buildNumber(b) - buildNumber(a))
+      .map((old) => ({
+        ...old,
+        download_url: old.download_url === '/releases/latest.apk' ? `/releases/${old.name}` : old.download_url,
+      })),
+  ].slice(0, 3);
+  await save(path.join(output, 'release.json'), entry);
+  await save(path.join(output, 'releases.json'), history);
+  const files = {};
+  for (const name of [apkName, `${apkName}.sha256`, siteName, 'release-notes.md', 'release.json', 'releases.json'])
+    files[name] = await digest(path.join(output, name));
+  await save(bundleFile, { plan, entry, site: siteName, files });
+}
+const bundle = await json(bundleFile);
+assert.deepEqual(bundle.plan, plan, '缓存不属于当前标签');
+for (const [name, expected] of Object.entries(bundle.files)) {
+  assert.equal(path.basename(name), name, '缓存文件名无效');
+  assert.equal(await digest(path.join(output, name)), expected, `缓存摘要不符：${name}`);
+}
+assert.equal(bundle.entry.sha256, await digest(apk));
+assert.equal(bundle.entry.notes, notes);
+await validateApk();
+cleanSource(commit);
+const stage = `${base}/.upload-${randomUUID()}`;
+ecs(`mkdir ${shellQuote(stage)}`);
+for (const name of [...Object.keys(bundle.files), 'bundle.json'])
+  run(workbench, ['upload', path.join(output, name), `${stage}/`, '--instance-id', instance], { stdio: 'inherit' });
+console.log(server('stage', stage));
+
+// Upload to a draft, verify every attachment, then publish; never clobber an existing asset.
+const releases = JSON.parse(run('gh', ['api', `repos/${repo}/releases`, '--paginate', '--slurp'])).flat();
+let release = releases.find((item) => item.tag_name === tag);
+if (!release) {
+  gh(
+    'release',
+    'create',
+    tag,
+    '--draft',
+    '--verify-tag',
+    '--title',
+    `MusicDan ${tag}`,
+    '--notes-file',
+    path.join(output, 'release-notes.md'),
+  );
+  release = JSON.parse(gh('release', 'view', tag, '--json', 'body,isDraft,assets'));
+} else release = { body: release.body, isDraft: release.draft, assets: release.assets };
+assert.equal(release.body.trim(), notes.trim(), 'GitHub 更新说明与本地不一致，禁止覆盖');
+const downloads = await mkdtemp(path.join(tmpdir(), 'musicdan-verify-'));
+try {
+  for (const name of [apkName, `${apkName}.sha256`, 'release-notes.md']) {
+    if (!release.assets.some((asset) => asset.name === name)) {
+      assert(release.isDraft, `已发布的 GitHub Release 缺少附件 ${name}`);
+      gh('release', 'upload', tag, path.join(output, name));
     }
-    const expectedState = createHash('sha256').update(JSON.stringify(previous)).digest('hex');
-    // flock prevents simultaneous publishers; compare the original records again before committing.
-    // Published metadata, APK and website share one atomic public/latest symlink switch.
-    ecs(
-      publishCommand({
-        base: ECS_BASE,
-        stage,
-        buildNumber,
-        sha256,
-        siteSha256,
-        apkName,
-        siteBundleName: path.basename(siteBundle),
-        expectedState,
-      }),
-    );
-    console.log(`[server] v${version} 已发布：${WEBSITE}/releases/latest.apk`);
-  } finally {
-    await rm(work, { recursive: true, force: true });
+    gh('release', 'download', tag, '--pattern', name, '--dir', downloads);
+    assert.equal(await digest(path.join(downloads, name)), bundle.files[name], `GitHub 附件摘要不符：${name}`);
   }
+} finally {
+  await rm(downloads, { recursive: true, force: true });
 }
-
-// Fail before builds or remote writes when source metadata is inconsistent.
-async function preflight() {
-  run('yarn', ['quality'], { stdio: 'inherit' });
-  if (run('git', ['branch', '--show-current']).trim() !== 'main') throw new Error('请在 main 分支发布');
-  if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('发布版本必须为 x.y.z');
-  const status = run('git', ['status', '--porcelain', '--untracked-files=normal', '--', '.', ':!artifacts/previews']);
-  if (status.trim()) throw new Error(`请先提交或暂存到 stash 后再发布（预览截图除外）：\n${status}`);
-  const tauri = JSON.parse(await readFile(path.join(root, 'src-tauri/tauri.conf.json'), 'utf8'));
-  const cargo = await readFile(path.join(root, 'src-tauri/Cargo.toml'), 'utf8');
-  const lock = await readFile(path.join(root, 'src-tauri/Cargo.lock'), 'utf8');
-  const cargoVersion = /\[package\][\s\S]*?^version\s*=\s*"([^"]+)"/m.exec(cargo)?.[1];
-  const lockVersion = /\[\[package\]\]\nname = "musicdan"\nversion = "([^"]+)"/.exec(lock)?.[1];
-  if ([tauri.version, cargoVersion, lockVersion].some((value) => value !== version)) {
-    throw new Error('package.json、tauri.conf.json、Cargo.toml、Cargo.lock 版本必须一致');
-  }
-  const notes = await readFile(path.join(root, 'release-notes.md'), 'utf8');
-  if (!notes.includes(`## ✨ v${version} 更新内容`)) throw new Error('release-notes.md 标题与当前版本不符');
-  console.log(`[check] v${version} 源码与发布元数据检查通过`);
-}
-
-await preflight();
-if (args.includes('--check')) process.exit(0);
-
-if (siteOnly) {
-  await buildSiteBundle();
-  await deploySite();
-} else {
-  const sha = run('git', ['rev-parse', 'HEAD']).trim();
-  const previous = readServerState();
-  const published = previous.find((item) => item.version === version);
-  if (published) {
-    const existingPath = published.build_number ? `build-${published.build_number}/${published.name}` : published.name;
-    ecs(`cd ${ECS_BASE}/public/releases; printf '%s  %s\n' '${published.sha256}' '${existingPath}' | sha256sum -c -`);
-    ecs(pruneCommand(ECS_BASE));
-    console.log(`[release] v${version} 已发布且 APK 摘要正确，跳过重复构建`);
-  } else {
-    const buildNumber = nextBuildNumber(previous);
-    await buildSiteBundle();
-    const apk = await buildApk(buildNumber);
-    await publishServer(apk, buildNumber, sha, previous);
-  }
-}
+if (release.isDraft) gh('release', 'edit', tag, '--draft=false', '--latest');
+console.log(server('activate', `${base}/public/releases/build-${plan.build_number}`));
+console.log(
+  `[release] ${tag} 已发布到 https://github.com/${repo}/releases/tag/${tag} 和 https://musicdan.syncmoon.ink`,
+);

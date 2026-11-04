@@ -2,15 +2,37 @@
 
 ## 版本发布
 
-发布完全在本地完成，在 `main` 分支显式运行 `yarn release`（`scripts/release.mjs`）执行：lint 与格式检查 → 重建官网 → 构建签名 APK → 上传服务器并校验 SHA-256 → 原子切换官网、APK 和发布元数据。
+- 发布来源只能是 `main`。所有待发布改动必须先合入 `main`；禁止直接推送 `release` 分支，也不能将其作为独立的开发或发布来源。
 
-- **不再创建、上传或发布 GitHub Release**，不依赖 `gh` 登录，也不推送发布标签。GitHub 仅用于代码托管，不使用 GitHub Actions；历史 GitHub Release 已清理。当前 `main` 为 `v0.1.0` 首版基线。
-- 官网是唯一的发布入口，固定下载地址 `/releases/latest.apk`；应用内检查更新读取官网 `/releases.json`。
-- 构建编号 = 服务器 `releases.json` 中最大构建编号 + 1；兼容旧记录中的 `build-N` URL。APK `versionCode = 1000000000 + 构建编号`，禁止因读取失败而归零。
-- 新记录包含 `build_number`、`version_code`、`source_commit`、版本名、文件大小、SHA-256 和更新说明。服务器只保留最近 3 个版本，安装包按 `public/releases/build-N/` 存放；发布成功后在发布锁内清理更早版本及废弃官网目录，不覆盖保留版本。
-- 所有附件上传并校验后，统一通过 `public/latest` 符号链接原子切换官网、APK、元数据。服务器发布锁和旧记录校验阻止并发覆盖；重复发布已存在版本时校验安装包后跳过。
-- 发布前同步 `package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 和 `src-tauri/Cargo.lock` 中的应用版本，并更新 `release-notes.md`。更新说明保存在官网发布记录和该版本目录中。
-- 本地构建依赖：`android-signing/musicdan.keystore` 与 `src-tauri/gen/android/keystore.properties`（签名材料只保存在本地，务必私有备份，不要提交或上传到任何远端）、Android SDK/NDK、Rust `aarch64-linux-android` target、macmini `workbench`，以及环境变量 `MUSICDAN_ECS_INSTANCE`（服务器实例 ID，不写入仓库）。不再使用 Git 推送钩子触发发布。
+发布在当前 macmini 上显式运行 `yarn release`（`scripts/release.mjs`），顺序固定为：预检 → 在 main 提交上创建并推送附注 tag → 构建签名 APK → 用现有截图工具重新截图并构建发布页 → 上传服务器暂存并校验 → 上传并发布 GitHub Release → 原子部署发布页、APK 和元数据。
+
+- Git tag 为 `v<版本>`，固定指向已推送到 `origin/main` 的提交；标签包含构建编号与更新说明摘要。先打标再构建，构建失败保留标签，重试不移动或覆盖标签。禁止直接推送 `release` 分支；Git 推送不触发发布，不使用 GitHub Actions。
+- APK 同时上传官网服务器与 GitHub Release，两份文件必须具有相同 SHA-256。`release-notes.md` 是两处唯一的更新日志来源，GitHub 正文、附件、官网与应用元数据共用该文件。
+- 官网固定下载地址 `/releases/latest.apk`；应用内检查更新继续读取官网 `/releases.json`。发布页从 `/latest.json` 读取最新版本号，不手工硬编码。
+- 构建编号 = 服务器 `releases.json` 中最大构建编号 + 1；兼容旧记录中的 `build-N` URL。APK `versionCode = 1000000000 + 构建编号`，禁止因读取失败或重新打 tag 而归零。
+- 新记录包含 `build_number`、`version_code`、`source_commit`、版本名、文件大小、SHA-256 和更新说明。服务器只保留最近 3 个版本，安装包按 `public/releases/build-N/` 存放；发布成功后在发布锁内清理更早版本及废弃官网目录，不覆盖保留版本。GitHub Release 不随服务器清理而删除。
+- 服务器附件先上传并校验，GitHub 使用草稿上传并下载回验；GitHub 正式发布后，服务器通过 `public/latest` 符号链接一次切换官网、APK 和元数据。服务器锁与旧记录校验防止并发覆盖；不隐式迁移旧服务器目录。
+- `artifacts/releases/v<版本>/` 保存标签对应的构建产物和摘要。失败重试复用已验证的 APK 和完整官网包，不覆盖已发布附件；缓存缺失或摘要冲突时停止。GitHub 与服务器不能跨平台原子发布，部分成功后使用同一标签和缓存重试。
+- 发布前同步 `package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 和 `src-tauri/Cargo.lock` 中的应用版本，并更新 `release-notes.md`，提交并推送 main。生成的 `artifacts/previews/` 截图允许变动，其余工作区必须干净。
+- 本地依赖：`android-signing/musicdan.keystore` 与 `src-tauri/gen/android/keystore.properties`（签名材料只保存在本地，务必私有备份，不要提交或上传到任何远端）、Android SDK/NDK、Java、Rust `aarch64-linux-android` target、Google Chrome、已登录且有仓库写权限的 `gh`、本机 `workbench`，以及环境变量 `MUSICDAN_ECS_INSTANCE`（服务器实例 ID，不写入仓库）。
+- `yarn release:check` 仅检查，不创建标签、不构建、不上传；完整发布统一运行 `yarn release`，不再提供单独发布官网的入口。
+
+### 连接发版服务器与远程执行
+
+当前工作环境就在 `macmini`，直接使用本机 `/usr/local/bin/workbench` 访问 ECS，无需再 SSH 到 macmini。实例 ID 从本地环境变量 `MUSICDAN_ECS_INSTANCE` 获取，不写入仓库；以下命令在当前终端运行。
+
+```bash
+# 交互式登录（需要终端）
+/usr/local/bin/workbench connect --instance-id "${MUSICDAN_ECS_INSTANCE:?请先设置服务器实例 ID}"
+
+# 非交互式远程执行，适用于 agent 和脚本
+/usr/local/bin/workbench exec --instance-id "${MUSICDAN_ECS_INSTANCE:?请先设置服务器实例 ID}" --command 'cd /srv/musicdan && pwd' --timeout 60 --output json
+```
+
+- `connect` 仅用于交互登录；执行远程命令使用 `exec --command`，无需先运行 `connect`。
+- 每次 `exec` 都是独立 shell，不保留上次的 `cd`、`export`；依赖相同上下文的操作放在同一个 `--command` 中。必须正确引用整个命令，避免被本地 shell 提前展开、拆分。
+- `exec` 默认超时 30 秒，较长操作显式设置 `--timeout`（秒）；使用 `--output json` 时检查返回的 `exit_code`，并读取 `stdout`、`stderr`。
+- 上传文件直接执行 `/usr/local/bin/workbench upload <本地文件> <ECS 目标目录> --instance-id <实例 ID>`，无需先用 `scp` 中转到 macmini；文件通过 OSS 中转。发布脚本直接调用本机 workbench。
 
 ### 发布说明格式
 
@@ -26,7 +48,7 @@
 ## 静态检查门禁
 
 - 统一入口为 `yarn quality`，依次运行 ESLint（`yarn lint`）与 Prettier 格式检查（`yarn format:check`）。lint 错误、警告或格式不符均中止流程。
-- 应用构建、官网构建及发布预检必须执行门禁；`yarn release`、`yarn release:check` 和 `yarn release:site` 均受其约束。
+- 应用构建、官网构建及发布预检必须执行门禁；`yarn release` 与 `yarn release:check` 均受其约束。
 - 门禁只检查，不自动修改文件。格式修复使用 `yarn format`，修复后重新运行 `yarn quality`。
 - ESLint 覆盖项目 JavaScript / TypeScript（含 Node.js 脚本）；Prettier 范围由 `.prettierignore` 定义，外部技能包不纳入格式检查。
 - 不用测试用例替代或扩展此门禁。
@@ -41,7 +63,7 @@
 
 - `musicdan.syncmoon.ink` 同时作为 MusicDan 的应用介绍落地页和服务器备用下载入口。
 - 官网使用 **React 构建静态页面**，构建产物部署到服务器，由 Caddy 提供服务。
-- 官网部署通过在 `main` 分支显式运行 `yarn release` 完成（`scripts/release.mjs`）：官网构建部署、APK 构建上传到官网服务器。推送代码不触发发布，服务器不运行任何同步服务。
+- 官网与 APK 通过 `yarn release` 统一发布，发布来源仅限 `main`；APK 同时上传 GitHub Release。推送代码不触发发布，服务器不运行任何同步服务。
 - 官网下载地址固定指向 `/releases/latest.apk`（符号链接，随发布原子切换）；新版本上传完成前继续指向上一版本。详见 `deploy/musicdan/README.md`。
 - 官网 UI 框架使用 **shadcn/ui**，只使用 shadcn/ui 提供的控件并组合页面，**不要手写自定义 UI 控件，也不要手动复制控件源码**。
 - 新增 shadcn/ui 控件必须通过 **yarn 调用官方 shadcn CLI** 安装；依赖同样使用 yarn 管理，不使用 npm、npx 或 pnpm。

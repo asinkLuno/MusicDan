@@ -12,20 +12,39 @@ yarn --cwd website shadcn add <控件名>
 
 官网与 Tauri 应用分别管理依赖与 yarn.lock；不会把官网依赖打入 APK。
 
-## 部署流程（本地显式发布）
+## 本地发布流程
 
-服务器只提供静态文件，不再运行任何 GitHub 同步服务。在 **main 分支**运行 `yarn release`，由 `scripts/release.mjs` 完成本地发布，推送代码不触发发布：
+在当前 macmini 上发布，不使用 GitHub Actions 或 release 分支。先将版本号、源码与 `release-notes.md` 合入并推送 `main`，工作区除生成截图外必须干净。
 
-1. **静态检查**：运行 `yarn quality`（ESLint 与 Prettier 格式检查），失败立即中止，不自动改写文件。
-2. **本地构建**：运行真实前端重建截图、打包官网、构建签名 arm64 APK；校验签名与版本代码。
-3. **上传与校验**：从服务器 `releases.json` 分配下一个构建编号，将 APK、官网包、校验文件、说明和元数据上传到独立暂存目录，服务器再次校验 APK 和官网包的 SHA-256。
-4. **原子发布**：取得服务器发布锁并确认旧记录未变化，保留 `public/releases/build-N/` 为不可变版本目录；以 `public/latest` 符号链接一次切换官网、APK、版本信息和历史列表。仅保留最近 3 个版本用于回滚；切换成功后在同一发布锁内删除更早安装包、兼容下载链接和废弃官网目录。
+```sh
+yarn release:check
+yarn release
+```
 
-不调用 GitHub API、不上传 GitHub Release 附件、不推送发布标签。历史 GitHub Release 已清理。构建编号兼容迁移前的 `build-N` 记录，Android versionCode 继续递增。
+`release:check` 执行静态检查、版本与说明检查、本机依赖、GitHub 权限、main 与标签、服务器历史及目录检查；不会打标、构建或上传。需要网络，会 fetch main 及已存在的同名 tag。
 
-重复执行时，已发布版本校验服务器 APK 后跳过；未发布版本重新构建上传。读取服务器失败会直接终止，不会清空历史或重置构建编号。
+完整发布顺序：
 
-运行 `yarn release` 完整发布；`node scripts/release.mjs --site-only` 只重建部署官网。原 `--sync-server-only` 已移除。
+1. 预检通过后，在固定 main 提交上创建 `vX.Y.Z` 附注标签并推送 origin。标签记录源码 SHA、构建编号和更新日志摘要。
+2. 构建签名 arm64 APK，校验应用 ID、`versionName`、`versionCode`、架构和 release 签名证书。
+3. 启动真实应用前端与本机 Chrome，官网构建调用现有截图工具，重新生成 1080 × 2340 截图；官网清单记录版本和源码 SHA。
+4. APK、官网包、更新日志和元数据上传服务器独立暂存目录，校验 SHA-256 并准备不可变版本目录；此时线上页面和下载仍指向旧版本。
+5. 在 GitHub 创建草稿 Release，上传同一 APK、校验文件和 `release-notes.md`，下载回验后一并公开。GitHub 正文直接读取相同的更新日志，不使用自动生成说明。
+6. 在服务器发布锁内确认旧记录未变化，原子切换 `public/latest`，同时更新发布页、APK、`latest.json` 和 `releases.json`。发布页通过 `/latest.json` 显示新版本号。随后清理服务器较早版本，仅保留最近 3 个；GitHub 历史 Release 保留。
+
+本机需安装根目录和 website 的 yarn 依赖、Android SDK build-tools/NDK、Java、Rust Android target、Google Chrome、workbench、gh，并登录有仓库写权限的 GitHub 账号。SDK 默认位于 `~/Library/Android/sdk`，可通过 `ANDROID_HOME` 或 `ANDROID_SDK_ROOT` 指定；NDK 可用 `NDK_HOME` 或 `ANDROID_NDK_HOME` 指定。设置 `MUSICDAN_ECS_INSTANCE`，备份并配置现有私有签名材料。连接服务器的方法见根目录 AGENTS.md。
+
+### 版本与重试规则
+
+- tag 为 `vX.Y.Z`，`versionName` 为 `X.Y.Z`，package.json、Tauri、Cargo 的应用版本必须一致。tag 先于构建创建，不因构建失败而删除或移动。
+- `versionCode` 延续 `1000000000 + 构建编号`，构建编号从服务器历史分配并固定在标签中；读取失败禁止归零。旧标签已清理不代表 Android 升级编号可以重置。
+- 同名标签必须是本流程生成的附注标签，指向相同 main SHA，且更新说明摘要相同。标签冲突立即中止，绝不强推标签。
+- 本地产物保存在 `artifacts/releases/vX.Y.Z/`。重复运行复用已校验的 APK；官网包完整生成后也复用。上传附件同名时核验摘要，不覆盖；摘要不同则停止。
+- GitHub 与官网不能跨平台原子发布。GitHub 发布后官网切换失败，保留标签、Release 和本地缓存，修复原因后重跑 `yarn release`，补完官网切换。
+- 已发布版本的本地缓存缺失时停止，需恢复原缓存，不能重新构建同名版本。其他发布抢先改变服务器历史时停止，不复用已经冲突的编号。
+- 不再提供 `release:site`；截图和发布页始终跟随同一次完整发布。`yarn build:release-site` 仍可单独构建官网，但需自行启动预览服务和 Chrome。
+
+参考：[Android 版本管理](https://developer.android.com/studio/publish/versioning)、[Android 应用签名](https://developer.android.com/studio/publish/app-signing)、[Git tag](https://git-scm.com/docs/git-tag)、[GitHub Release CLI](https://cli.github.com/manual/gh_release_create)。
 
 ## 公开路径
 
@@ -49,7 +68,7 @@ yarn --cwd website shadcn add <控件名>
 
 ## 运维
 
-通过 AGENTS.md 中的 `musicdan-server-exec` 执行：
+通过 AGENTS.md 中的 `workbench exec --command` 执行以下远程命令：
 
 ```sh
 ls -la /srv/musicdan/                 # site 符号链接指向的目录即当前页面
@@ -57,28 +76,12 @@ readlink /srv/musicdan/public/releases/latest.apk
 docker logs --tail 50 caddy
 ```
 
-最近 3 个 `public/releases/build-N/` 目录保留作为回滚点；将 `public/latest` 原子切回对应目录即可同时回滚官网、APK 和发布记录。`--site-only` 单独部署的页面可通过 `/srv/musicdan/site` 切回旧目录。定期关注磁盘空间。
+最近 3 个 `public/releases/build-N/` 目录保留作为回滚点；将 `public/latest` 原子切回对应目录即可同时回滚官网、APK 和发布记录。旧流程单独部署的页面可通过 `/srv/musicdan/site` 切回旧目录。定期关注磁盘空间。
 
-## 日常发布操作手册
+## 服务器兼容与回滚
 
-发布入口统一为根目录的 `scripts/release.mjs`，以下命令调用同一流程：
+发布脚本要求现有目录已采用统一指针：`site → public/latest/site`、`public/releases.json → latest/releases.json`、`public/releases/latest.apk → ../latest/app.apk`，以及对应的校验文件链接。预检不通过时先检查服务器布局；脚本不会在发布时隐式迁移旧目录。
 
-| 入口                      | 用途                                          | 是否修改服务器 |
-| ------------------------- | --------------------------------------------- | -------------- |
-| `yarn release:check`      | 检查 lint、格式、工作区、四处版本号和更新说明 | 否             |
-| `yarn release`            | 从 main 执行完整发布，也可重试                | 是             |
-| `yarn release:site`       | 仅重新构建并替换官网                          | 是             |
-| `yarn build:release-site` | 仅打包官网，需要预览服务与 Chrome 已启动      | 否             |
+固定下载地址和应用更新接口保持兼容。服务器发布辅助脚本 `scripts/publish-release.py` 由本机通过 workbench 执行，不常驻服务器；上传和切换均在发布锁内重新检查文件与旧记录。
 
-正常发布顺序：
-
-1. 同步根 package.json、Tauri 配置、Cargo.toml 和 Cargo.lock 的应用版本。
-2. 更新 release-notes.md，仅保留当前版本说明；提交源码与说明。生成的 artifacts/previews 截图允许有改动，其余未提交或未跟踪文件会阻止发布。
-3. 在 main 分支运行 `yarn release:check`，再运行 `yarn release`。首次克隆需准备本地签名、SDK/NDK、Chrome、官网依赖及 macmini 访问。
-4. 检查官网 latest.json 的版本、source_commit 和固定 APK 下载地址。
-
-Git 推送仅同步源码，发布需单独运行命令。相同版本已存在时仅校验已有 APK 并跳过，修改应用必须提高版本号。
-
-服务器记录读取失败时修复连接后重试，禁止手工清空记录；并发冲突时等待另一发布完成后重试。上传或构建失败不会推进最新版本指针。官网单独部署使用独立目录，下一次完整发布会重新接管官网指针。
-
-回滚旧 public/latest 会同时回滚历史列表，因此回滚后不要直接发布新版本：必须先恢复完整历史记录并确认最大构建编号，否则可能重新使用已有编号。回滚仅限仍保留的版本；签名材料必须永久私有备份。
+回滚 `public/latest` 会同时回滚页面、APK 和历史列表。回滚后不要直接发布新版本：必须先恢复完整历史记录并确认最大构建编号，避免复用已发布编号。回滚仅限仍保留的版本；签名材料必须永久私有备份。

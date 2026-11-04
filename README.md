@@ -70,10 +70,10 @@
 
 ## 构建与发布
 
-当前 main 作为 v0.1.0 首版基线。GitHub 仅托管源码，不使用 Release、Actions 或发布分支。
+当前 main 作为 v0.1.0 首版基线。GitHub 托管源码并提供 Release APK 下载，不使用 Actions 或发布分支。
 
 - 本地调试 APK：`yarn tauri android build --debug --target aarch64 --apk`。
-- 正式发布：提交 main 上的版本和更新说明，运行 `yarn release:check`，再运行 `yarn release`；该命令构建签名 APK 并部署官网。
+- 正式发布：提交并推送 main 上的版本与更新说明，运行 `yarn release:check`，再运行 `yarn release`。流程为先打 tag、构建 APK、重新截图、上传服务器与 GitHub Release，最后部署发布页；两处共用更新日志。
 - 构建与发布前强制运行 `yarn quality`（lint + 格式检查）；不通过即中止。格式修复运行 `yarn format`。
 - 推送代码不会触发发布。完整流程见 [部署说明](deploy/musicdan/README.md)。
 
