@@ -34,6 +34,8 @@ yarn release
 
 本机需安装根目录和 website 的 yarn 依赖、Android SDK build-tools/NDK、Java、Rust Android target、Google Chrome、workbench、gh，并登录有仓库写权限的 GitHub 账号。SDK 默认位于 `~/Library/Android/sdk`，可通过 `ANDROID_HOME` 或 `ANDROID_SDK_ROOT` 指定；NDK 可用 `NDK_HOME` 或 `ANDROID_NDK_HOME` 指定。设置 `MUSICDAN_ECS_INSTANCE`，备份并配置现有私有签名材料。连接服务器的方法见根目录 AGENTS.md。
 
+当前 macmini 的环境配置保存在被 Git 忽略的 `android-signing/release-env.sh`，新终端先执行 `source android-signing/release-env.sh`。首版使用新签名，私有备份需包含 `android-signing/musicdan.keystore`、`android-signing/signing-credentials.txt` 和 `src-tauri/gen/android/keystore.properties`；旧内部测试版需卸载后重新安装。
+
 ### 版本与重试规则
 
 - tag 为 `vX.Y.Z`，`versionName` 为 `X.Y.Z`，package.json、Tauri、Cargo 的应用版本必须一致。tag 先于构建创建，不因构建失败而删除或移动。
@@ -41,7 +43,8 @@ yarn release
 - 同名标签必须是本流程生成的附注标签，指向相同 main SHA，且更新说明摘要相同。标签冲突立即中止，绝不强推标签。
 - 本地产物保存在 `artifacts/releases/vX.Y.Z/`。重复运行复用已校验的 APK；官网包完整生成后也复用。上传附件同名时核验摘要，不覆盖；摘要不同则停止。
 - GitHub 与官网不能跨平台原子发布。GitHub 发布后官网切换失败，保留标签、Release 和本地缓存，修复原因后重跑 `yarn release`，补完官网切换。
-- 已发布版本的本地缓存缺失时停止，需恢复原缓存，不能重新构建同名版本。其他发布抢先改变服务器历史时停止，不复用已经冲突的编号。
+- GitHub 已有草稿或正式版本、或服务器已经暂存该版本时，本地完整缓存缺失就停止，需恢复原缓存，不能重新构建同名版本。其他发布抢先改变服务器历史时停止，不复用已经冲突的编号。
+- 同一工作区通过 `artifacts/releases/.release-lock` 防止并发构建。进程异常终止留下锁时，确认没有发布进程后再删除该锁目录；不要删除版本产物目录。
 - 不再提供 `release:site`；截图和发布页始终跟随同一次完整发布。`yarn build:release-site` 仍可单独构建官网，但需自行启动预览服务和 Chrome。
 
 参考：[Android 版本管理](https://developer.android.com/studio/publish/versioning)、[Android 应用签名](https://developer.android.com/studio/publish/app-signing)、[Git tag](https://git-scm.com/docs/git-tag)、[GitHub Release CLI](https://cli.github.com/manual/gh_release_create)。

@@ -82,6 +82,7 @@ def check_history(bundle):
     history_file = PUBLIC / 'releases.json'
     history = read_json(history_file)
     if history[0] == bundle['entry']:
+        require(digest(history_file) == bundle['files']['releases.json'], '当前版本的历史记录不一致，拒绝覆盖')
         return True
     require(digest(history_file) == bundle['plan']['previous_sha256'], '服务器记录已变化，拒绝覆盖')
     return False
@@ -108,6 +109,8 @@ def prune(history):
         name = entry['name']
         require(re.fullmatch(r'MusicDan_\d+\.\d+\.\d+_arm64\.apk', name), '历史 APK 名称无效')
         number = entry.get('build_number')
+        if number is None and type(entry.get('version_code')) is int:
+            number = entry['version_code'] - 1000000000
         if number is None:
             match = re.search(r'/build-(\d+)(?:/|$)', entry.get('release_url') or entry.get('github_url', ''))
             require(match, '历史记录缺少编号，停止清理')
@@ -195,6 +198,10 @@ with (BASE / '.publish.lock').open('a') as lock:
         else:
             require(directory == destination, '发布目录编号不符')
             verify_site(directory, bundle)
+            for link, target in (('app.apk', bundle['entry']['name']),
+                                 ('app.apk.sha256', bundle['entry']['name'] + '.sha256')):
+                require((directory / link).is_symlink() and os.readlink(directory / link) == target,
+                        f'版本目录下载链接不符：{link}')
             for name in (bundle['entry']['name'], bundle['entry']['name'] + '.sha256'):
                 alias = RELEASES / name
                 if alias.exists() or alias.is_symlink():

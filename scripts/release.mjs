@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import net from 'node:net';
-import { existsSync, globSync } from 'node:fs';
+import { existsSync, globSync, mkdirSync, rmSync } from 'node:fs';
 import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
@@ -62,6 +62,8 @@ function cleanSource(commit) {
 const { version } = await json(path.join(root, 'package.json'));
 assert(/^\d+\.\d+\.\d+$/.test(version), '版本必须为 X.Y.Z');
 const tag = `v${version}`;
+const output = path.join(root, 'artifacts/releases', tag);
+const bundleFile = path.join(output, 'bundle.json');
 const commit = git('rev-parse', 'HEAD');
 cleanSource(commit);
 run('yarn', ['quality'], { stdio: 'inherit' });
@@ -161,12 +163,36 @@ if (alreadyPublished) {
   assert.equal(plan.previous_sha256, sha256(previousRaw), '服务器记录已变化，此标签不能继续发布');
   assert.equal(plan.build_number, maximum + 1, '构建编号不再是下一个编号');
 }
+const releases = JSON.parse(run('gh', ['api', `repos/${repo}/releases`, '--paginate', '--slurp'])).flat();
+const existingRelease = releases.find((item) => item.tag_name === tag);
+let release = existingRelease
+  ? { body: existingRelease.body, isDraft: existingRelease.draft, assets: existingRelease.assets }
+  : undefined;
+if (release) assert.equal(release.body.trim(), notes.trim(), 'GitHub 更新说明与本地不一致，禁止覆盖');
+const staged = ecs(`if [ -e ${base}/public/releases/build-${plan.build_number} ]; then printf staged; fi`).trim();
+assert(
+  !(alreadyPublished || release || staged) || existsSync(bundleFile),
+  '远端已有该版本产物，本地缓存缺失；请恢复原缓存，禁止重新构建',
+);
+if (existsSync(bundleFile)) {
+  const cached = await json(bundleFile);
+  assert.deepEqual(cached.plan, plan, '缓存不属于当前标签');
+  for (const [name, expected] of Object.entries(cached.files)) {
+    assert.equal(path.basename(name), name, '缓存文件名无效');
+    assert.equal(await digest(path.join(output, name)), expected, `缓存缺失或摘要不符：${name}`);
+  }
+}
 if (args.includes('--check')) {
   console.log(`[check] ${tag} 预检通过；未打标、构建或发布`);
   process.exit(0);
 }
-const output = path.join(root, 'artifacts/releases', tag);
 await mkdir(output, { recursive: true });
+// Gradle outputs and screenshots are shared by all releases in this checkout.
+const localLock = path.join(root, 'artifacts/releases/.release-lock');
+assert(!existsSync(localLock), '本地发布锁已存在；确认没有发布进程后再清理 artifacts/releases/.release-lock');
+mkdirSync(localLock);
+process.once('exit', () => rmSync(localLock, { recursive: true, force: true }));
+cleanSource(commit);
 if (!git('tag', '--list', tag)) {
   const annotation = path.join(output, 'tag.json');
   await save(annotation, plan);
@@ -182,7 +208,6 @@ const env = {
 };
 const apkName = `MusicDan_${version}_arm64.apk`;
 const apk = path.join(output, apkName);
-const bundleFile = path.join(output, 'bundle.json');
 const apkState = path.join(output, 'apk.json');
 let signingDigest;
 async function validateApk() {
@@ -345,8 +370,6 @@ for (const name of [...Object.keys(bundle.files), 'bundle.json'])
 console.log(server('stage', stage));
 
 // Upload to a draft, verify every attachment, then publish; never clobber an existing asset.
-const releases = JSON.parse(run('gh', ['api', `repos/${repo}/releases`, '--paginate', '--slurp'])).flat();
-let release = releases.find((item) => item.tag_name === tag);
 if (!release) {
   gh(
     'release',
@@ -360,7 +383,7 @@ if (!release) {
     path.join(output, 'release-notes.md'),
   );
   release = JSON.parse(gh('release', 'view', tag, '--json', 'body,isDraft,assets'));
-} else release = { body: release.body, isDraft: release.draft, assets: release.assets };
+}
 assert.equal(release.body.trim(), notes.trim(), 'GitHub 更新说明与本地不一致，禁止覆盖');
 const downloads = await mkdtemp(path.join(tmpdir(), 'musicdan-verify-'));
 try {
