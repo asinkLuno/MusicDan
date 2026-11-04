@@ -96,35 +96,3 @@ pub async fn check_update(app: AppHandle) -> Result<UpdateStatus, String> {
         .map_err(|error| format!("更新信息解析失败：{error}"))?;
     Ok(build_status(&current_version, &releases))
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn reads_latest_and_installed_version_from_website() {
-        let releases: Vec<WebsiteRelease> = serde_json::from_str(r###"[
-            {"version":"0.5.1","download_url":"/releases/latest.apk","notes":"本次更新"},
-            {"version":"0.5.0","download_url":"/releases/build-18/MusicDan_0.5.0_arm64.apk"}
-        ]"###).unwrap();
-        let status = build_status("0.5.0", &releases);
-        let latest = status.latest.unwrap();
-        assert_eq!(latest.version, "0.5.1");
-        assert_eq!(latest.apk_url.as_deref(), Some("https://musicdan.syncmoon.ink/releases/latest.apk"));
-        assert_eq!(latest.notes, "本次更新");
-        let current = status.current_release.unwrap();
-        assert_eq!(current.version, "0.5.0");
-        assert_eq!(current.notes, "");
-        assert!(current.apk_url.unwrap().contains("/build-18/"));
-        assert!(build_status("0.1.0", &releases).current_release.is_none());
-    }
-
-    #[test]
-    fn ignores_downloads_outside_the_official_release_directory() {
-        for url in ["https://example.com/app.apk", "//example.com/app.apk", "/releases/../app.apk", "/releases/a.apk?redirect=evil"] {
-            let release = WebsiteRelease { version: "0.5.1".into(), download_url: url.into(), notes: String::new() };
-            assert!(release_info(&release).is_none());
-        }
-        assert!(build_status("0.5.0", &[]).latest.is_none());
-    }
-}

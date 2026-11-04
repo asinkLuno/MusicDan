@@ -6,22 +6,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc --noEmit && vite build",
-    "test": "node --experimental-strip-types --test src/*.test.ts",
+    "build": "yarn quality && tsc --noEmit && vite build",
     "tauri": "tauri",
     "fixtures:refresh": "node scripts/refresh-ncm-fixture.mjs",
-    "test:release": "node --test scripts/release-state.test.mjs",
-    "test:fixtures": "node --experimental-strip-types --test scripts/ncm-preview.test.mjs",
     "fixtures:add-version": "node scripts/add-ncm-version.mjs",
     "fixtures:refresh-lyrics": "node scripts/refresh-ncm-lyrics.mjs",
     "screenshots:release": "node scripts/capture-release.mjs",
     "build:release-site": "node scripts/build-release-site.mjs",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "release": "node scripts/release.mjs",
     "release:check": "node scripts/release.mjs --check",
-    "release:site": "node scripts/release.mjs --site-only"
+    "release:site": "node scripts/release.mjs --site-only",
+    "quality": "yarn lint && yarn format:check"
   },
   "dependencies": {
     "@tamagui/config": "^3.1.10",

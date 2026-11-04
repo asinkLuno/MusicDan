@@ -4,10 +4,23 @@ const base = 'https://music.163.com';
 // Same EAPI payload/encryption as src-tauri/src/ncm.rs::lyric_params.
 function lyricParams(id) {
   const path = '/api/song/lyric/v1';
-  const payload = JSON.stringify({ id: String(id), cp: 'false', lv: '0', kv: '0', tv: '0', rv: '0', yv: '0', ytv: '0', yrv: '0', csrf_token: '' });
+  const payload = JSON.stringify({
+    id: String(id),
+    cp: 'false',
+    lv: '0',
+    kv: '0',
+    tv: '0',
+    rv: '0',
+    yv: '0',
+    ytv: '0',
+    yrv: '0',
+    csrf_token: '',
+  });
   const digest = createHash('md5').update(`nobody${path}use${payload}md5forencrypt`).digest('hex');
   const cipher = createCipheriv('aes-128-ecb', Buffer.from('e82ckenh8dichen8'), null);
-  return Buffer.concat([cipher.update(`${path}-36cd479b6b5-${payload}-36cd479b6b5-${digest}`), cipher.final()]).toString('hex').toUpperCase();
+  return Buffer.concat([cipher.update(`${path}-36cd479b6b5-${payload}-36cd479b6b5-${digest}`), cipher.final()])
+    .toString('hex')
+    .toUpperCase();
 }
 export async function request(route, query) {
   const headers = { Referer: base, 'User-Agent': 'Mozilla/5.0' };
@@ -38,4 +51,3 @@ export async function request(route, query) {
   if (data.code !== 200) throw new Error(`网易云接口返回错误：${data.code}`);
   return data;
 }
-

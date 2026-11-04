@@ -7,7 +7,22 @@ import { danmakuEffects } from './tamagui.config';
 import { PlaybackClock } from './playbackClock';
 
 type SpriteLine = { segs: Segment[]; widths: number[]; width: number };
-type Sprite = { pageCount: number; pageIndex: number; lines: SpriteLine[]; lineHeight: number; font: string; badgeFont: string; fontSize: number; height: number; emoteSize: number; effect: 'high' | 'top' | null; badge: string; width: number; tiles: Map<number, HTMLCanvasElement>; invalidate: () => void };
+type Sprite = {
+  pageCount: number;
+  pageIndex: number;
+  lines: SpriteLine[];
+  lineHeight: number;
+  font: string;
+  badgeFont: string;
+  fontSize: number;
+  height: number;
+  emoteSize: number;
+  effect: 'high' | 'top' | null;
+  badge: string;
+  width: number;
+  tiles: Map<number, HTMLCanvasElement>;
+  invalidate: () => void;
+};
 
 export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; settings: Settings }) {
   const theme = useTheme();
@@ -27,9 +42,10 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
-      setSize(previous => previous.width === width && previous.height === height ? previous : { width, height });
+      setSize((previous) => (previous.width === width && previous.height === height ? previous : { width, height }));
     });
-    observer.observe(canvasRef.current!); return () => observer.disconnect();
+    observer.observe(canvasRef.current!);
+    return () => observer.disconnect();
   }, []);
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -38,13 +54,20 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
     if (!drawingContext) return;
     const context = drawingContext;
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.round(size.width * dpr); canvas.height = Math.round(size.height * dpr);
+    canvas.width = Math.round(size.width * dpr);
+    canvas.height = Math.round(size.height * dpr);
     context.scale(dpr, dpr);
     const height = size.height;
     const duration = snapshot?.nowPlaying?.duration || snapshot?.song?.duration || 240000;
-    const { list, lanes, spacing, crossing, pinned } = makePlan(snapshot?.comments || [], duration, height, settings, size.width);
+    const { list, lanes, spacing, crossing, pinned } = makePlan(
+      snapshot?.comments || [],
+      duration,
+      height,
+      settings,
+      size.width,
+    );
     // Dense screens need many cached tiles; bound their resolution and memory.
-    const concurrent = list.length * crossing / Math.max(1, duration);
+    const concurrent = (list.length * crossing) / Math.max(1, duration);
     const rasterScale = Math.min(dpr, 2, Math.max(1, Math.sqrt(160 / Math.max(1, concurrent))));
     const tileWidth = 512;
     const padding = 8;
@@ -60,11 +83,16 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
         lines.push(line);
         return line;
       };
-      const push = (line: SpriteLine, seg: Segment, width: number) => { line.segs.push(seg); line.widths.push(width); line.width += width; };
+      const push = (line: SpriteLine, seg: Segment, width: number) => {
+        line.segs.push(seg);
+        line.widths.push(width);
+        line.width += width;
+      };
       for (const [index, seg] of segs.entries()) {
         let line = lines[lines.length - 1];
         if (seg.type === 'text') {
-          let text = ''; let measured = 0;
+          let text = '';
+          let measured = 0;
           for (const character of Array.from(seg.text)) {
             const nextWidth = context.measureText(text + character).width;
             if (line.width + nextWidth > maxWidth && (line.width > 0 || text)) {
@@ -91,48 +119,86 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
       const fontSize = commentFontSize(settings.fontSize, comment.occurrences);
       const lineHeight = Math.round(fontSize * 1.3);
       const font = `500 ${fontSize}px system-ui, sans-serif`;
-      const badgeFont = `600 ${Math.round(fontSize * .65)}px system-ui, sans-serif`;
+      const badgeFont = `600 ${Math.round(fontSize * 0.65)}px system-ui, sans-serif`;
       const emoteSize = Math.round(fontSize * 1.5);
       context.font = font;
       const label = comment.content.replaceAll('\n', ' ');
-      const badge = [comment.liked_count > 0 ? `♥${comment.liked_count}` : '', (comment.occurrences || 1) > 1 ? `×${comment.occurrences}` : ''].filter(Boolean).join('  ');
+      const badge = [
+        comment.liked_count > 0 ? `♥${comment.liked_count}` : '',
+        (comment.occurrences || 1) > 1 ? `×${comment.occurrences}` : '',
+      ]
+        .filter(Boolean)
+        .join('  ');
       const segs = parseSegments(label);
-      const widths = segs.map(seg => seg.type === 'text' ? context.measureText(seg.text).width : emoteSize);
+      const widths = segs.map((seg) => (seg.type === 'text' ? context.measureText(seg.text).width : emoteSize));
       const textWidth = widths.reduce((sum, width) => sum + width, 0);
       context.font = badgeFont;
       const measuredBadge = badge ? context.measureText(badge).width : 0;
       context.font = font;
-      const badgeWidth = badge ? fontSize * .25 + measuredBadge : 0;
-      const allLines = maxWidth != null && textWidth + badgeWidth > maxWidth
-        ? wrapLines(segs, widths, Math.max(1, maxWidth - badgeWidth))
-        : [{ segs, widths, width: textWidth }];
-      const rowsPerPage = maxWidth == null ? allLines.length : Math.max(1, Math.floor((height / 2 - padding * 2 - 8) / lineHeight));
+      const badgeWidth = badge ? fontSize * 0.25 + measuredBadge : 0;
+      const allLines =
+        maxWidth != null && textWidth + badgeWidth > maxWidth
+          ? wrapLines(segs, widths, Math.max(1, maxWidth - badgeWidth))
+          : [{ segs, widths, width: textWidth }];
+      const rowsPerPage =
+        maxWidth == null ? allLines.length : Math.max(1, Math.floor((height / 2 - padding * 2 - 8) / lineHeight));
       const pageCount = Math.ceil(allLines.length / rowsPerPage);
       const lines = allLines.slice(pageIndex * rowsPerPage, (pageIndex + 1) * rowsPerPage);
       const hasBadge = pageIndex === pageCount - 1;
-      const width = Math.ceil(Math.max(...lines.map((line, index) => line.width + (hasBadge && index === lines.length - 1 ? badgeWidth : 0))));
-      const effect = comment.liked_count >= danmakuEffects.top.minLikes ? 'top' : comment.liked_count >= danmakuEffects.high.minLikes ? 'high' : null;
+      const width = Math.ceil(
+        Math.max(...lines.map((line, index) => line.width + (hasBadge && index === lines.length - 1 ? badgeWidth : 0))),
+      );
+      const effect =
+        comment.liked_count >= danmakuEffects.top.minLikes
+          ? 'top'
+          : comment.liked_count >= danmakuEffects.high.minLikes
+            ? 'high'
+            : null;
       const tiles = new Map<number, HTMLCanvasElement>();
       // An arriving emote only invalidates the comment that uses it.
       const invalidate = () => tiles.clear();
-      return { pageCount, pageIndex, lines, lineHeight, font, badgeFont, fontSize, height: lines.length * lineHeight + padding * 2, emoteSize, effect, badge: hasBadge ? badge : '', width, tiles, invalidate };
+      return {
+        pageCount,
+        pageIndex,
+        lines,
+        lineHeight,
+        font,
+        badgeFont,
+        fontSize,
+        height: lines.length * lineHeight + padding * 2,
+        emoteSize,
+        effect,
+        badge: hasBadge ? badge : '',
+        width,
+        tiles,
+        invalidate,
+      };
     }
     function spriteFor(index: number) {
       let sprite = sprites.get(index);
-      if (!sprite) { sprite = makeSprite(list[index]); sprites.set(index, sprite); }
+      if (!sprite) {
+        sprite = makeSprite(list[index]);
+        sprites.set(index, sprite);
+      }
       return sprite;
     }
     // 长评驻留队列：按各自驻留时长首尾相接，读一条换一条
     const pinList = pinned.list;
     const pinEnters: number[] = [];
-    { let acc = 0; for (const comment of pinList) { pinEnters.push(acc); acc += pinDurationMs(comment.content); } }
+    {
+      let acc = 0;
+      for (const comment of pinList) {
+        pinEnters.push(acc);
+        acc += pinDurationMs(comment.content);
+      }
+    }
     function pinnedSpriteFor(index: number, elapsed: number, dwell: number) {
       let sprite = pinnedSprites.get(index);
       if (!sprite) {
         sprite = makeSprite(pinList[index], size.width - 24);
         pinnedSprites.set(index, sprite);
       }
-      const page = Math.min(sprite.pageCount - 1, Math.floor(elapsed / dwell * sprite.pageCount));
+      const page = Math.min(sprite.pageCount - 1, Math.floor((elapsed / dwell) * sprite.pageCount));
       if (sprite.pageIndex !== page) {
         removeEmoteListener(sprite.invalidate);
         sprite = makeSprite(pinList[index], size.width - 24, page);
@@ -141,10 +207,15 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
       return sprite;
     }
     function activePinned(position: number): number {
-      let lo = 0; let hi = pinEnters.length - 1; let found = -1;
+      let lo = 0;
+      let hi = pinEnters.length - 1;
+      let found = -1;
       while (lo <= hi) {
         const mid = (lo + hi) >> 1;
-        if (pinEnters[mid] <= position) { found = mid; lo = mid + 1; } else hi = mid - 1;
+        if (pinEnters[mid] <= position) {
+          found = mid;
+          lo = mid + 1;
+        } else hi = mid - 1;
       }
       if (found < 0) return -1;
       return position - pinEnters[found] < pinDurationMs(pinList[found].content) ? found : -1;
@@ -157,10 +228,12 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
         image.width = Math.ceil((tileWidth + padding * 2) * rasterScale);
         image.height = Math.ceil(sprite.height * rasterScale);
         const ink = image.getContext('2d')!;
-        ink.scale(rasterScale, rasterScale); ink.font = font; ink.textBaseline = 'middle';
+        ink.scale(rasterScale, rasterScale);
+        ink.font = font;
+        ink.textBaseline = 'middle';
         if (sprite.effect) ink.fillStyle = textColor;
         lines.forEach((line, lineIndex) => {
-          const y = padding + lineHeight * (lineIndex + .5);
+          const y = padding + lineHeight * (lineIndex + 0.5);
           const left = padding - tile * tileWidth;
           if (sprite.effect) {
             // Anchor the gradient to each whole line, so tile boundaries remain seamless.
@@ -177,7 +250,7 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
                 ink.save();
                 if (sprite.effect === 'top') {
                   ink.shadowColor = danmakuEffects.top.colors[0];
-                  ink.shadowBlur = Math.min(6, fontSize * .2) * rasterScale;
+                  ink.shadowBlur = Math.min(6, fontSize * 0.2) * rasterScale;
                 }
                 ink.fillText(seg.text, cursor, y);
                 ink.restore();
@@ -185,7 +258,10 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
                 const img = getEmoteImage(seg.url, sprite.invalidate);
                 if (img) ink.drawImage(img, cursor, y - emoteSize / 2, emoteSize, emoteSize);
                 else {
-                  ink.save(); ink.beginPath(); ink.rect(cursor, 0, emoteSize, sprite.height); ink.clip();
+                  ink.save();
+                  ink.beginPath();
+                  ink.rect(cursor, 0, emoteSize, sprite.height);
+                  ink.clip();
                   ink.fillText(`[${seg.name}]`, cursor, y);
                   ink.restore();
                 }
@@ -196,7 +272,7 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
           if (lineIndex === lines.length - 1 && sprite.badge) {
             ink.font = badgeFont;
             ink.fillStyle = textColor;
-            ink.fillText(sprite.badge, cursor + fontSize * .25, y - fontSize * .55);
+            ink.fillText(sprite.badge, cursor + fontSize * 0.25, y - fontSize * 0.55);
             ink.font = font;
           }
         });
@@ -210,8 +286,17 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
       for (const tile of sprite.tiles.keys()) if (tile < first || tile > last) sprite.tiles.delete(tile);
       for (let tile = first; tile <= last; tile++) {
         const image = tileFor(sprite, tile);
-        context.drawImage(image, padding * rasterScale, 0, tileWidth * rasterScale, image.height,
-          x + tile * tileWidth, y, tileWidth, sprite.height);
+        context.drawImage(
+          image,
+          padding * rasterScale,
+          0,
+          tileWidth * rasterScale,
+          image.height,
+          x + tile * tileWidth,
+          y,
+          tileWidth,
+          sprite.height,
+        );
       }
     }
     let animation = 0;
@@ -233,7 +318,7 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
             const sprite = spriteFor(i);
             const progress = (position - i * spacing) / crossing;
             const x = size.width - (size.width + sprite.width) * progress;
-            const y = ((i % lanes) + .5) * height / lanes - sprite.height / 2;
+            const y = (((i % lanes) + 0.5) * height) / lanes - sprite.height / 2;
             drawSprite(sprite, x, y);
           }
         }
@@ -276,6 +361,29 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
       wake.current = null;
       document.removeEventListener('visibilitychange', resume);
     };
-  }, [size, playing, snapshot?.revision, snapshot?.nowPlaying?.duration, snapshot?.song?.duration, settings.fontSize, settings.commentLimit, settings.pinLongComments, textColor]);
-  return <View render="canvas" position="absolute" inset={0} width="100%" height="100%" pointerEvents="none" ref={element => { if (element instanceof HTMLCanvasElement) canvasRef.current = element; }} aria-label="实时弹幕" />;
+  }, [
+    size,
+    playing,
+    snapshot?.revision,
+    snapshot?.nowPlaying?.duration,
+    snapshot?.song?.duration,
+    settings.fontSize,
+    settings.commentLimit,
+    settings.pinLongComments,
+    textColor,
+  ]);
+  return (
+    <View
+      render="canvas"
+      position="absolute"
+      inset={0}
+      width="100%"
+      height="100%"
+      pointerEvents="none"
+      ref={(element) => {
+        if (element instanceof HTMLCanvasElement) canvasRef.current = element;
+      }}
+      aria-label="实时弹幕"
+    />
+  );
 }

@@ -10,3 +10,6 @@ public
 themes
 tests/fixtures
 yarn.lock
+
+# External agent skill packages are maintained separately.
+.agents/skills

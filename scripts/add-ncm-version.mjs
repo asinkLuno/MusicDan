@@ -2,11 +2,12 @@ import { readFile, writeFile, rename } from 'node:fs/promises';
 import { recordComments, recordLyrics } from './ncm-recording.mjs';
 
 const [name, rawId] = process.argv.slice(2);
-if (!['creep', 'november-rain'].includes(name) || !/^[1-9][0-9]+$/.test(rawId || '')) throw new Error('用法：yarn fixtures:add-version <场景> <歌曲ID>');
+if (!['creep', 'november-rain'].includes(name) || !/^[1-9][0-9]+$/.test(rawId || ''))
+  throw new Error('用法：yarn fixtures:add-version <场景> <歌曲ID>');
 const path = new URL(`../tests/fixtures/ncm-${name}.json`, import.meta.url);
 const fixture = JSON.parse(await readFile(path, 'utf8'));
 const id = Number(rawId);
-const song = fixture.searchResults.find(song => song.songId === id);
+const song = fixture.searchResults.find((song) => song.songId === id);
 if (!song || id === fixture.song.songId) throw new Error('请选择 fixture 搜索结果中的另一版本');
 const { comments, total } = await recordComments(id);
 const lyrics = await recordLyrics(id, fixture.source.previewPosition);
@@ -17,4 +18,6 @@ fixture.previewSongIds = [...new Set([fixture.song.songId, ...(fixture.previewSo
 const temporary = new URL(`../tests/fixtures/ncm-${name}.${process.pid}.tmp`, import.meta.url);
 await writeFile(temporary, JSON.stringify(fixture, null, 2) + '\n');
 await rename(temporary, path);
-console.log(`Recorded version ${id}: ${comments.length} sampled comments, ${total} reported comments. Original recording retained.`);
+console.log(
+  `Recorded version ${id}: ${comments.length} sampled comments, ${total} reported comments. Original recording retained.`,
+);

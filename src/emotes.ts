@@ -9,7 +9,7 @@ export function parseSegments(content: string): Segment[] {
   const segs: Segment[] = [];
   const re = /\[([^\][]{1,12})\]/g;
   let last = 0;
-  for (let m: RegExpExecArray | null; (m = re.exec(content)); ) {
+  for (let m: RegExpExecArray | null; (m = re.exec(content));) {
     if (!Object.hasOwn(EMOTE_ID, m[1])) continue; // 未收录的代码：留在文本里
     if (m.index > last) segs.push({ type: 'text', text: content.slice(last, m.index) });
     segs.push({ type: 'emote', name: m[1], url: `/emotes/emoji_${EMOTE_ID[m[1]]}.png` });
@@ -31,11 +31,15 @@ export function getEmoteImage(url: string, onLoaded: () => void): HTMLImageEleme
   cache.set(url, entry);
   const img = new Image();
   img.onload = () => {
-    entry.image = img; entry.pending = false;
+    entry.image = img;
+    entry.pending = false;
     for (const listener of entry.listeners) listener();
     entry.listeners.clear();
   };
-  img.onerror = () => { entry.pending = false; entry.listeners.clear(); };
+  img.onerror = () => {
+    entry.pending = false;
+    entry.listeners.clear();
+  };
   img.src = url;
   return null;
 }

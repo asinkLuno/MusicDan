@@ -3,25 +3,45 @@ import { readFileSync } from 'node:fs';
 /** Preserve Android upgrade ordering, including records written before website-only releases. */
 export function nextBuildNumber(releases) {
   if (!Array.isArray(releases) || !releases.length) throw new Error('服务器发布记录为空，拒绝重置构建编号');
-  const numbers = releases.map(item => item.build_number
-    ?? (Number.isInteger(item.version_code) ? item.version_code - 1_000_000_000 : undefined)
-    ?? Number(/\/build-(\d+)(?:\/|$)/.exec(item.release_url ?? item.github_url ?? '')?.[1]));
-  if (numbers.some(number => !Number.isSafeInteger(number) || number <= 0)) {
+  const numbers = releases.map(
+    (item) =>
+      item.build_number ??
+      (Number.isInteger(item.version_code) ? item.version_code - 1_000_000_000 : undefined) ??
+      Number(/\/build-(\d+)(?:\/|$)/.exec(item.release_url ?? item.github_url ?? '')?.[1]),
+  );
+  if (numbers.some((number) => !Number.isSafeInteger(number) || number <= 0)) {
     throw new Error('服务器发布记录缺少有效构建编号');
   }
   return Math.max(...numbers) + 1;
 }
 
 export function releaseHistory(entry, previous) {
-  return [entry, ...previous.filter(item => item.version !== entry.version).map(item => {
-    // A former latest entry must keep downloading its own APK after the next release.
-    if (item.download_url !== '/releases/latest.apk') return item;
-    return { ...item, download_url: `/releases/${item.name}` };
-  })].sort((a, b) => nextBuildNumber([b]) - nextBuildNumber([a])).slice(0, 3);
+  return [
+    entry,
+    ...previous
+      .filter((item) => item.version !== entry.version)
+      .map((item) => {
+        // A former latest entry must keep downloading its own APK after the next release.
+        if (item.download_url !== '/releases/latest.apk') return item;
+        return { ...item, download_url: `/releases/${item.name}` };
+      }),
+  ]
+    .sort((a, b) => nextBuildNumber([b]) - nextBuildNumber([a]))
+    .slice(0, 3);
 }
 
 /** Files are already staged; the last rename is the only visibility switch. */
-export function publishCommand({ base, stage, buildNumber, sha256, siteSha256, apkName, siteBundleName, expectedState, owner = 'musicdan:musicdan' }) {
+export function publishCommand({
+  base,
+  stage,
+  buildNumber,
+  sha256,
+  siteSha256,
+  apkName,
+  siteBundleName,
+  expectedState,
+  owner = 'musicdan:musicdan',
+}) {
   const releaseDir = `${base}/public/releases/build-${buildNumber}`;
   return `set -e
 exec 9>${base}/.publish.lock

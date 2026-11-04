@@ -4,7 +4,10 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { root, validateManifest } from './site-assets.mjs';
 
-execFileSync('yarn', ['--cwd', fileURLToPath(new URL('website/', root)), 'build'], { cwd: fileURLToPath(root), stdio: 'inherit' });
+execFileSync('yarn', ['--cwd', fileURLToPath(new URL('website/', root)), 'build'], {
+  cwd: fileURLToPath(root),
+  stdio: 'inherit',
+});
 const manifest = await validateManifest();
 manifest.files = {};
 async function inventory(directory, prefix = '') {
@@ -12,7 +15,10 @@ async function inventory(directory, prefix = '') {
     const relative = prefix + entry.name;
     const path = new URL(entry.name + (entry.isDirectory() ? '/' : ''), directory);
     if (entry.isDirectory()) await inventory(path, relative + '/');
-    else if (entry.isFile()) manifest.files[relative] = createHash('sha256').update(await readFile(path)).digest('hex');
+    else if (entry.isFile())
+      manifest.files[relative] = createHash('sha256')
+        .update(await readFile(path))
+        .digest('hex');
     else throw new Error(`Unsupported site asset: ${relative}`);
   }
 }

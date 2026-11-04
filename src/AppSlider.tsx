@@ -14,36 +14,44 @@ export const AppSlider = withStaticProperties(
       const interval = Math.max(props.step ?? 1, range / 40);
       return Math.round((value - (props.min ?? 0)) / interval);
     };
-    return <Slider {...props} size="xs" height={44} flexShrink={0}
-      justifyContent="center" opacity={props.disabled ? 0.4 : 1}
-      onSlideStart={(...args) => {
-        if (!props.disabled) {
-          gesture.current = { active: true, bucket: bucket(args[1]), lastTick: performance.now() };
-          feedback('start');
-        }
-        props.onSlideStart?.(...args);
-      }}
-      onValueChange={values => {
-        const next = bucket(values[0]);
-        const now = performance.now();
-        if (gesture.current.active && next !== gesture.current.bucket) {
-          gesture.current.bucket = next;
-          if (now - gesture.current.lastTick >= 120) {
-            gesture.current.lastTick = now;
-            feedback('tick');
+    return (
+      <Slider
+        {...props}
+        size="xs"
+        height={44}
+        flexShrink={0}
+        justifyContent="center"
+        opacity={props.disabled ? 0.4 : 1}
+        onSlideStart={(...args) => {
+          if (!props.disabled) {
+            gesture.current = { active: true, bucket: bucket(args[1]), lastTick: performance.now() };
+            feedback('start');
           }
-        }
-        props.onValueChange?.(values);
-      }}
-      onSlideEnd={(...args) => {
-        if (gesture.current.active) feedback('end');
-        gesture.current.active = false;
-        props.onSlideEnd?.(...args);
-      }}
-      onPointerCancel={event => {
-        gesture.current.active = false;
-        props.onPointerCancel?.(event);
-      }}/>;
+          props.onSlideStart?.(...args);
+        }}
+        onValueChange={(values) => {
+          const next = bucket(values[0]);
+          const now = performance.now();
+          if (gesture.current.active && next !== gesture.current.bucket) {
+            gesture.current.bucket = next;
+            if (now - gesture.current.lastTick >= 120) {
+              gesture.current.lastTick = now;
+              feedback('tick');
+            }
+          }
+          props.onValueChange?.(values);
+        }}
+        onSlideEnd={(...args) => {
+          if (gesture.current.active) feedback('end');
+          gesture.current.active = false;
+          props.onSlideEnd?.(...args);
+        }}
+        onPointerCancel={(event) => {
+          gesture.current.active = false;
+          props.onPointerCancel?.(event);
+        }}
+      />
+    );
   },
   {
     Track: styled(Slider.Track, {

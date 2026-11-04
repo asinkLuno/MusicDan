@@ -1,15 +1,27 @@
 // 设置页“版本与更新”的纯逻辑：版本号比较与 官网发布说明解析。
-// 不依赖 DOM / Tamagui，便于 node --test 直接测试。
+// 不依赖 DOM / Tamagui。
 
-export interface ReleaseInfo { version: string; pageUrl: string; apkUrl: string | null; notes: string }
-export interface UpdateStatus { currentVersion: string; latest: ReleaseInfo | null; currentRelease: ReleaseInfo | null }
+export interface ReleaseInfo {
+  version: string;
+  pageUrl: string;
+  apkUrl: string | null;
+  notes: string;
+}
+export interface UpdateStatus {
+  currentVersion: string;
+  latest: ReleaseInfo | null;
+  currentRelease: ReleaseInfo | null;
+}
 
-export interface ReleaseNoteBlock { kind: 'heading' | 'text' | 'item'; text: string }
+export interface ReleaseNoteBlock {
+  kind: 'heading' | 'text' | 'item';
+  text: string;
+}
 
 /** 逐段比较数字版本号（0.4.10 > 0.4.9），长度不同按 0 补齐。 */
 export function compareVersions(a: string, b: string): number {
-  const pa = a.split('.').map(part => Number.parseInt(part, 10) || 0);
-  const pb = b.split('.').map(part => Number.parseInt(part, 10) || 0);
+  const pa = a.split('.').map((part) => Number.parseInt(part, 10) || 0);
+  const pb = b.split('.').map((part) => Number.parseInt(part, 10) || 0);
   const length = Math.max(pa.length, pb.length);
   for (let i = 0; i < length; i++) {
     const x = pa[i] ?? 0;

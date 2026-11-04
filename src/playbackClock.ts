@@ -20,7 +20,13 @@ export class PlaybackClock {
 
   update(snapshot: Snapshot | null, now: number, wallNow: number): void {
     const np = snapshot?.nowPlaying;
-    if (!np) { this.key = ''; this.sample = -1; this.playing = false; this.base = 0; return; }
+    if (!np) {
+      this.key = '';
+      this.sample = -1;
+      this.playing = false;
+      this.base = 0;
+      return;
+    }
     const key = trackKey(np);
     const sampledAt = snapshot.sampledAt;
     const playing = np.isPlaying;
@@ -28,11 +34,12 @@ export class PlaybackClock {
     if (key === this.key && sampledAt === this.sample && playing === this.playing && speed === this.speed) return;
     const target = np.position + (playing ? Math.max(0, wallNow - sampledAt) * speed : 0);
     const current = this.position(now);
-    const reset = key !== this.key || playing !== this.playing || speed !== this.speed || Math.abs(target - current) > 1500;
+    const reset =
+      key !== this.key || playing !== this.playing || speed !== this.speed || Math.abs(target - current) > 1500;
     this.base = reset ? target : current;
     this.correction = reset ? 0 : target - current;
     // Keep ordinary corrections below half of playback speed, so animation continues forward.
-    this.correctionMs = Math.max(500, Math.abs(this.correction) * 2 / Math.max(.1, speed));
+    this.correctionMs = Math.max(500, (Math.abs(this.correction) * 2) / Math.max(0.1, speed));
     this.at = now;
     this.key = key;
     this.sample = sampledAt;

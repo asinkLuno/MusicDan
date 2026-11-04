@@ -4,7 +4,10 @@ import { fileURLToPath } from 'node:url';
 import { root, siteScreenshotFiles, screenshotInfo, validateManifest } from './site-assets.mjs';
 
 if (process.argv.includes('--capture')) {
-  execFileSync(process.execPath, [fileURLToPath(new URL('scripts/capture-release.mjs', root))], { cwd: fileURLToPath(root), stdio: 'inherit' });
+  execFileSync(process.execPath, [fileURLToPath(new URL('scripts/capture-release.mjs', root))], {
+    cwd: fileURLToPath(root),
+    stdio: 'inherit',
+  });
   await validateManifest();
 }
 const directory = new URL('website/public/screenshots/', root);

@@ -10,11 +10,17 @@ export function makePlan(comments: Comment[], duration: number, height: number, 
     const key = commentKey(comment.content);
     const previous = groups.get(key);
     const occurrences = (previous?.occurrences || 0) + (comment.occurrences || 1);
-    groups.set(key, { ...(previous && previous.liked_count >= comment.liked_count ? previous : comment), occurrences, time: Math.min(previous?.time ?? comment.time, comment.time) });
+    groups.set(key, {
+      ...(previous && previous.liked_count >= comment.liked_count ? previous : comment),
+      occurrences,
+      time: Math.min(previous?.time ?? comment.time, comment.time),
+    });
   }
   const unique = [...groups.values()];
   if (cfg.commentLimit != null) unique.sort((a, b) => b.liked_count - a.liked_count || a.time - b.time);
-  const list = (cfg.commentLimit == null ? unique : unique.slice(0, cfg.commentLimit)).sort((a, b) => a.time - b.time || a.commentId - b.commentId);
+  const list = (cfg.commentLimit == null ? unique : unique.slice(0, cfg.commentLimit)).sort(
+    (a, b) => a.time - b.time || a.commentId - b.commentId,
+  );
   // 阅读时间超过穿屏时间的评论单独成队，在顶部驻留显示；其余继续穿屏
   let crossing = crossingDuration(width, cfg.fontSize, lanes, list.length, duration);
   const flow: Comment[] = [];
@@ -48,9 +54,15 @@ export function visibleRange(position: number, crossing: number, spacing: number
 }
 
 /** Prefer a readable speed, shortening dense crossings while allowing overlap. */
-export function crossingDuration(width: number, fontSize: number, lanes: number, count: number, duration: number): number {
-  const readable = Math.max(4000, Math.min(12000, width / (fontSize * 6) * 1000));
-  const dense = lanes * 8 * Math.max(1, duration) / Math.max(1, count);
+export function crossingDuration(
+  width: number,
+  fontSize: number,
+  lanes: number,
+  count: number,
+  duration: number,
+): number {
+  const readable = Math.max(4000, Math.min(12000, (width / (fontSize * 6)) * 1000));
+  const dense = (lanes * 8 * Math.max(1, duration)) / Math.max(1, count);
   return Math.max(3000, Math.min(readable, dense));
 }
 
@@ -70,5 +82,5 @@ export function commentKey(content: string): string {
 }
 
 export function commentFontSize(base: number, occurrences = 1): number {
-  return Math.round(base * (1 + Math.min(1, Math.log2(Math.max(1, occurrences)) * .15)));
+  return Math.round(base * (1 + Math.min(1, Math.log2(Math.max(1, occurrences)) * 0.15)));
 }

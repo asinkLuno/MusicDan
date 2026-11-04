@@ -1,13 +1,17 @@
-import { memo, type JSX } from 'react'
-import { Svg, Rect, type SvgProps } from 'react-native-svg'
-import { themed, type IconProps } from '@tamagui/helpers-icon'
+import { memo, type JSX } from 'react';
+import { Svg, Rect, type SvgProps } from 'react-native-svg';
+import { themed, type IconProps } from '@tamagui/helpers-icon';
 
 export const Pause: (props: IconProps) => JSX.Element = themed(
   memo(function Pause(props: IconProps) {
-    const { color = 'black', size = 24, ...otherProps } = props as SvgProps & {
-      color?: string
-      size?: number
-    }
+    const {
+      color = 'black',
+      size = 24,
+      ...otherProps
+    } = props as SvgProps & {
+      color?: string;
+      size?: number;
+    };
     return (
       <Svg
         width={size}
@@ -23,6 +27,6 @@ export const Pause: (props: IconProps) => JSX.Element = themed(
         <Rect x="14" y="3" width="5" height="18" rx="1" stroke={color} />
         <Rect x="5" y="3" width="5" height="18" rx="1" stroke={color} />
       </Svg>
-    )
-  })
-)
+    );
+  }),
+);

@@ -16,7 +16,7 @@ yarn --cwd website shadcn add <控件名>
 
 服务器只提供静态文件，不再运行任何 GitHub 同步服务。在 **main 分支**运行 `yarn release`，由 `scripts/release.mjs` 完成本地发布，推送代码不触发发布：
 
-1. **测试**：运行前端、数据、发布逻辑和 Kotlin 插件测试。
+1. **静态检查**：运行 `yarn quality`（ESLint 与 Prettier 格式检查），失败立即中止，不自动改写文件。
 2. **本地构建**：运行真实前端重建截图、打包官网、构建签名 arm64 APK；校验签名与版本代码。
 3. **上传与校验**：从服务器 `releases.json` 分配下一个构建编号，将 APK、官网包、校验文件、说明和元数据上传到独立暂存目录，服务器再次校验 APK 和官网包的 SHA-256。
 4. **原子发布**：取得服务器发布锁并确认旧记录未变化，保留 `public/releases/build-N/` 为不可变版本目录；以 `public/latest` 符号链接一次切换官网、APK、版本信息和历史列表。仅保留最近 3 个版本用于回滚；切换成功后在同一发布锁内删除更早安装包、兼容下载链接和废弃官网目录。
@@ -63,12 +63,12 @@ docker logs --tail 50 caddy
 
 发布入口统一为根目录的 `scripts/release.mjs`，以下命令调用同一流程：
 
-| 入口 | 用途 | 是否修改服务器 |
-| --- | --- | --- |
-| `yarn release:check` | 检查工作区、四处版本号和更新说明 | 否 |
-| `yarn release` | 从 main 执行完整发布，也可重试 | 是 |
-| `yarn release:site` | 仅重新构建并替换官网 | 是 |
-| `yarn build:release-site` | 仅打包官网，需要预览服务与 Chrome 已启动 | 否 |
+| 入口                      | 用途                                          | 是否修改服务器 |
+| ------------------------- | --------------------------------------------- | -------------- |
+| `yarn release:check`      | 检查 lint、格式、工作区、四处版本号和更新说明 | 否             |
+| `yarn release`            | 从 main 执行完整发布，也可重试                | 是             |
+| `yarn release:site`       | 仅重新构建并替换官网                          | 是             |
+| `yarn build:release-site` | 仅打包官网，需要预览服务与 Chrome 已启动      | 否             |
 
 正常发布顺序：
 

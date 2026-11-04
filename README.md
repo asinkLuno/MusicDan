@@ -41,8 +41,8 @@
 - 手动匹配会被记住，随时可恢复自动匹配
 - 字号、不透明度、显示上限随时调整，改动即时生效，无需重新抓取
 
-| 搜索匹配 | 弹幕外观 |
-| --- | --- |
+| 搜索匹配                                                             | 弹幕外观                                                          |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | <img src="artifacts/previews/november-rain-search.png" width="270"/> | <img src="docs/screenshots/settings-appearance.png" width="270"/> |
 
 ### 评论加载与合并
@@ -74,6 +74,7 @@
 
 - 本地调试 APK：`yarn tauri android build --debug --target aarch64 --apk`。
 - 正式发布：提交 main 上的版本和更新说明，运行 `yarn release:check`，再运行 `yarn release`；该命令构建签名 APK 并部署官网。
+- 构建与发布前强制运行 `yarn quality`（lint + 格式检查）；不通过即中止。格式修复运行 `yarn format`。
 - 推送代码不会触发发布。完整流程见 [部署说明](deploy/musicdan/README.md)。
 
 ## 开发
@@ -82,10 +83,8 @@
 yarn                                # 安装依赖（本项目只用 yarn，不要用 npm/pnpm）
 yarn dev                            # 浏览器预览界面；媒体功能需要安卓真机
 yarn build                          # TypeScript 检查及前端构建
-yarn test                           # 弹幕容量、跳转和去重测试
 yarn tauri android dev              # 真机调试
 yarn tauri android build --debug --target aarch64 --apk
-cd src-tauri && cargo test --lib    # Rust 侧测试
 ```
 
 安卓构建需要 JDK、Android SDK / NDK 和对应的 Rust target，并设置 `ANDROID_HOME`、`NDK_HOME`。项目包含已定制的 `src-tauri/gen/android`，不要重新初始化覆盖其中的系统栏适配。

@@ -21,7 +21,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "prebuild": "node ../scripts/prepare-site-assets.mjs --capture && node scripts/optimize-screenshots.mjs && node scripts/optimize-brand.mjs",
+    "prebuild": "yarn --cwd .. quality && node ../scripts/prepare-site-assets.mjs --capture && node scripts/optimize-screenshots.mjs && node scripts/optimize-brand.mjs",
     "predev": "node ../scripts/prepare-site-assets.mjs && node scripts/optimize-screenshots.mjs && node scripts/optimize-brand.mjs"
   },
   "devDependencies": {
