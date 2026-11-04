@@ -68,6 +68,14 @@
 - 部分系统页面及主动屏蔽悬浮窗的 App 会隐藏悬浮层
 - Android 13 及以上若关闭了应用通知，前台服务通知可能不显示，可在系统的应用通知设置中开启
 
+## 构建与发布
+
+当前 main 作为 v0.1.0 首版基线。GitHub 仅托管源码，不使用 Release、Actions 或发布分支。
+
+- 本地调试 APK：`yarn tauri android build --debug --target aarch64 --apk`。
+- 正式发布：提交 main 上的版本和更新说明，运行 `yarn release:check`，再运行 `yarn release`；该命令构建签名 APK 并部署官网。
+- 推送代码不会触发发布。完整流程见 [部署说明](deploy/musicdan/README.md)。
+
 ## 开发
 
 ```sh

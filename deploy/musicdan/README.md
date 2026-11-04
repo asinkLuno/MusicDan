@@ -12,26 +12,20 @@ yarn --cwd website shadcn add <控件名>
 
 官网与 Tauri 应用分别管理依赖与 yarn.lock；不会把官网依赖打入 APK。
 
-## 部署流程（本地钩子）
+## 部署流程（本地显式发布）
 
-服务器只提供静态文件，不再运行任何 GitHub 同步服务。推送 **releases 分支**时，本地 `pre-push` 钩子（`.githooks/pre-push`）执行 `scripts/release.mjs` 完成本地发布：
+服务器只提供静态文件，不再运行任何 GitHub 同步服务。在 **main 分支**运行 `yarn release`，由 `scripts/release.mjs` 完成本地发布，推送代码不触发发布：
 
 1. **测试**：运行前端、数据、发布逻辑和 Kotlin 插件测试。
 2. **本地构建**：运行真实前端重建截图、打包官网、构建签名 arm64 APK；校验签名与版本代码。
 3. **上传与校验**：从服务器 `releases.json` 分配下一个构建编号，将 APK、官网包、校验文件、说明和元数据上传到独立暂存目录，服务器再次校验 APK 和官网包的 SHA-256。
 4. **原子发布**：取得服务器发布锁并确认旧记录未变化，保留 `public/releases/build-N/` 为不可变版本目录；以 `public/latest` 符号链接一次切换官网、APK、版本信息和历史列表。仅保留最近 3 个版本用于回滚；切换成功后在同一发布锁内删除更早安装包、兼容下载链接和废弃官网目录。
 
-不调用 GitHub API、不上传 GitHub Release 附件、不推送发布标签。历史 GitHub Release 和标签保留。构建编号兼容迁移前的 `build-N` 记录，Android versionCode 继续递增。
+不调用 GitHub API、不上传 GitHub Release 附件、不推送发布标签。历史 GitHub Release 已清理。构建编号兼容迁移前的 `build-N` 记录，Android versionCode 继续递增。
 
 重复执行时，已发布版本校验服务器 APK 后跳过；未发布版本重新构建上传。读取服务器失败会直接终止，不会清空历史或重置构建编号。
 
-首次克隆仓库需要启用钩子：
-
-```sh
-git config core.hooksPath .githooks
-```
-
-也可运行 `yarn release` 完整发布；`node scripts/release.mjs --site-only` 只重建部署官网。原 `--sync-server-only` 已移除。
+运行 `yarn release` 完整发布；`node scripts/release.mjs --site-only` 只重建部署官网。原 `--sync-server-only` 已移除。
 
 ## 公开路径
 
@@ -72,8 +66,7 @@ docker logs --tail 50 caddy
 | 入口 | 用途 | 是否修改服务器 |
 | --- | --- | --- |
 | `yarn release:check` | 检查工作区、四处版本号和更新说明 | 否 |
-| `git push origin HEAD:releases` | 检查、构建并发布当前提交，然后推送代码 | 是 |
-| `yarn release` | 手动执行完整发布，用于重试 | 是 |
+| `yarn release` | 从 main 执行完整发布，也可重试 | 是 |
 | `yarn release:site` | 仅重新构建并替换官网 | 是 |
 | `yarn build:release-site` | 仅打包官网，需要预览服务与 Chrome 已启动 | 否 |
 
@@ -81,10 +74,10 @@ docker logs --tail 50 caddy
 
 1. 同步根 package.json、Tauri 配置、Cargo.toml 和 Cargo.lock 的应用版本。
 2. 更新 release-notes.md，仅保留当前版本说明；提交源码与说明。生成的 artifacts/previews 截图允许有改动，其余未提交或未跟踪文件会阻止发布。
-3. 运行 `yarn release:check`，再推送当前提交到 releases 分支。首次克隆需启用钩子并准备本地签名、SDK/NDK、Chrome、官网依赖及 macmini 访问。
+3. 在 main 分支运行 `yarn release:check`，再运行 `yarn release`。首次克隆需准备本地签名、SDK/NDK、Chrome、官网依赖及 macmini 访问。
 4. 检查官网 latest.json 的版本、source_commit 和固定 APK 下载地址。
 
-注意：pre-push 在 Git 推送完成**之前**发布服务器。若随后 Git 推送失败，官网可能已经上线；修复 Git 连接后重试相同提交即可。相同版本已存在时仅校验已有 APK 并跳过，修改应用必须提高版本号。
+Git 推送仅同步源码，发布需单独运行命令。相同版本已存在时仅校验已有 APK 并跳过，修改应用必须提高版本号。
 
 服务器记录读取失败时修复连接后重试，禁止手工清空记录；并发冲突时等待另一发布完成后重试。上传或构建失败不会推进最新版本指针。官网单独部署使用独立目录，下一次完整发布会重新接管官网指针。
 

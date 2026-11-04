@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { Button as TamaguiButton, Card, Checkbox, Dialog, H3, Input, Label, Paragraph, Separator, Switch, TamaguiProvider, Text, XStack, YStack, styled, useMedia } from 'tamagui';
 import { musicAtmosphere, tamaguiConfig } from './tamagui.config';
 import { PlaybackControls } from './PlaybackControls';
-import { LyricsBackground } from './Lyrics';
+import { LyricsBackground } from './LyricsBackground';
 import { Danmaku } from './Danmaku';
 import { MarqueeText } from './MarqueeText';
 import { compareVersions, parseReleaseNotes } from './release';

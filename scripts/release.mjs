@@ -1,5 +1,5 @@
 // 本地测试、签名构建，直接发布官网与 APK；不调用 GitHub API 或推送 Git 标签。
-// yarn release / 推送 releases 分支：完整发布；--site-only：仅重建官网。
+// yarn release：从 main 显式完整发布；--site-only：仅重建官网。
 // 服务器 releases.json 是构建编号和已发布版本的唯一来源。
 
 import { nextBuildNumber, releaseHistory, publishCommand, pruneCommand } from './release-state.mjs';
@@ -21,7 +21,7 @@ const ANDROID_BUILD_TOOLS = '37.0.0';
 const ANDROID_PROJECT = path.join(root, 'src-tauri/gen/android');
 
 const args = process.argv.slice(2);
-const pushedSha = args.includes('--pushed-sha') ? args[args.indexOf('--pushed-sha') + 1] : null;
+if (args.includes('--pushed-sha')) throw new Error('推送触发发布已移除；请在 main 分支运行 yarn release');
 if (args.includes('--sync-server-only')) throw new Error('--sync-server-only 已移除；请运行 yarn release，已发布版本会自动校验并跳过');
 const siteOnly = args.includes('--site-only');
 
@@ -29,12 +29,7 @@ function run(command, cliArgs, options = {}) {
   return execFileSync(command, cliArgs, { cwd: root, encoding: 'utf8', ...options });
 }
 
-/** 版本号从本地读取：有推送提交时读该提交的 package.json，避免工作区切分支后读到错误版本 */
-function readVersion() {
-  const raw = pushedSha ? run('git', ['show', `${pushedSha}:package.json`]) : run('cat', ['package.json']);
-  return JSON.parse(raw).version;
-}
-const version = readVersion();
+const version = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8')).version;
 const apkName = `MusicDan_${version}_arm64.apk`;
 
 /** 远程命令：ssh macmini workbench exec（命令整体加引号传递，避免 macmini shell 拆散分号） */
@@ -227,6 +222,7 @@ async function publishServer(apk, buildNumber, sha, previous) {
 
 // Fail before tests, builds or remote writes when source metadata is inconsistent.
 async function preflight() {
+  if (run('git', ['branch', '--show-current']).trim() !== 'main') throw new Error('请在 main 分支发布');
   if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('发布版本必须为 x.y.z');
   const status = run('git', ['status', '--porcelain', '--untracked-files=normal', '--', '.', ':!artifacts/previews']);
   if (status.trim()) throw new Error(`请先提交或暂存到 stash 后再发布（预览截图除外）：\n${status}`);
@@ -250,10 +246,7 @@ if (siteOnly) {
   await buildSiteBundle();
   await deploySite();
 } else {
-  const sha = pushedSha ?? run('git', ['rev-parse', 'HEAD']).trim();
-  if (run('git', ['rev-parse', `${sha}^{tree}`]).trim() !== run('git', ['rev-parse', 'HEAD^{tree}']).trim()) {
-    throw new Error('当前工作区不是待发布的提交；请在发布提交上执行推送');
-  }
+  const sha = run('git', ['rev-parse', 'HEAD']).trim();
   const previous = readServerState();
   const published = previous.find(item => item.version === version);
   if (published) {
