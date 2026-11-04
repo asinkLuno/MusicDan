@@ -213,7 +213,7 @@ let signingDigest;
 async function validateApk() {
   if (!signingDigest) {
     const report = run(path.join(android, 'gradlew'), [':app:signingReport', '--console=plain'], { cwd: android, env });
-    const releaseSigning = /Variant: release\r?\n(?:(?!Variant:)[\s\S])*/.exec(report)?.[0] ?? '';
+    const releaseSigning = /Variant: arm64Release\r?\n(?:(?!Variant:)[\s\S])*/.exec(report)?.[0] ?? '';
     assert.equal(
       path.resolve(/Store: (.+)/.exec(releaseSigning)?.[1].trim() ?? ''),
       path.join(root, 'android-signing/musicdan.keystore'),
