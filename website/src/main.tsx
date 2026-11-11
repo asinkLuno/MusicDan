@@ -10,17 +10,19 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-const overlay = '/screenshots/november-rain-danmaku';
-const danmaku = '/screenshots/app-danmaku';
-const search = '/screenshots/november-rain-search';
+const base = import.meta.env.BASE_URL;
+const overlay = `${base}screenshots/november-rain-danmaku`;
+const danmaku = `${base}screenshots/app-danmaku`;
+const search = `${base}screenshots/november-rain-search`;
 const heroSizes = '(min-width: 640px) 384px, calc(100vw - 48px)';
 const cardSizes =
   '(min-width: 1152px) 492px, (min-width: 768px) calc(50vw - 84px), (min-width: 640px) calc(100vw - 112px), calc(100vw - 80px)';
-const srcSet = (base: string, format: 'avif' | 'webp') =>
-  [540, 810, 1080].map((width) => `${base}-${width}.${format} ${width}w`).join(', ');
+const srcSet = (stem: string, format: 'avif' | 'webp') =>
+  [540, 810, 1080].map((width) => `${stem}-${width}.${format} ${width}w`).join(', ');
 import './index.css';
 
 const repository = 'https://github.com/asinkLuno/MusicDan';
+const downloadPrefix = `${repository}/releases/download/`;
 const reveal = {
   initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
@@ -48,7 +50,9 @@ function validRelease(value: unknown): value is Release {
     typeof release.sha256 === 'string' &&
     /^[a-f0-9]{64}$/.test(release.sha256) &&
     typeof release.download_url === 'string' &&
-    /^\/releases\/(?:latest\.apk|(?:[\w.-]+\/)?MusicDan_[\w.-]+_arm64\.apk)$/.test(release.download_url) &&
+    release.download_url.startsWith(downloadPrefix) &&
+    release.download_url.endsWith('.apk') &&
+    !release.download_url.includes('..') &&
     typeof release.published_at === 'string' &&
     Number.isFinite(Date.parse(release.published_at))
   );
@@ -63,7 +67,7 @@ function App() {
     const timeout = setTimeout(() => controller.abort(), 10000);
     async function loadLatest() {
       try {
-        const response = await fetch('/latest.json', { signal: controller.signal, cache: 'no-store' });
+        const response = await fetch(`${base}latest.json`, { signal: controller.signal, cache: 'no-store' });
         if (!response.ok) throw new Error('Latest release unavailable');
         const value: unknown = await response.json();
         if (!validRelease(value)) throw new Error('Invalid release metadata');
@@ -75,7 +79,7 @@ function App() {
     }
     let disposed = false;
     void loadLatest();
-    void fetch('/releases.json', { signal: controller.signal, cache: 'no-store' })
+    void fetch(`${base}releases.json`, { signal: controller.signal, cache: 'no-store' })
       .then((response) => (response.ok ? response.json() : []))
       .then((value: unknown) => {
         if (!disposed && Array.isArray(value)) setHistory(value.filter(validRelease));
@@ -92,8 +96,8 @@ function App() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-6 sm:px-10">
         <Button asChild variant="ghost" className="gap-2 px-0 text-lg font-semibold">
-          <a href="/" aria-label="MusicDan 首页">
-            <img src="/brand/icon-128.webp" alt="" width={28} height={28} className="size-7" />
+          <a href={base} aria-label="MusicDan 首页">
+            <img src={`${base}brand/icon-128.webp`} alt="" width={28} height={28} className="size-7" />
             MusicDan
           </a>
         </Button>
@@ -234,7 +238,9 @@ function App() {
               <CardTitle id="download-title" role="heading" aria-level={2} className="text-3xl">
                 下一首歌，和大家一起听。
               </CardTitle>
-              <CardDescription>从官网下载 APK 安装到 Android 手机，每个版本均提供 SHA-256 校验信息。</CardDescription>
+              <CardDescription>
+                从 GitHub Releases 下载 APK 安装到 Android 手机，每个版本均提供 SHA-256 校验信息。
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {status === 'loading' ? <Skeleton className="h-10 w-52" aria-label="正在读取最新版本" /> : null}
@@ -250,7 +256,7 @@ function App() {
                   <div className="flex flex-wrap gap-3">
                     <Button asChild size="lg">
                       <a href={release.download_url} download={release.name}>
-                        <ArrowDownToLine aria-hidden="true" /> 本站下载 APK
+                        <ArrowDownToLine aria-hidden="true" /> GitHub 下载 APK
                       </a>
                     </Button>
                     <Button asChild variant="link">
@@ -261,11 +267,11 @@ function App() {
               ) : null}
               {status === 'error' ? (
                 <Alert>
-                  <AlertTitle>暂时无法读取本站安装包</AlertTitle>
+                  <AlertTitle>暂时无法读取 GitHub 发布信息</AlertTitle>
                   <AlertDescription>
-                    <p>请稍后刷新重试，也可以直接使用固定下载地址。</p>
+                    <p>请稍后刷新重试，也可以直接前往 GitHub Releases。</p>
                     <Button asChild variant="outline">
-                      <a href="/releases/latest.apk">下载最新 APK</a>
+                      <a href={`${repository}/releases/latest`}>前往 GitHub Releases</a>
                     </Button>
                   </AlertDescription>
                 </Alert>

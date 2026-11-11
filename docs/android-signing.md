@@ -1,6 +1,8 @@
 # Android 发布签名迁移
 
-正式构建从以下 Repository Secrets 恢复签名，缺失时停止构建，绝不生成新证书：
+> 当前从 v0.1.1 起使用新的发布证书，已配置到 GitHub Actions Secrets。下方“从现有缓存迁移”记录的是旧证书的迁移过程，仅作历史参考；不要重新生成或替换现有证书。
+
+GitHub Actions 发布流程从以下 Repository Secrets 恢复签名，缺失时停止构建，绝不生成新证书：
 
 - `ANDROID_KEYSTORE_BASE64`
 - `ANDROID_KEY_ALIAS`

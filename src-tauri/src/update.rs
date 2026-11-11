@@ -2,8 +2,9 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tauri::AppHandle;
 
-const WEBSITE: &str = "https://musicdan.syncmoon.ink";
-const RELEASES_URL: &str = "https://musicdan.syncmoon.ink/releases.json";
+const WEBSITE: &str = "https://asinkluno.github.io/MusicDan";
+const RELEASES_URL: &str = "https://asinkluno.github.io/MusicDan/releases.json";
+const DOWNLOAD_PREFIX: &str = "https://github.com/asinkLuno/MusicDan/releases/download/";
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -31,18 +32,24 @@ struct WebsiteRelease {
 }
 
 fn release_info(release: &WebsiteRelease) -> Option<ReleaseInfo> {
-    // Only open APKs served by the official website, including historical build paths.
-    let relative = release.download_url.strip_prefix("/releases/")?;
-    if !relative.ends_with(".apk")
-        || relative.contains("..")
-        || relative.chars().any(|c| !c.is_ascii_alphanumeric() && !"/_-.".contains(c))
+    // Only open APK assets from the official GitHub Release, never arbitrary links.
+    let relative = release.download_url.strip_prefix(DOWNLOAD_PREFIX)?;
+    let (tag, asset) = relative.split_once('/')?;
+    if tag.is_empty()
+        || asset.is_empty()
+        || asset.contains('/')
+        || asset.contains("..")
+        || !asset.starts_with("MusicDan_")
+        || !asset.ends_with("_arm64.apk")
+        || !tag.chars().all(|c| c.is_ascii_alphanumeric() || "._-".contains(c))
+        || !asset.chars().all(|c| c.is_ascii_alphanumeric() || "._-".contains(c))
     {
         return None;
     }
     Some(ReleaseInfo {
         version: release.version.clone(),
         page_url: format!("{WEBSITE}/#download"),
-        apk_url: Some(format!("{WEBSITE}{}", release.download_url)),
+        apk_url: Some(release.download_url.clone()),
         notes: release.notes.clone(),
     })
 }
@@ -70,14 +77,14 @@ fn request_error(error: &reqwest::Error) -> String {
     let hint = if error.is_timeout() {
         "请求超时，请检查网络后重试"
     } else if error.is_connect() {
-        "连接官网失败，请检查网络、代理及设备时间"
+        "连接发布页失败，请检查网络、代理及设备时间"
     } else {
-        "无法获取官网更新信息"
+        "无法获取发布页更新信息"
     };
     format!("{hint}：{details}")
 }
 
-/// 官网发布记录同时用于检查更新和显示版本说明，无需 GitHub API。
+/// GitHub Pages 发布记录同时用于检查更新和显示版本说明，无需直接调用 GitHub API。
 #[tauri::command]
 pub async fn check_update(app: AppHandle) -> Result<UpdateStatus, String> {
     let current_version = app.package_info().version.to_string();

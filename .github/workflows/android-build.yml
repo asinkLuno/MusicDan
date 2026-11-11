@@ -1,16 +1,16 @@
-name: Build Android APK
+name: Release Android APK and website
 
-# main → releases 同步后构建签名 arm64 APK。
-# 这里只产出 Actions 工件，不创建 GitHub Release，也不占用服务器发布编号。
+# main → releases 同步后：构建签名 arm64 APK → GitHub Release → 重新截图并构建发布页 → GitHub Pages。
 on:
   push:
     branches:
       - releases
   workflow_dispatch:
 
+# 发布必须串行，避免并发同步或重跑互相覆盖。
 concurrency:
-  group: android-build-${{ github.ref }}
-  cancel-in-progress: true
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -18,23 +18,29 @@ permissions:
 env:
   ANDROID_NDK_VERSION: '30.0.16248370'
   ANDROID_BUILD_TOOLS_VERSION: '37.0.0'
+  ANDROID_CERT_SHA256: '4f44587c500b0a8e01ac72cfbaacdce4835f2f17673db28a692977149ea09bdc'
 
 jobs:
   build:
     if: github.ref == 'refs/heads/releases'
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 90
+    permissions:
+      contents: write
+      pages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
-      - name: Verify the commit came from main
+      - name: Verify the build commit came from main
         run: |
+          set -euo pipefail
           git fetch --no-tags origin main:refs/remotes/origin/main
-          if ! git merge-base --is-ancestor refs/remotes/origin/main "$GITHUB_SHA"; then
-            echo "::error::releases 只能包含 main 上已有的提交；请先把改动合入 main 并重新同步。"
+          git fetch --tags --force origin
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main; then
+            echo "::error::releases 只能构建 main 上已有的提交；请先把改动合入 main，再把 releases 快进到 main。"
             exit 1
           fi
 
@@ -43,6 +49,9 @@ jobs:
         with:
           node-version: '24.22.1'
           cache: yarn
+          cache-dependency-path: |
+            yarn.lock
+            website/yarn.lock
 
       - name: Pin Yarn Classic
         run: corepack enable && corepack prepare yarn@1.22.22 --activate
@@ -79,6 +88,9 @@ jobs:
 
       - name: Install frontend dependencies
         run: yarn install --frozen-lockfile
+
+      - name: Install landing page dependencies
+        run: yarn --cwd website install --frozen-lockfile
 
       # 签名材料只从 Secrets 读取；缺失时直接失败，绝不生成替代证书。
       - name: Restore release signing from Secrets
@@ -129,11 +141,23 @@ jobs:
             exit 1
           fi
           apk="${apks[0]}"
+          signature=$("$tools/apksigner" verify --print-certs "$apk")
+          cert=$(printf '%s\n' "$signature" | grep -i 'certificate SHA-256 digest' | head -n1 | sed 's/.*digest:[[:space:]]*//' | tr -d ':' | tr 'A-F' 'a-f')
+          if [ "$cert" != "$ANDROID_CERT_SHA256" ]; then
+            echo "::error::APK signing certificate mismatch (expected $ANDROID_CERT_SHA256, got $cert)"
+            exit 1
+          fi
           "$tools/apksigner" verify --verbose "$apk"
           metadata=$("$tools/aapt" dump badging "$apk")
           expected_code=$((1000000000 + MUSICDAN_BUILD_NUMBER))
           if [[ "$metadata" != *"package: name='ink.starmountain.musicdan' versionCode='$expected_code'"* ]]; then
             echo "::error::Unexpected application id or versionCode (expected $expected_code)"
+            printf '%s\n' "$metadata"
+            exit 1
+          fi
+          expected_version="${{ steps.version.outputs.version }}"
+          if [[ "$metadata" != *"versionName='$expected_version'"* ]]; then
+            echo "::error::Unexpected versionName (expected $expected_version)"
             printf '%s\n' "$metadata"
             exit 1
           fi
@@ -158,6 +182,129 @@ jobs:
           if-no-files-found: error
           compression-level: 0
 
+      - name: Publish GitHub Release
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APP_VERSION: ${{ steps.version.outputs.version }}
+          APK_NAME: MusicDan_${{ steps.version.outputs.version }}_arm64.apk
+        run: |
+          set -euo pipefail
+          tag="v$APP_VERSION"
+          notes_sha=$(sha256sum release-notes.md | cut -d' ' -f1)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse -q --verify "refs/tags/$tag" > /dev/null; then
+            tag_sha=$(git rev-list -n 1 "$tag")
+            if [ "$tag_sha" != "$GITHUB_SHA" ]; then
+              echo "::error::标签 $tag 已指向 $tag_sha，而不是本次构建的 $GITHUB_SHA；请提升版本号后重新同步。"
+              exit 1
+            fi
+          else
+            git tag -a "$tag" -m "MusicDan $tag (build $GITHUB_RUN_NUMBER, notes $notes_sha)" "$GITHUB_SHA"
+            git push origin "refs/tags/$tag"
+          fi
+
+          reused=false
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            is_draft=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)
+            if [ "$is_draft" = "false" ]; then
+              echo "GitHub Release $tag 已发布，复用现有安装包。"
+              reused=true
+            else
+              echo "清理上次失败留下的草稿 $tag"
+              gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes
+            fi
+          fi
+
+          if [ "$reused" = "false" ]; then
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+              --title "MusicDan v$APP_VERSION" \
+              --notes-file release-notes.md
+            gh release upload "$tag" --repo "$GITHUB_REPOSITORY" \
+              "artifacts/ci/$APK_NAME" \
+              "artifacts/ci/$APK_NAME.sha256" \
+              release-notes.md
+
+            expected=$(cut -d' ' -f1 "artifacts/ci/$APK_NAME.sha256")
+            asset_json=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag")
+            digest=$(jq -r --arg name "$APK_NAME" '.assets[] | select(.name == $name) | .digest // empty' <<< "$asset_json")
+            if [ -n "$digest" ]; then
+              if [ "$digest" != "sha256:$expected" ]; then
+                echo "::error::Release 附件摘要不一致：$digest != sha256:$expected"
+                exit 1
+              fi
+            else
+              asset_id=$(jq -r --arg name "$APK_NAME" '.assets[] | select(.name == $name) | .id' <<< "$asset_json")
+              gh api -H "Accept: application/octet-stream" \
+                "repos/$GITHUB_REPOSITORY/releases/assets/$asset_id" > "$RUNNER_TEMP/$APK_NAME"
+              actual=$(sha256sum "$RUNNER_TEMP/$APK_NAME" | cut -d' ' -f1)
+              if [ "$actual" != "$expected" ]; then
+                echo "::error::Release 附件摘要不一致：$actual != $expected"
+                exit 1
+              fi
+            fi
+
+            gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "reused=$reused" >> "$GITHUB_OUTPUT"
+
+      - name: Install Chinese fonts for screenshots
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+
+      - name: Re-capture screenshots and build the landing page
+        run: |
+          set -euo pipefail
+          yarn dev > "$RUNNER_TEMP/musicdan-preview.log" 2>&1 &
+          preview_pid=$!
+          google-chrome --headless --disable-gpu --no-sandbox --no-first-run \
+            --remote-debugging-port=9229 --remote-debugging-address=127.0.0.1 \
+            --user-data-dir="$RUNNER_TEMP/musicdan-chrome" about:blank > "$RUNNER_TEMP/musicdan-chrome.log" 2>&1 &
+          chrome_pid=$!
+          trap 'kill "$preview_pid" "$chrome_pid" 2>/dev/null || true' EXIT
+          ready=false
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:1420/ > /dev/null && curl -fsS http://127.0.0.1:9229/json/version > /dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            cat "$RUNNER_TEMP/musicdan-preview.log" "$RUNNER_TEMP/musicdan-chrome.log"
+            exit 1
+          fi
+          yarn build:release-site
+
+      - name: Generate GitHub Pages release metadata
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/pages-release.mjs --output website/dist --tag "${{ steps.release.outputs.tag }}"
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: website/dist
+
       - name: Remove signing material
         if: always()
         run: rm -f android-signing/musicdan.keystore src-tauri/gen/android/keystore.properties
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

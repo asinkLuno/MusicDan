@@ -10,6 +10,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 
+// 发布已迁移到 GitHub Actions：main → releases 触发构建、GitHub Release 与 GitHub Pages。
+console.error('发布已迁移到 GitHub Actions：请把 main 同步到 releases 分支；本地 ECS 发布脚本已停用。');
+process.exit(1);
+
 const root = fileURLToPath(new URL('../', import.meta.url));
 const base = '/srv/musicdan';
 const instance = process.env.MUSICDAN_ECS_INSTANCE;

@@ -53,7 +53,7 @@
 
 ## 下载
 
-- 通过官网 [musicdan.syncmoon.ink](https://musicdan.syncmoon.ink) 下载最新安装包，每个版本附 SHA-256 校验值；应用内检查更新同样使用官网发布记录
+- 通过 [GitHub Releases](https://github.com/asinkLuno/MusicDan/releases) 或 [GitHub Pages 发布页](https://asinkluno.github.io/MusicDan/) 下载最新安装包，每个版本附 SHA-256 校验值；应用内检查更新同样使用发布页记录
 - 需要 **Android 7.0（API 24）及以上**；仅提供 arm64-v8a（64 位）安装包，暂不支持 32 位 armv7 或 x86 / x86_64 模拟器
 
 安装后开启弹幕：
@@ -70,13 +70,20 @@
 
 ## 构建与发布
 
-当前 main 作为 v0.1.0 首版基线。GitHub 托管源码并提供 Release APK 下载；从 main 同步到 `releases` 分支会触发 GitHub Actions 构建签名 arm64 APK 工件，只用于构建验证，不创建 Release、不发布官网。
+当前 `main` 是发布基线。GitHub Actions 负责构建、发布与部署：
 
 - 本地调试 APK：`yarn tauri android build --debug --target aarch64 --apk`。
-- CI 构建：把 main 同步到 `releases` 分支（或在该分支手动运行 `Build Android APK`），在 Actions 运行页下载 `MusicDan_<版本>_arm64-build-<编号>.zip` 工件，内含 APK 与 SHA-256 校验文件。签名材料从 Actions Secrets 读取，需先按 [Android 发布签名迁移](docs/android-signing.md) 配置。CI 构建编号使用 `github.run_number`，仅供构建验证；在 CI 包与正式发布包之间切换时可能需要先卸载。
-- 正式发布：提交并推送 main 上的版本与更新说明，运行 `yarn release:check`，再运行 `yarn release`。流程为先打 tag、构建 APK、重新截图、上传服务器与 GitHub Release，最后部署发布页；两处共用更新日志。
-- 构建与发布前强制运行 `yarn quality`（lint + 格式检查）；不通过即中止。格式修复运行 `yarn format`。
-- 同步到 `releases` 只构建工件，不会发布；完整发布流程见 [部署说明](deploy/musicdan/README.md)。
+- 发布：把 `main` 快进同步到 `releases` 分支（或在该分支手动运行 `Release Android APK and website`）：
+
+  ```sh
+  git push origin main:releases
+  ```
+
+  工作流会构建签名 arm64 APK、校验应用 ID / 版本号 / 架构 / 证书，创建或复用 `v<版本>` GitHub Release，重新截图并构建 React 发布页，生成 `latest.json` / `releases.json`，最后部署到 GitHub Pages。
+
+- 发布前：同步 `package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml`、`src-tauri/Cargo.lock` 的版本号，更新 `release-notes.md`，提交并推送 `main`，运行 `yarn quality`。签名材料从 GitHub Actions Secrets 读取，配置说明见 [Android 发布签名](docs/android-signing.md)。
+- CI 构建编号使用 `github.run_number`，APK `versionCode = 1000000000 + 构建编号`；APK、`.sha256` 和更新说明同时挂在 GitHub Release 上，发布页直接从 Release 下载。
+- 旧的 `yarn release` / `yarn release:check` 与 `deploy/musicdan/` ECS 部署已停用，仅保留作历史参考。
 
 ## 开发
 

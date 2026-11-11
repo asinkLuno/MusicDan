@@ -1,4 +1,6 @@
-# MusicDan 官网与 APK 镜像
+# MusicDan 官网与 APK 镜像（已停用）
+
+> **已停用**：发布页与 APK 下载已迁移到 GitHub Pages（<https://asinkluno.github.io/MusicDan/>）和 GitHub Releases。本目录与 `scripts/release.mjs` 仅保留作历史参考，不再参与发布。
 
 入口：<https://musicdan.syncmoon.ink/>。React 静态页面位于 `website/`，shadcn/ui 控件由官方 CLI 安装，`src/index.css` 是 CLI 生成的主题文件。
 

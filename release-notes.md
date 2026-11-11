@@ -9,5 +9,6 @@
 
 ### 构建与发布
 
-- 从 main 同步到 releases 分支时，GitHub Actions 自动构建并校验 arm64 APK 工件。
-- 官网与 GitHub Release 继续提供相同的安装包和 SHA-256 校验值。
+- 从 main 同步到 releases 分支时，GitHub Actions 自动构建并校验签名 arm64 APK，创建 GitHub Release。
+- 发布页改由 GitHub Pages 托管，与 APK 在同一次构建中生成；下载地址指向 GitHub Release 附件。
+- GitHub Release 与发布页提供相同的安装包和 SHA-256 校验值。
