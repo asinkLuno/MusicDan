@@ -53,7 +53,9 @@
 
 ## 下载
 
-- 通过 [GitHub Releases](https://github.com/asinkLuno/MusicDan/releases) 或 [GitHub Pages 发布页](https://asinkluno.github.io/MusicDan/) 下载最新安装包，每个版本附 SHA-256 校验值；应用内检查更新同样使用发布页记录
+- **发布页**：<https://asinkluno.github.io/MusicDan/>（GitHub Pages，与 APK 在同一次构建中部署）
+- **GitHub Releases**：<https://github.com/asinkLuno/MusicDan/releases>，每个版本附 SHA-256 校验值
+- 应用内检查更新读取发布页的 `releases.json`，下载地址指向 GitHub Release 附件
 - 需要 **Android 7.0（API 24）及以上**；仅提供 arm64-v8a（64 位）安装包，暂不支持 32 位 armv7 或 x86 / x86_64 模拟器
 
 安装后开启弹幕：
@@ -70,7 +72,7 @@
 
 ## 构建与发布
 
-当前 `main` 是发布基线。GitHub Actions 负责构建、发布与部署：
+`main` 是唯一的发布基线；`releases` 只用于触发发布，不能作为独立的开发或发布来源。GitHub Actions 负责构建、发布与部署：
 
 - 本地调试 APK：`yarn tauri android build --debug --target aarch64 --apk`。
 - 发布：把 `main` 快进同步到 `releases` 分支（或在该分支手动运行 `Release Android APK and website`）：
@@ -79,7 +81,7 @@
   git push origin main:releases
   ```
 
-  工作流会构建签名 arm64 APK、校验应用 ID / 版本号 / 架构 / 证书，创建或复用 `v<版本>` GitHub Release，重新截图并构建 React 发布页，生成 `latest.json` / `releases.json`，最后部署到 GitHub Pages。
+  工作流会构建签名 arm64 APK、校验应用 ID / 版本号 / 架构 / 证书，创建或复用 `v<版本>` GitHub Release，重新截图并构建 React 发布页，生成 `latest.json` / `releases.json`，最后部署到 GitHub Pages。发布页使用相对资源路径，`latest.json` / `releases.json` 由 `scripts/pages-release.mjs` 从 GitHub Releases 生成，不要手工维护。
 
 - 发布前：同步 `package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml`、`src-tauri/Cargo.lock` 的版本号，更新 `release-notes.md`，提交并推送 `main`，运行 `yarn quality`。签名材料从 GitHub Actions Secrets 读取，配置说明见 [Android 发布签名](docs/android-signing.md)。
 - CI 构建编号使用 `github.run_number`，APK `versionCode = 1000000000 + 构建编号`；APK、`.sha256` 和更新说明同时挂在 GitHub Release 上，发布页直接从 Release 下载。
