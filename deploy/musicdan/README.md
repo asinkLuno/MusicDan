@@ -14,7 +14,7 @@ yarn --cwd website shadcn add <控件名>
 
 ## 本地发布流程
 
-在当前 macmini 上发布，不使用 GitHub Actions 或 release 分支。先将版本号、源码与 `release-notes.md` 合入并推送 `main`，工作区除生成截图外必须干净。
+正式发布沿用当前 macmini 上的本地流程；从 `main` 同步到 `releases` 分支只会触发 GitHub Actions 构建签名 arm64 APK 工件，不创建 Release、不发布官网。先将版本号、源码与 `release-notes.md` 合入并推送 `main`，工作区除生成截图外必须干净。
 
 ```sh
 yarn release:check

@@ -2,11 +2,11 @@
 
 ## 版本发布
 
-- 发布来源只能是 `main`。所有待发布改动必须先合入 `main`；禁止直接推送 `release` 分支，也不能将其作为独立的开发或发布来源。
+- 发布来源只能是 `main`。所有待发布改动必须先合入 `main`；`releases` 分支只用于从 `main` 同步并触发 GitHub Actions 构建，不能作为独立的开发或发布来源。
 
 发布在当前 macmini 上显式运行 `yarn release`（`scripts/release.mjs`），顺序固定为：预检 → 在 main 提交上创建并推送附注 tag → 构建签名 APK → 用现有截图工具重新截图并构建发布页 → 上传服务器暂存并校验 → 上传并发布 GitHub Release → 原子部署发布页、APK 和元数据。
 
-- Git tag 为 `v<版本>`，固定指向已推送到 `origin/main` 的提交；标签包含构建编号与更新说明摘要。先打标再构建，构建失败保留标签，重试不移动或覆盖标签。禁止直接推送 `release` 分支；Git 推送不触发发布，不使用 GitHub Actions。
+- Git tag 为 `v<版本>`，固定指向已推送到 `origin/main` 的提交；标签包含构建编号与更新说明摘要。先打标再构建，构建失败保留标签，重试不移动或覆盖标签。推送 `main` 不触发发布；向 `releases` 同步推送只触发 `.github/workflows/android-build.yml` 构建 arm64 APK 工件（签名材料来自 Actions Secrets），不创建 Release、不发布官网、不写入服务器发布记录。正式发布仍只在 `main` 上运行 `yarn release`。
 - APK 同时上传官网服务器与 GitHub Release，两份文件必须具有相同 SHA-256。`release-notes.md` 是两处唯一的更新日志来源，GitHub 正文、附件、官网与应用元数据共用该文件。
 - 官网固定下载地址 `/releases/latest.apk`；应用内检查更新继续读取官网 `/releases.json`。发布页从 `/latest.json` 读取最新版本号，不手工硬编码。
 - 构建编号 = 服务器 `releases.json` 中最大构建编号 + 1；兼容旧记录中的 `build-N` URL。APK `versionCode = 1000000000 + 构建编号`，禁止因读取失败或重新打 tag 而归零。
@@ -63,7 +63,7 @@
 
 - `musicdan.syncmoon.ink` 同时作为 MusicDan 的应用介绍落地页和服务器备用下载入口。
 - 官网使用 **React 构建静态页面**，构建产物部署到服务器，由 Caddy 提供服务。
-- 官网与 APK 通过 `yarn release` 统一发布，发布来源仅限 `main`；APK 同时上传 GitHub Release。推送代码不触发发布，服务器不运行任何同步服务。
+- 官网与 APK 通过 `yarn release` 统一发布，发布来源仅限 `main`；APK 同时上传 GitHub Release。推送代码不触发发布（`releases` 分支只构建 Actions 工件），服务器不运行任何同步服务。
 - 官网下载地址固定指向 `/releases/latest.apk`（符号链接，随发布原子切换）；新版本上传完成前继续指向上一版本。详见 `deploy/musicdan/README.md`。
 - 官网 UI 框架使用 **shadcn/ui**，只使用 shadcn/ui 提供的控件并组合页面，**不要手写自定义 UI 控件，也不要手动复制控件源码**。
 - 新增 shadcn/ui 控件必须通过 **yarn 调用官方 shadcn CLI** 安装；依赖同样使用 yarn 管理，不使用 npm、npx 或 pnpm。

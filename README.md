@@ -70,12 +70,13 @@
 
 ## 构建与发布
 
-当前 main 作为 v0.1.0 首版基线。GitHub 托管源码并提供 Release APK 下载，不使用 Actions 或发布分支。
+当前 main 作为 v0.1.0 首版基线。GitHub 托管源码并提供 Release APK 下载；从 main 同步到 `releases` 分支会触发 GitHub Actions 构建签名 arm64 APK 工件，只用于构建验证，不创建 Release、不发布官网。
 
 - 本地调试 APK：`yarn tauri android build --debug --target aarch64 --apk`。
+- CI 构建：把 main 同步到 `releases` 分支（或在该分支手动运行 `Build Android APK`），在 Actions 运行页下载 `MusicDan_<版本>_arm64-build-<编号>.zip` 工件，内含 APK 与 SHA-256 校验文件。签名材料从 Actions Secrets 读取，需先按 [Android 发布签名迁移](docs/android-signing.md) 配置。CI 构建编号使用 `github.run_number`，仅供构建验证；在 CI 包与正式发布包之间切换时可能需要先卸载。
 - 正式发布：提交并推送 main 上的版本与更新说明，运行 `yarn release:check`，再运行 `yarn release`。流程为先打 tag、构建 APK、重新截图、上传服务器与 GitHub Release，最后部署发布页；两处共用更新日志。
 - 构建与发布前强制运行 `yarn quality`（lint + 格式检查）；不通过即中止。格式修复运行 `yarn format`。
-- 推送代码不会触发发布。完整流程见 [部署说明](deploy/musicdan/README.md)。
+- 同步到 `releases` 只构建工件，不会发布；完整发布流程见 [部署说明](deploy/musicdan/README.md)。
 
 ## 开发
 
