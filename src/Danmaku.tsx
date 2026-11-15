@@ -118,7 +118,7 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
     function makeSprite(comment: Comment, maxWidth?: number, pageIndex = 0): Sprite {
       const fontSize = commentFontSize(settings.fontSize, comment.occurrences);
       const lineHeight = Math.round(fontSize * 1.3);
-      const font = `500 ${fontSize}px system-ui, sans-serif`;
+      const font = `600 ${fontSize}px system-ui, sans-serif`;
       const badgeFont = `600 ${Math.round(fontSize * 0.65)}px system-ui, sans-serif`;
       const emoteSize = Math.round(fontSize * 1.5);
       context.font = font;
@@ -248,6 +248,10 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
             if (cursor + segWidth >= 0 && cursor <= tileWidth + padding * 2) {
               if (seg.type === 'text') {
                 ink.save();
+                ink.lineJoin = 'round';
+                ink.strokeStyle = 'rgba(12, 14, 20, 0.88)';
+                ink.lineWidth = Math.max(2, fontSize * 0.16);
+                ink.strokeText(seg.text, cursor, y);
                 if (sprite.effect === 'top') {
                   ink.shadowColor = danmakuEffects.top.colors[0];
                   ink.shadowBlur = Math.min(6, fontSize * 0.2) * rasterScale;
@@ -270,10 +274,27 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
             cursor += segWidth;
           }
           if (lineIndex === lines.length - 1 && sprite.badge) {
+            ink.save();
             ink.font = badgeFont;
-            ink.fillStyle = textColor;
-            ink.fillText(sprite.badge, cursor + fontSize * 0.25, y - fontSize * 0.55);
-            ink.font = font;
+            const badgeX = cursor + fontSize * 0.25;
+            const badgeY = y - fontSize * 0.55;
+            const badgeWidth = ink.measureText(sprite.badge).width;
+            const badgeHeight = Math.round(fontSize * 0.9);
+            const badgePadding = Math.round(fontSize * 0.32);
+            const radius = badgeHeight / 2;
+            ink.fillStyle = 'rgba(12, 14, 20, 0.82)';
+            ink.beginPath();
+            ink.roundRect(
+              badgeX - badgePadding,
+              badgeY - badgeHeight / 2,
+              badgeWidth + badgePadding * 2,
+              badgeHeight,
+              radius,
+            );
+            ink.fill();
+            ink.fillStyle = sprite.effect ? danmakuEffects[sprite.effect].colors[0] : '#ffffff';
+            ink.fillText(sprite.badge, badgeX, badgeY);
+            ink.restore();
           }
         });
         sprite.tiles.set(tile, image);
