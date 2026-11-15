@@ -28,28 +28,20 @@ let error: string | null = null;
 let initialized: Promise<void> | undefined;
 let fixturePromise: Promise<DemoFixture> | undefined;
 let manualMatch = false;
-// 设置页“版本与更新”演示数据：与 v0.4.3 真实发布说明一致，检查结果为已是最新版本
+// 设置页“版本与更新”演示数据与当前 GitHub Release 保持一致
 const demoRelease: ReleaseInfo = {
-  version: '0.4.3',
-  pageUrl: 'https://musicdan.syncmoon.ink/#download',
-  apkUrl: 'https://musicdan.syncmoon.ink/releases/build-17/MusicDan_0.4.3_arm64.apk',
+  version: '0.1.2',
+  pageUrl: 'https://asinkluno.github.io/MusicDan/#download',
+  apkUrl: 'https://github.com/asinkLuno/MusicDan/releases/download/v0.1.2/MusicDan_0.1.2_arm64.apk',
   notes: [
-    '## 📱 Android 用户请下载这个文件',
+    '## ✨ v0.1.2 更新内容',
     '',
-    '**[`MusicDan_0.4.3_arm64.apk`](https://musicdan.syncmoon.ink/releases/build-17/MusicDan_0.4.3_arm64.apk)**',
+    '更新基线：在 v0.1.1 基础上优化弹幕可读性。',
     '',
-    '## ✨ v0.4.3 更新内容',
+    '### 弹幕显示',
     '',
-    '包含自 v0.4.2 发布以来的以下改动。',
-    '',
-    '### 歌词',
-    '',
-    '- 收紧歌词行距：行与行的间隔改为按歌词字号计算，长段歌词阅读更连贯。',
-    '',
-    '## 📋 系统要求',
-    '',
-    '- 需要 **Android 7.0（API 24）及以上**。',
-    '- 仅提供 arm64-v8a（64 位）安装包；暂不提供 32 位 armv7 和模拟器（x86/x86_64）的包。',
+    '- 加强弹幕文字的字重与背景描边，提升不同画面上的辨识度。',
+    '- 点赞数和重复次数改为紧凑标记，高赞弹幕保留分级强调色。',
   ].join('\n'),
 };
 function fixture(): Promise<DemoFixture> {
