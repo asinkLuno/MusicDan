@@ -86,4 +86,23 @@ impl<R: Runtime> Media<R> {
             .map(|_| ())
             .map_err(Into::into)
     }
+
+    pub fn install_permission(&self) -> crate::Result<InstallPermissionResponse> {
+        self.0.run_mobile_plugin("installPermission", ()).map_err(Into::into)
+    }
+
+    pub fn open_install_permission_settings(&self) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin::<EmptyResponse>("openInstallPermissionSettings", ())
+            .map(|_| ())
+            .map_err(Into::into)
+    }
+
+    /// 把已通过 SHA-256 校验的安装包交给系统安装器（仅 Android）
+    pub fn install_apk(&self, path: &str) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin::<EmptyResponse>("installApk", serde_json::json!({ "path": path }))
+            .map(|_| ())
+            .map_err(Into::into)
+    }
 }

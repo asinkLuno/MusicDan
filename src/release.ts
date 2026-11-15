@@ -5,6 +5,8 @@ export interface ReleaseInfo {
   version: string;
   pageUrl: string;
   apkUrl: string | null;
+  /** GitHub Release 附件的 SHA-256（应用内安装前用于校验），历史版本可能缺失 */
+  sha256: string | null;
   notes: string;
 }
 export interface UpdateStatus {

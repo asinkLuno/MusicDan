@@ -331,6 +331,30 @@
           "markdownDescription": "Denies the haptic_feedback command without any pre-configured scope."
         },
         {
+          "description": "Enables the install_apk command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-install-apk",
+          "markdownDescription": "Enables the install_apk command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the install_apk command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-install-apk",
+          "markdownDescription": "Denies the install_apk command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the install_permission command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-install-permission",
+          "markdownDescription": "Enables the install_permission command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the install_permission command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-install-permission",
+          "markdownDescription": "Denies the install_permission command without any pre-configured scope."
+        },
+        {
           "description": "Enables the is_permission_granted command without any pre-configured scope.",
           "type": "string",
           "const": "allow-is-permission-granted",
@@ -341,6 +365,18 @@
           "type": "string",
           "const": "deny-is-permission-granted",
           "markdownDescription": "Denies the is_permission_granted command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the open_install_permission_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-open-install-permission-settings",
+          "markdownDescription": "Enables the open_install_permission_settings command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the open_install_permission_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-open-install-permission-settings",
+          "markdownDescription": "Denies the open_install_permission_settings command without any pre-configured scope."
         },
         {
           "description": "Enables the open_overlay_settings command without any pre-configured scope.",
@@ -415,10 +451,10 @@
           "markdownDescription": "Denies the set_overlay command without any pre-configured scope."
         },
         {
-          "description": "默认权限：允许查询当前播放、通知权限状态并跳转授权设置\n#### This default permission set includes:\n\n- `allow-set-keep-screen-on`\n- `allow-haptic-feedback`\n- `allow-control-playback`\n- `allow-overlay-status`\n- `allow-open-overlay-settings`\n- `allow-set-overlay`\n- `allow-get-now-playing`\n- `allow-is-permission-granted`\n- `allow-open-permission-settings`\n- `allow-open-url`",
+          "description": "默认权限：允许查询当前播放、通知权限状态并跳转授权设置\n#### This default permission set includes:\n\n- `allow-set-keep-screen-on`\n- `allow-haptic-feedback`\n- `allow-control-playback`\n- `allow-overlay-status`\n- `allow-open-overlay-settings`\n- `allow-set-overlay`\n- `allow-get-now-playing`\n- `allow-is-permission-granted`\n- `allow-open-permission-settings`\n- `allow-open-url`\n- `allow-install-permission`\n- `allow-open-install-permission-settings`\n- `allow-install-apk`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "默认权限：允许查询当前播放、通知权限状态并跳转授权设置\n#### This default permission set includes:\n\n- `allow-set-keep-screen-on`\n- `allow-haptic-feedback`\n- `allow-control-playback`\n- `allow-overlay-status`\n- `allow-open-overlay-settings`\n- `allow-set-overlay`\n- `allow-get-now-playing`\n- `allow-is-permission-granted`\n- `allow-open-permission-settings`\n- `allow-open-url`"
+          "markdownDescription": "默认权限：允许查询当前播放、通知权限状态并跳转授权设置\n#### This default permission set includes:\n\n- `allow-set-keep-screen-on`\n- `allow-haptic-feedback`\n- `allow-control-playback`\n- `allow-overlay-status`\n- `allow-open-overlay-settings`\n- `allow-set-overlay`\n- `allow-get-now-playing`\n- `allow-is-permission-granted`\n- `allow-open-permission-settings`\n- `allow-open-url`\n- `allow-install-permission`\n- `allow-open-install-permission-settings`\n- `allow-install-apk`"
         }
       ]
     }

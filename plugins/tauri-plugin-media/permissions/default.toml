@@ -11,4 +11,7 @@ permissions = [
     "allow-is-permission-granted",
     "allow-open-permission-settings",
     "allow-open-url",
+    "allow-install-permission",
+    "allow-open-install-permission-settings",
+    "allow-install-apk",
 ]

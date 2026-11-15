@@ -11,6 +11,8 @@ import {
   Input,
   Label,
   Paragraph,
+  Progress,
+  ProgressIndicator,
   Separator,
   Switch,
   TamaguiProvider,
@@ -28,7 +30,8 @@ import { MarqueeText } from './MarqueeText';
 import { compareVersions, parseReleaseNotes } from './release';
 import type { ReleaseInfo, UpdateStatus } from './release';
 import { durationsMatch, formatTime, trackKey } from './types';
-import { invoke } from './commands';
+import { invoke, listen } from './commands';
+import type { DownloadProgress } from './commands';
 import type { Song } from './types';
 import { usePlayerState } from './usePlayerState';
 import '@tamagui/core/reset.css';
@@ -923,16 +926,20 @@ function ReleaseNotes({ label, release }: { label: string; release?: ReleaseInfo
   );
 }
 
-/** 设置页“版本与更新”：当前版本号、检查更新、本版本的更新内容 */
+/** 设置页“版本与更新”：当前版本号、检查更新、应用内下载安装、本版本的更新内容 */
 function VersionSection() {
   const [status, setStatus] = useState<UpdateStatus | null>(updateCache);
   const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>(updateCache ? 'ready' : 'loading');
   const [checkError, setCheckError] = useState('');
-  const [downloadError, setDownloadError] = useState('');
+  const [updateError, setUpdateError] = useState('');
+  const [busy, setBusy] = useState<'download' | 'install' | null>(null);
+  const [progress, setProgress] = useState<number | null>(null);
+  const [installerOpened, setInstallerOpened] = useState(false);
+  const [needsPermission, setNeedsPermission] = useState(false);
   const check = useCallback(async () => {
     setPhase('loading');
     setCheckError('');
-    setDownloadError('');
+    setUpdateError('');
     try {
       const next = await invoke('check_update');
       updateCache = next;
@@ -946,19 +953,75 @@ function VersionSection() {
   useEffect(() => {
     if (!updateCache) void check();
   }, [check]);
+  // 下载进度由 Rust 侧边写边算 SHA-256 时发出，total 未知时只显示不定进度。
+  useEffect(() => {
+    let stop: (() => void) | null = null;
+    let cancelled = false;
+    void listen<DownloadProgress>('update://progress', (payload) => {
+      setProgress(payload.total > 0 ? Math.min(1, payload.received / payload.total) : null);
+    }).then((unlisten) => {
+      if (cancelled) unlisten();
+      else stop = unlisten;
+    });
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
+  }, []);
   const latest = status?.latest ?? null;
   const hasUpdate = !!status && !!latest && compareVersions(status.currentVersion, latest.version) < 0;
   const openUrl = async (url: string) => {
-    setDownloadError('');
+    setUpdateError('');
     try {
       await invoke('plugin:media|open_url', { url });
     } catch (e) {
-      setDownloadError(e instanceof Error ? e.message : String(e));
+      setUpdateError(e instanceof Error ? e.message : String(e));
     }
   };
-  const download = () => {
-    if (latest) void openUrl(latest.apkUrl || latest.pageUrl);
+  const openInstallPermission = async () => {
+    setUpdateError('');
+    try {
+      await invoke('plugin:media|open_install_permission_settings');
+    } catch (e) {
+      setUpdateError(e instanceof Error ? e.message : String(e));
+    }
   };
+  /** 应用内下载 → SHA-256 校验 → 交给系统安装器 */
+  const installUpdate = async () => {
+    if (!latest?.apkUrl) return;
+    if (!latest.sha256) {
+      setUpdateError('该版本未提供 SHA-256 校验值，请到发布页手动下载');
+      return;
+    }
+    setUpdateError('');
+    setInstallerOpened(false);
+    try {
+      const permission = await invoke('plugin:media|install_permission');
+      if (!permission.supported) {
+        setUpdateError('当前平台不支持应用内安装');
+        return;
+      }
+      if (!permission.granted) {
+        setNeedsPermission(true);
+        await openInstallPermission();
+        setUpdateError('请在系统设置中允许 MusicDan 安装应用，然后返回重试');
+        return;
+      }
+      setNeedsPermission(false);
+      setBusy('download');
+      setProgress(0);
+      const file = await invoke('download_update', { url: latest.apkUrl, sha256: latest.sha256 });
+      setBusy('install');
+      await invoke('plugin:media|install_apk', { path: file.path });
+      setInstallerOpened(true);
+    } catch (e) {
+      setUpdateError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+      setProgress(null);
+    }
+  };
+  const percent = progress === null ? null : Math.round(progress * 100);
   return (
     <Card padding="4" gap="3" borderRadius="6" borderWidth={1} borderColor="border-color">
       <XStack gap="3" minHeight={44} alignItems="center" justifyContent="space-between">
@@ -986,13 +1049,47 @@ function VersionSection() {
             <Paragraph flex={1} fontWeight="600">
               发现新版本 v{latest.version}
             </Paragraph>
-            <Button size="sm" theme="accent" onPress={download}>
-              下载新版本
+            <Button size="sm" theme="accent" disabled={!!busy} onPress={() => void installUpdate()}>
+              {busy === 'download'
+                ? '下载中…'
+                : busy === 'install'
+                  ? '安装中…'
+                  : installerOpened
+                    ? '再次安装'
+                    : '下载并安装'}
             </Button>
           </XStack>
-          {downloadError && (
+          {busy === 'download' && (
+            <YStack gap="2">
+              <Progress
+                value={(progress ?? 0) * 100}
+                max={100}
+                width="100%"
+                height={6}
+                borderRadius="3"
+                overflow="hidden"
+                backgroundColor="color-3"
+              >
+                <ProgressIndicator backgroundColor="accent-background" />
+              </Progress>
+              <Paragraph size="sm" color="color-10">
+                {percent === null ? '正在下载并校验安装包…' : `正在下载并校验安装包 ${percent}%`}
+              </Paragraph>
+            </YStack>
+          )}
+          {installerOpened && (
             <Paragraph size="sm" color="color-10">
-              打开下载链接失败：{downloadError}
+              安装包已通过 SHA-256 校验，请在系统安装器中确认安装。
+            </Paragraph>
+          )}
+          {needsPermission && (
+            <Button size="sm" variant="quiet" alignSelf="flex-start" onPress={() => void openInstallPermission()}>
+              打开安装授权设置
+            </Button>
+          )}
+          {updateError && (
+            <Paragraph size="sm" color="color-10">
+              {updateError}
             </Paragraph>
           )}
         </YStack>
@@ -1007,9 +1104,9 @@ function VersionSection() {
           暂时无法获取更新信息
         </Paragraph>
       )}
-      {downloadError && phase !== 'ready' && (
+      {updateError && phase !== 'ready' && (
         <Paragraph size="sm" color="color-10">
-          打开下载链接失败：{downloadError}
+          操作失败：{updateError}
         </Paragraph>
       )}
       <Separator />

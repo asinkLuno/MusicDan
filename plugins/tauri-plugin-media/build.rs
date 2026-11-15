@@ -9,6 +9,9 @@ const COMMANDS: &[&str] = &[
     "is_permission_granted",
     "open_permission_settings",
     "open_url",
+    "install_permission",
+    "open_install_permission_settings",
+    "install_apk",
 ];
 
 fn main() {

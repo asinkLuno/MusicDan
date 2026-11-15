@@ -33,6 +33,7 @@ const demoRelease: ReleaseInfo = {
   version: '0.1.2',
   pageUrl: 'https://asinkluno.github.io/MusicDan/#download',
   apkUrl: 'https://github.com/asinkLuno/MusicDan/releases/download/v0.1.2/MusicDan_0.1.2_arm64.apk',
+  sha256: null,
   notes: [
     '## ✨ v0.1.2 更新内容',
     '',
@@ -172,6 +173,11 @@ export async function demoInvoke<T>(command: string, args?: Record<string, unkno
       break;
     case 'plugin:media|open_url':
       break;
+    case 'download_update':
+    case 'plugin:media|install_permission':
+    case 'plugin:media|open_install_permission_settings':
+    case 'plugin:media|install_apk':
+      throw new Error('浏览器演示暂不支持应用内下载安装，请使用安卓应用');
     default:
       throw new Error(`浏览器演示暂不支持：${command}`);
   }

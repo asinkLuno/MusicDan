@@ -30,6 +30,14 @@ pub struct GetNowPlayingResponse {
     pub error: Option<String>,
 }
 
+/// installPermission 的返回：应用内安装是否可用、是否已获得「安装未知应用」授权
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstallPermissionResponse {
+    pub supported: bool,
+    pub granted: bool,
+}
+
 /// isPermissionGranted 的返回
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

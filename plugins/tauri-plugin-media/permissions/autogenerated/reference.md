@@ -14,6 +14,9 @@
 - `allow-is-permission-granted`
 - `allow-open-permission-settings`
 - `allow-open-url`
+- `allow-install-permission`
+- `allow-open-install-permission-settings`
+- `allow-install-apk`
 
 ## Permission Table
 
@@ -105,6 +108,58 @@ Denies the haptic_feedback command without any pre-configured scope.
 <tr>
 <td>
 
+`media:allow-install-apk`
+
+</td>
+<td>
+
+Enables the install_apk command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`media:deny-install-apk`
+
+</td>
+<td>
+
+Denies the install_apk command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`media:allow-install-permission`
+
+</td>
+<td>
+
+Enables the install_permission command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`media:deny-install-permission`
+
+</td>
+<td>
+
+Denies the install_permission command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 `media:allow-is-permission-granted`
 
 </td>
@@ -124,6 +179,32 @@ Enables the is_permission_granted command without any pre-configured scope.
 <td>
 
 Denies the is_permission_granted command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`media:allow-open-install-permission-settings`
+
+</td>
+<td>
+
+Enables the open_install_permission_settings command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`media:deny-open-install-permission-settings`
+
+</td>
+<td>
+
+Denies the open_install_permission_settings command without any pre-configured scope.
 
 </td>
 </tr>

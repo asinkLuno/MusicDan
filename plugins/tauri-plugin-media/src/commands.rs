@@ -51,8 +51,27 @@ pub(crate) async fn haptic_feedback<R: Runtime>(app: AppHandle<R>, kind: HapticK
     app.media().haptic_feedback(kind)
 }
 
-/// 用系统浏览器打开链接（设置页“检查更新”后跳转下载）
+/// 用系统浏览器打开链接（设置页检查更新失败时兜底）
 #[command]
 pub(crate) async fn open_url<R: Runtime>(app: AppHandle<R>, url: String) -> Result<()> {
     app.media().open_url(&url)
+}
+
+/// 是否已获得「安装未知应用」授权（应用内安装更新的前提）
+#[command]
+pub(crate) async fn install_permission<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<InstallPermissionResponse> {
+    app.media().install_permission()
+}
+
+#[command]
+pub(crate) async fn open_install_permission_settings<R: Runtime>(app: AppHandle<R>) -> Result<()> {
+    app.media().open_install_permission_settings()
+}
+
+/// 把已校验的安装包交给系统安装器
+#[command]
+pub(crate) async fn install_apk<R: Runtime>(app: AppHandle<R>, path: String) -> Result<()> {
+    app.media().install_apk(&path)
 }

@@ -53,4 +53,16 @@ impl<R: Runtime> Media<R> {
     pub fn open_url(&self, _url: &str) -> crate::Result<()> {
         Err(crate::Error::Plugin("仅支持 Android".into()))
     }
+
+    pub fn install_permission(&self) -> crate::Result<InstallPermissionResponse> {
+        Ok(InstallPermissionResponse { supported: false, granted: false })
+    }
+
+    pub fn open_install_permission_settings(&self) -> crate::Result<()> {
+        Err(crate::Error::Plugin("仅支持 Android".into()))
+    }
+
+    pub fn install_apk(&self, _path: &str) -> crate::Result<()> {
+        Err(crate::Error::Plugin("应用内安装仅支持 Android".into()))
+    }
 }

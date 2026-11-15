@@ -19,7 +19,8 @@ pub fn run() {
             player::set_song_match,
             player::set_song_matches,
             player::retry_match,
-            update::check_update
+            update::check_update,
+            update::download_update
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

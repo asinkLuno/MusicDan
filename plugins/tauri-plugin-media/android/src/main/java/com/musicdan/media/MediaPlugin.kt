@@ -10,6 +10,8 @@ import androidx.appcompat.app.AppCompatActivity
 import android.app.Activity
 import android.content.Intent
 import android.provider.Settings
+import androidx.core.content.FileProvider
+import java.io.File
 import android.util.Log
 import app.tauri.plugin.JSObject
 import app.tauri.annotation.Command
@@ -28,7 +30,9 @@ import com.musicdan.media.permission.MediaPermissions
  * - isPermissionGranted: 查询「通知使用权」是否已授予
  * - openPermissionSettings: 跳转系统通知使用权设置页
  * - getNowPlaying: 返回当前播放的歌曲信息（标题/歌手/专辑/进度/播放状态）
- * - openUrl: 用系统浏览器打开网页链接（检查更新后跳转下载）
+ * - openUrl: 用系统浏览器打开网页链接（检查更新失败时兜底）
+ * - installPermission / openInstallPermissionSettings / installApk: 应用内安装已校验的 APK
+ *   （「安装未知应用」授权 + FileProvider 交给系统安装器）
  */
 @TauriPlugin
 class MediaPlugin(private val activity: Activity) : Plugin(activity) {
@@ -114,6 +118,77 @@ class MediaPlugin(private val activity: Activity) : Plugin(activity) {
             invoke.resolve(JSObject())
         } catch (e: Exception) {
             invoke.reject(e.message ?: "无法打开链接")
+        }
+    }
+
+    /**
+     * installPermission: 查询「安装未知应用」是否已授权。
+     * Android 8.0 起安装 APK 需要用户在系统设置里单独允许本应用。
+     */
+    @Command
+    fun installPermission(invoke: Invoke) {
+        val restricted = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+        val ret = JSObject()
+        ret.put("supported", true)
+        ret.put(
+            "granted",
+            if (restricted) activity.packageManager.canRequestPackageInstalls() else true,
+        )
+        invoke.resolve(ret)
+    }
+
+    /** openInstallPermissionSettings: 跳转本应用的「安装未知应用」授权页 */
+    @Command
+    fun openInstallPermissionSettings(invoke: Invoke) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                activity.startActivity(
+                    Intent(
+                        Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                        Uri.parse("package:${activity.packageName}"),
+                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                )
+            }
+            invoke.resolve(JSObject())
+        } catch (e: Exception) {
+            invoke.reject(e.message ?: "无法打开安装授权设置")
+        }
+    }
+
+    /**
+     * installApk: 把应用缓存中已通过 SHA-256 校验的 APK 交给系统安装器。
+     * 只接受 cacheDir/updates 下的 .apk，避免被前端传入任意路径。
+     */
+    @Command
+    fun installApk(invoke: Invoke) {
+        val raw = invoke.getArgs().optString("path")
+        try {
+            val file = File(raw).canonicalFile
+            val root = File(activity.cacheDir, "updates").canonicalFile
+            check(file.path.startsWith(root.path + File.separator)) { "安装包路径无效" }
+            check(file.name.endsWith(".apk")) { "安装包路径无效" }
+            check(file.isFile) { "安装包不存在，请重新下载" }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                !activity.packageManager.canRequestPackageInstalls()
+            ) {
+                invoke.reject("请先允许 MusicDan 安装未知应用")
+                return
+            }
+            val uri = FileProvider.getUriForFile(
+                activity,
+                "${activity.packageName}.fileprovider",
+                file,
+            )
+            activity.startActivity(
+                Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(uri, "application/vnd.android.package-archive")
+                    .addFlags(
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK,
+                    ),
+            )
+            invoke.resolve(JSObject())
+        } catch (e: Exception) {
+            invoke.reject(e.message ?: "无法启动系统安装器")
         }
     }
 
