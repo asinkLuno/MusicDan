@@ -15,6 +15,14 @@ mod t2s;
 const BASE: &str = "https://music.163.com";
 const UA: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
+fn client() -> Result<reqwest::Client, String> {
+    reqwest::Client::builder()
+        .user_agent(UA)
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| e.to_string())
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Comment {
     #[serde(rename = "commentId")]
@@ -169,21 +177,6 @@ fn match_score(
     s
 }
 
-/// 搜索歌曲（关键词 = 歌名 + 歌手）并返回其热门评论，按点赞数降序。
-/// album / duration（MediaSession 上报的毫秒时长）用于消歧：
-/// 歌名+专辑对上、时长接近的候选优先。
-#[tauri::command]
-pub async fn fetch_comments(
-    song: String,
-    artist: String,
-    album: Option<String>,
-    duration: Option<i64>,
-    limit: Option<u32>,
-) -> Result<CommentsResult, String> {
-    let song_match = match_song(song, artist, album, duration).await?;
-    fetch_song_comments(song_match, limit).await
-}
-
 pub async fn match_song(
     song: String,
     artist: String,
@@ -213,14 +206,6 @@ pub async fn match_song(
     Ok(candidates[best.unwrap().1].clone())
 }
 
-#[tauri::command]
-pub async fn fetch_song_comments(
-    song_match: SongMatch,
-    limit: Option<u32>,
-) -> Result<CommentsResult, String> {
-    fetch_song_comments_progress(song_match, limit, |_| {}).await
-}
-
 /// Publish cumulative snapshots every 1000 sampled comments, plus the final remainder.
 pub async fn fetch_song_comments_progress(
     song_match: SongMatch,
@@ -228,11 +213,7 @@ pub async fn fetch_song_comments_progress(
     on_progress: impl Fn(Vec<Comment>) + Send,
 ) -> Result<CommentsResult, String> {
     let cap = limit.filter(|n| *n > 0).map(|n| n as usize);
-    let client = reqwest::Client::builder()
-        .user_agent(UA)
-        .timeout(std::time::Duration::from_secs(15))
-        .build()
-        .map_err(|e| e.to_string())?;
+    let client = client()?;
 
     // Offset pagination stops early. Continue from the oldest timestamp instead.
     // Keep the first page's hotComments even when they are older than our sample.
@@ -334,8 +315,8 @@ pub async fn fetch_song_comments_progress(
                 if seen.insert(id) {
                     raw_all.push(comment);
                     added += 1;
+                }
             }
-        }
         }
         if (published == 0 || sampled / 1000 > published / 1000)
             && cap.is_none_or(|cap| raw_all.len() < cap)
@@ -367,11 +348,7 @@ pub async fn search_songs(keyword: String) -> Result<Vec<SongMatch>, String> {
     if keyword.trim().is_empty() {
         return Ok(Vec::new());
     }
-    let client = reqwest::Client::builder()
-        .user_agent(UA)
-        .timeout(std::time::Duration::from_secs(15))
-        .build()
-        .map_err(|e| e.to_string())?;
+    let client = client()?;
 
     let search: serde_json::Value = client
         .get(format!("{BASE}/api/search/get"))
@@ -399,11 +376,7 @@ pub async fn search_songs(keyword: String) -> Result<Vec<SongMatch>, String> {
 /// Only fetch one comment to read the total, without downloading all pages.
 #[tauri::command]
 pub async fn get_song_comment_count(song_id: i64) -> Result<i64, String> {
-    let page: serde_json::Value = reqwest::Client::builder()
-        .user_agent(UA)
-        .timeout(std::time::Duration::from_secs(15))
-        .build()
-        .map_err(|e| e.to_string())?
+    let page: serde_json::Value = client()?
         .get(format!("{BASE}/api/v1/resource/comments/R_SO_4_{song_id}"))
         .header("Referer", BASE)
         .query(&[("limit", "1"), ("offset", "0")])
@@ -461,7 +434,6 @@ struct RawSong {
     duration: i64,
 }
 
-
 #[derive(Debug, Serialize)]
 pub struct Lyrics {
     lrc: String,
@@ -473,7 +445,7 @@ pub struct Lyrics {
 }
 
 fn lyric_params(song_id: i64) -> String {
-    use ecb::cipher::{BlockEncryptMut, KeyInit, block_padding::Pkcs7};
+    use ecb::cipher::{block_padding::Pkcs7, BlockEncryptMut, KeyInit};
     use md5::{Digest, Md5};
     let path = "/api/song/lyric/v1";
     let payload = serde_json::json!({"id": song_id.to_string(), "cp":"false", "lv":"0", "kv":"0", "tv":"0", "rv":"0", "yv":"0", "ytv":"0", "yrv":"0", "csrf_token":""}).to_string();
@@ -492,11 +464,7 @@ pub async fn fetch_lyrics(song_id: i64) -> Result<Lyrics, String> {
     if song_id <= 0 {
         return Err("无效歌曲 ID".into());
     }
-    let page: serde_json::Value = reqwest::Client::builder()
-        .user_agent(UA)
-        .timeout(std::time::Duration::from_secs(15))
-        .build()
-        .map_err(|e| e.to_string())?
+    let page: serde_json::Value = client()?
         .post("https://interface3.music.163.com/eapi/song/lyric/v1")
         .form(&[("params", lyric_params(song_id))])
         .send()

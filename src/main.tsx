@@ -27,8 +27,10 @@ import { Danmaku } from './Danmaku';
 import { MarqueeText } from './MarqueeText';
 import { compareVersions, parseReleaseNotes } from './release';
 import type { ReleaseInfo, UpdateStatus } from './release';
-import { defaults, durationsMatch, formatTime, invoke, trackKey } from './types';
-import type { Settings, Snapshot, Song } from './types';
+import { durationsMatch, formatTime, trackKey } from './types';
+import { invoke } from './commands';
+import type { Song } from './types';
+import { usePlayerState } from './usePlayerState';
 import '@tamagui/core/reset.css';
 
 const AnimatedButton = styled(TamaguiButton, {
@@ -58,11 +60,8 @@ function App() {
   const media = useMedia();
   const [lyricChoice, setLyricChoice] = useState<{ key: string; id: number | null }>({ key: '', id: null });
   const [tab, setTab] = useState('danmaku');
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
-  const [cfg, setCfg] = useState<Settings>(defaults);
-  const [commentLimitDraft, setCommentLimitDraft] = useState(String(defaults.commentLimit ?? ''));
-  const [overlay, setOverlay] = useState({ granted: false, running: false, supported: true });
-  const [error, setError] = useState('');
+  const { snapshot, cfg, commentLimitDraft, setCommentLimitDraft, overlay, setOverlay, error, setError, fail, change } =
+    usePlayerState();
   const [full, setFull] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedSongs, setSelectedSongs] = useState<Song[]>([]);
@@ -71,9 +70,7 @@ function App() {
   const [searched, setSearched] = useState(false);
   const [searching, setSearching] = useState(false);
   const [busy, setBusy] = useState(false);
-  const initialized = useRef(false);
   const searchId = useRef(0);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const np = snapshot?.nowPlaying;
   const currentKey = np ? trackKey(np) : '';
   const merged = (snapshot?.songs?.length || 0) > 1;
@@ -107,7 +104,6 @@ function App() {
       return [...next.values()];
     });
   }, []);
-  const fail = useCallback((e: unknown) => setError(e instanceof Error ? e.message : String(e)), []);
   useEffect(() => {
     if (!full || tab !== 'danmaku' || !cfg.keepScreenOnFullscreen) return;
     void invoke('plugin:media|set_keep_screen_on', { enabled: true }).catch(fail);
@@ -115,44 +111,6 @@ function App() {
       void invoke('plugin:media|set_keep_screen_on', { enabled: false }).catch(fail);
     };
   }, [full, tab, cfg.keepScreenOnFullscreen, fail]);
-  useEffect(() => {
-    let stopped = false;
-    let revision: number | undefined;
-    let timer: ReturnType<typeof setTimeout>;
-    async function poll() {
-      try {
-        const [state, status] = await Promise.all([
-          invoke<Omit<Snapshot, 'comments'> & { comments?: Snapshot['comments'] }>('get_player_state', {
-            sinceRevision: revision,
-          }),
-          invoke<typeof overlay>('plugin:media|overlay_status'),
-        ]);
-        if (stopped) return;
-        revision = state.revision;
-        setSnapshot((previous) => ({ ...state, comments: state.comments ?? previous?.comments ?? [] }));
-        setOverlay((previous) =>
-          previous.granted === status.granted &&
-          previous.running === status.running &&
-          previous.supported === status.supported
-            ? previous
-            : status,
-        );
-        if (!initialized.current) {
-          initialized.current = true;
-          setCfg(state.settings);
-          setCommentLimitDraft(state.settings.commentLimit == null ? '' : String(state.settings.commentLimit));
-        }
-      } catch (e) {
-        if (!stopped) fail(e);
-      }
-      if (!stopped) timer = setTimeout(poll, 750);
-    }
-    void poll();
-    return () => {
-      stopped = true;
-      clearTimeout(timer);
-    };
-  }, []);
   useEffect(() => {
     const back = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setFull(false);
@@ -178,14 +136,6 @@ function App() {
     if (window.history.state?.musicdanBack) window.history.back();
     return undefined;
   }, [tab, full]);
-  function change(patch: Partial<Settings>) {
-    const next = { ...cfg, ...patch };
-    setCfg(next);
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      void invoke('update_settings', { settings: next }).catch(fail);
-    }, 180);
-  }
   async function search(e: React.FormEvent) {
     e.preventDefault();
     await searchSongs(query);
@@ -198,7 +148,7 @@ function App() {
     setError('');
     setSearched(false);
     try {
-      const songs = await invoke<Song[]>('search_songs', { keyword });
+      const songs = await invoke('search_songs', { keyword });
       if (id === searchId.current) {
         setResults(songs);
         setSearched(true);
@@ -210,7 +160,7 @@ function App() {
             const songId = ids[next++];
             let count: number | null = null;
             try {
-              count = await invoke<number>('get_song_comment_count', { songId });
+              count = await invoke('get_song_comment_count', { songId });
             } catch {
               /* Keep the song selectable if counts fail. */
             }
@@ -984,7 +934,7 @@ function VersionSection() {
     setCheckError('');
     setDownloadError('');
     try {
-      const next = await invoke<UpdateStatus>('check_update');
+      const next = await invoke('check_update');
       updateCache = next;
       setStatus(next);
       setPhase('ready');

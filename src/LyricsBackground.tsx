@@ -5,7 +5,8 @@ import { activeLine, prepareLyrics } from './lyrics';
 import type { LyricLine, Lyrics } from './lyrics';
 import { PlaybackClock } from './playbackClock';
 import { musicAtmosphere } from './tamagui.config';
-import { formatTime, invoke } from './types';
+import { formatTime } from './types';
+import { invoke } from './commands';
 import type { Snapshot } from './types';
 
 // Row pitch follows the lyric font size so lines stay close: one focused line
@@ -72,7 +73,7 @@ export function LyricsBackground({
     if (!songId) return;
     let cancelled = false;
     setResult(null);
-    void invoke<Lyrics>('fetch_lyrics', { songId }).then(
+    void invoke('fetch_lyrics', { songId }).then(
       (data) => {
         if (!cancelled) setResult({ id: songId, data });
       },

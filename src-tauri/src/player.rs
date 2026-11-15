@@ -34,8 +34,7 @@ impl Default for Settings {
 #[serde(default)]
 struct Preferences {
     settings: Settings,
-    matches: HashMap<String, SongMatch>,
-    merged_matches: HashMap<String, Vec<SongMatch>>,
+    matches: HashMap<String, Vec<SongMatch>>,
 }
 #[derive(Clone, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -128,9 +127,8 @@ pub fn set_song_match(
     song: Option<SongMatch>,
 ) -> Result<(), String> {
     let mut inner = state.0.lock().unwrap();
-    inner.prefs.merged_matches.remove(&key);
     if let Some(song) = song {
-        inner.prefs.matches.insert(key.clone(), song);
+        inner.prefs.matches.insert(key.clone(), vec![song]);
     } else {
         inner.prefs.matches.remove(&key);
     }
@@ -149,8 +147,7 @@ pub fn set_song_matches(state: State<Player>, key: String, songs: Vec<SongMatch>
         return Err("请选择 1 至 30 首歌曲".into());
     }
     let mut inner = state.0.lock().unwrap();
-    inner.prefs.matches.insert(key.clone(), songs[0].clone());
-    inner.prefs.merged_matches.insert(key.clone(), songs);
+    inner.prefs.matches.insert(key.clone(), songs);
     persist(&inner)?;
     if inner.key == key { inner.generation += 1; inner.key.clear(); }
     Ok(())
@@ -291,7 +288,7 @@ pub fn start(app: AppHandle) -> Result<(), String> {
                                 request = Some((
                                     inner.generation,
                                     np.clone(),
-                                    inner.prefs.merged_matches.get(&key).cloned().or_else(|| inner.prefs.matches.get(&key).cloned().map(|song| vec![song])),
+                                    inner.prefs.matches.get(&key).cloned(),
                                 ));
                             }
                         }

@@ -1,6 +1,6 @@
 import { useRef, type ComponentProps } from 'react';
 import { Slider, styled, withStaticProperties } from 'tamagui';
-import { invoke } from './types';
+import { invoke } from './commands';
 
 // A quiet visual track inside a full-height touch target, shared by all sliders.
 export const AppSlider = withStaticProperties(

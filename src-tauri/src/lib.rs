@@ -11,11 +11,9 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            ncm::fetch_comments,
             ncm::fetch_lyrics,
             ncm::search_songs,
             ncm::get_song_comment_count,
-            ncm::fetch_song_comments,
             player::get_player_state,
             player::update_settings,
             player::set_song_match,
