@@ -10,7 +10,7 @@
 4. **构建 APK**:tauri-action 执行 `tauri android build --apk --split-per-abi --target aarch64`,注入 `MUSICDAN_BUILD_NUMBER = github.run_number`;`beforeBuildCommand` 会跑 `yarn build`,内含 `yarn quality` 门禁。
 5. **校验 APK**(build-tools `apksigner` / `aapt`):
    - 签名证书 SHA-256 必须等于 `ANDROID_CERT_SHA256`(workflow 顶部 env,与现有 keystore 一致);
-   - 包名 `ink.starmountain.musicdan`、`versionCode = 1000000000 + run_number`、`versionName` 等于 `package.json` 版本、native code 为 `arm64-v8a`;
+   - 包名 `io.github.asinkluno.musicdan`、`versionCode = 1000000000 + run_number`、`versionName` 等于 `package.json` 版本、native code 为 `arm64-v8a`;
    - 恰好产出一个签名 arm64 APK,复制为 `artifacts/ci/MusicDan_<版本>_arm64.apk` 并生成 `.sha256`。
 6. **发布 GitHub Release**(细节见下节)。
 7. **重新截图并构建发布页**:安装中文字体 `fonts-noto-cjk` → 启动 `yarn dev`(1420)与无头 Chrome(CDP 9229)→ `yarn build:release-site`(内含截图、校验、发布页构建)。

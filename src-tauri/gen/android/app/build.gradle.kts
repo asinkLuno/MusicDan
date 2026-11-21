@@ -22,7 +22,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     compileSdk = 37
-    namespace = "ink.starmountain.musicdan"
+    namespace = "io.github.asinkluno.musicdan"
     signingConfigs {
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as? String
@@ -33,7 +33,7 @@ android {
     }
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
-        applicationId = "ink.starmountain.musicdan"
+        applicationId = "io.github.asinkluno.musicdan"
         minSdk = 24
         targetSdk = 37
         // Release tags reserve a monotonically increasing build number for Android upgrades.

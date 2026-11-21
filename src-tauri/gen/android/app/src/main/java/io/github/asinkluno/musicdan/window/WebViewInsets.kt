@@ -1,4 +1,4 @@
-package ink.starmountain.musicdan.window
+package io.github.asinkluno.musicdan.window
 
 import android.webkit.WebView
 import androidx.core.view.ViewCompat
