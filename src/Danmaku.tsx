@@ -1,5 +1,5 @@
 import { View, useTheme } from 'tamagui';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import type { Settings, Snapshot, Comment } from './types';
 import { commentFontSize, makePlan, pinDurationMs, visibleRange } from './plan';
 import { getEmoteImage, parseSegments, removeEmoteListener, type Segment } from './emotes';
@@ -24,7 +24,13 @@ type Sprite = {
   invalidate: () => void;
 };
 
-export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; settings: Settings }) {
+export const Danmaku = memo(function Danmaku({
+  snapshot,
+  settings,
+}: {
+  snapshot: Snapshot | null;
+  settings: Settings;
+}) {
   const theme = useTheme();
   // Canvas cannot resolve the CSS variable returned by .get(); use the literal color.
   const textColor = theme.color.val;
@@ -386,4 +392,4 @@ export function Danmaku({ snapshot, settings }: { snapshot: Snapshot | null; set
       aria-label="实时弹幕"
     />
   );
-}
+});

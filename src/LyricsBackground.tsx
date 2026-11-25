@@ -14,11 +14,14 @@ import type { Snapshot } from './types';
 const LYRIC_FONT_SIZE = 28;
 const LYRIC_LINE_HEIGHT = 1.36;
 const TRANSLATION_FONT_SIZE = 20;
+// 聚焦与非聚焦行保持同一排版字号，仅通过 GPU scale/opacity 过渡，避免切行或拖动时重排。
+const UNFOCUSED_SCALE = 0.82;
+const LYRIC_ROW_TRANSITION = { opacity: 'quickLessBouncy', transform: 'quickLessBouncy' } as const;
 // 行高由每行内容实测（onLayout），避免两行正文加翻译被固定行距裁剪；
 // 首尾留白跟随实际行高，保证第一行和最后一行也能居中。
 const EST_ROW_HEIGHT = 96;
 
-export function LyricsBackground({
+export const LyricsBackground = memo(function LyricsBackground({
   snapshot,
   songId,
   onError,
@@ -38,6 +41,7 @@ export function LyricsBackground({
   const [requested, setRequested] = useState<{ target: number; sentAt: number } | null>(null);
   const scroll = useRef<ScrollView>(null);
   const offset = useRef(0);
+  const selectedRef = useRef(0);
   const manual = useRef(false);
   const dragging = useRef(false);
   const submitting = useRef(false);
@@ -47,6 +51,7 @@ export function LyricsBackground({
   const requestTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const clock = useRef(new PlaybackClock());
   const np = snapshot?.nowPlaying;
+  const playing = Boolean(np?.isPlaying);
 
   useEffect(() => {
     clock.current.update(snapshot, performance.now(), Date.now());
@@ -88,6 +93,7 @@ export function LyricsBackground({
   const data = result && result.id === songId ? result.data : undefined;
   const parsed = useMemo(() => prepareLyrics(data), [data]);
   useEffect(() => {
+    if (!parsed.lines.length) return;
     const tick = () => {
       if (!document.hidden)
         setPosition((previous) => {
@@ -96,42 +102,49 @@ export function LyricsBackground({
         });
     };
     tick();
+    if (!playing) return;
     const timer = setInterval(tick, 100);
     document.addEventListener('visibilitychange', tick);
     return () => {
       clearInterval(timer);
       document.removeEventListener('visibilitychange', tick);
     };
-  }, [parsed.lines]);
+  }, [parsed.lines, playing]);
   const lineCount = parsed.lines.length;
-  const index = activeLine(parsed.lines, requested?.target ?? (np?.isPlaying ? position : (np?.position ?? position)));
+  const index = activeLine(parsed.lines, requested?.target ?? (playing ? position : (np?.position ?? position)));
   const center = Math.max(0, index);
   const canSeek = Boolean(
     np?.packageName &&
     np.duration > 0 &&
     (np.playbackActions || 0) & 256 &&
-    (np.isPlaying || (np.playbackActions || 0) & (4 | 512)),
+    (playing || (np.playbackActions || 0) & (4 | 512)),
   );
 
-  // Keep measurements tied to the lyric result and reactive so wrapping,
-  // focus changes and viewport resizing all trigger a new centering pass.
-  const [measurements, setMeasurements] = useState<{ source: typeof parsed; heights: number[] }>({
+  // Keep measurements tied to the lyric result and reactive so wrapping and
+  // viewport resizing trigger a new centering pass.
+  const [measurements, setMeasurements] = useState<{ source: typeof parsed; heights: number[]; count: number }>({
     source: parsed,
     heights: [],
+    count: 0,
   });
   const heights = useMemo(() => (measurements.source === parsed ? measurements.heights : []), [measurements, parsed]);
-  const measured = lineCount > 0 && heights.filter((value) => value > 0).length === lineCount;
+  const measured = lineCount > 0 && measurements.source === parsed && measurements.count === lineCount;
   useEffect(() => {
     initialized.current = false;
+    selectedRef.current = 0;
   }, [parsed]);
   const reportHeight = useCallback(
     (lineIndex: number, rowHeight: number) => {
       setMeasurements((previous) => {
-        const current = previous.source === parsed ? previous.heights : [];
-        if (current[lineIndex] === rowHeight) return previous;
+        const same = previous.source === parsed;
+        const current = same ? previous.heights : [];
+        const prevHeight = current[lineIndex];
+        if (prevHeight === rowHeight) return previous;
         const next = [...current];
         next[lineIndex] = rowHeight;
-        return { source: parsed, heights: next };
+        const prevCount = same ? previous.count : 0;
+        const delta = (rowHeight > 0 ? 1 : 0) - ((prevHeight ?? 0) > 0 ? 1 : 0);
+        return { source: parsed, heights: next, count: prevCount + delta };
       });
     },
     [parsed],
@@ -155,17 +168,21 @@ export function LyricsBackground({
   );
   const nearestRow = useCallback(
     (offsetY: number): number => {
+      const count = offsets.length;
+      if (count <= 1) return 0;
       const viewportCenter = offsetY + height / 2;
-      let best = 0;
-      let bestDist = Infinity;
-      for (let i = 0; i < offsets.length; i++) {
-        const dist = Math.abs(offsets[i] + (heights[i] ?? 0) / 2 - viewportCenter);
-        if (dist < bestDist) {
-          bestDist = dist;
-          best = i;
-        }
+      let low = 0;
+      let high = count - 1;
+      while (low < high) {
+        const mid = (low + high) >>> 1;
+        const midCenter = offsets[mid] + (heights[mid] ?? EST_ROW_HEIGHT) / 2;
+        if (midCenter < viewportCenter) low = mid + 1;
+        else high = mid;
       }
-      return best;
+      if (low === 0) return 0;
+      const currDist = Math.abs(offsets[low] + (heights[low] ?? EST_ROW_HEIGHT) / 2 - viewportCenter);
+      const prevDist = Math.abs(offsets[low - 1] + (heights[low - 1] ?? EST_ROW_HEIGHT) / 2 - viewportCenter);
+      return prevDist <= currDist ? low - 1 : low;
     },
     [height, offsets, heights],
   );
@@ -176,6 +193,12 @@ export function LyricsBackground({
     initialized.current = true;
   }, [center, browsing, height, lineCount, measured, parsed, reduceMotion, centerScroll]);
 
+  function updateSelected(next: number) {
+    const clamped = Math.max(0, Math.min(lineCount - 1, next));
+    if (selectedRef.current === clamped) return;
+    selectedRef.current = clamped;
+    setSelected(clamped);
+  }
   function follow() {
     clearTimeout(returnTimer.current);
     clearTimeout(snapTimer.current);
@@ -196,11 +219,18 @@ export function LyricsBackground({
     returnTimer.current = setTimeout(follow, 5000);
   }
   function browse() {
-    if (!manual.current) scroll.current?.scrollTo({ y: offset.current, animated: false });
-    manual.current = true;
-    setBrowsing(true);
-    setSelected(Math.max(0, Math.min(lineCount - 1, nearestRow(offset.current))));
-    scheduleReturn();
+    if (!manual.current) {
+      scroll.current?.scrollTo({ y: offset.current, animated: false });
+      manual.current = true;
+      setBrowsing(true);
+    }
+    updateSelected(nearestRow(offset.current));
+    if (dragging.current) {
+      clearTimeout(returnTimer.current);
+      clearTimeout(snapTimer.current);
+    } else {
+      scheduleReturn();
+    }
   }
   function endDrag() {
     dragging.current = false;
@@ -250,6 +280,7 @@ export function LyricsBackground({
       inset={0}
       zIndex={0}
       overflow="hidden"
+      contain="layout paint"
       aria-label="同步歌词"
       backgroundColor="lyricSurface"
       backgroundImage={musicAtmosphere.lyrics}
@@ -277,8 +308,8 @@ export function LyricsBackground({
         onScroll={(event) => {
           offset.current = event.nativeEvent.contentOffset.y;
           if (!manual.current) return;
-          setSelected(Math.max(0, Math.min(lineCount - 1, nearestRow(offset.current))));
-          scheduleReturn();
+          updateSelected(nearestRow(offset.current));
+          if (!dragging.current) scheduleReturn();
         }}
       >
         <YStack flexShrink={0} paddingTop={topPadding} paddingBottom={bottomPadding}>
@@ -341,7 +372,7 @@ export function LyricsBackground({
       )}
     </YStack>
   );
-}
+});
 
 const LyricRow = memo(function LyricRow({
   line,
@@ -363,6 +394,12 @@ const LyricRow = memo(function LyricRow({
   onHeight: (lineIndex: number, height: number) => void;
 }) {
   const focused = active || selected;
+  const handleLayout = useCallback(
+    (event: { nativeEvent: { layout: { height: number } } }) => {
+      onHeight(lineIndex, event.nativeEvent.layout.height);
+    },
+    [lineIndex, onHeight],
+  );
   // Measure the unscaled layout; the visual scale belongs to the inner row.
   return (
     <YStack
@@ -370,7 +407,8 @@ const LyricRow = memo(function LyricRow({
       maxWidth={720}
       alignSelf="center"
       flexShrink={0}
-      onLayout={(event) => onHeight(lineIndex, event.nativeEvent.layout.height)}
+      contain="layout style"
+      onLayout={handleLayout}
     >
       <YStack
         width="100%"
@@ -379,20 +417,16 @@ const LyricRow = memo(function LyricRow({
         gap="3"
         alignItems="center"
         justifyContent="center"
-        transition={reduceMotion ? 'none' : 'quickLessBouncy'}
-        scale={focused ? 1 : 0.94}
+        transition={reduceMotion ? 'none' : LYRIC_ROW_TRANSITION}
+        scale={focused ? 1 : UNFOCUSED_SCALE}
         opacity={focused ? 1 : nearby ? 0.38 : 0.16}
       >
         <Text
-          fontSize={focused ? LYRIC_FONT_SIZE : 23}
+          fontSize={LYRIC_FONT_SIZE}
           lineHeight={LYRIC_LINE_HEIGHT}
-          fontWeight={focused ? '700' : '500'}
-          transition={reduceMotion ? 'none' : 'quickLessBouncy'}
+          fontWeight="700"
           backgroundImage={focused ? musicAtmosphere.lyricInk : undefined}
           backgroundClip={focused ? 'text' : undefined}
-          textShadowColor="lyricGlow"
-          textShadowRadius={focused ? 8 : 0}
-          textShadowOffset={{ width: 0, height: 0 }}
           color={focused ? 'transparent' : nearby ? 'lyricNearby' : 'lyricRest'}
           textAlign="center"
         >
@@ -400,7 +434,7 @@ const LyricRow = memo(function LyricRow({
         </Text>
         {translation && (
           <Text
-            fontSize={focused ? TRANSLATION_FONT_SIZE : TRANSLATION_FONT_SIZE - 3}
+            fontSize={TRANSLATION_FONT_SIZE}
             lineHeight={1.4}
             color="lyricTranslation"
             opacity={focused ? 0.76 : 0.65}

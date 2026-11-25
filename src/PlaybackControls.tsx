@@ -1,6 +1,6 @@
 import { Pause, Play, SkipBack, SkipForward } from './icons';
 import { AppSlider as Slider } from './AppSlider';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { PlaybackClock } from './playbackClock';
 import { Button, Text, XStack, YStack } from 'tamagui';
 import { formatTime, trackKey } from './types';
@@ -9,8 +9,9 @@ import type { Snapshot } from './types';
 
 // Android PlaybackState action bits, supplied by the selected media session.
 const actions = { pause: 2, play: 4, previous: 16, next: 32, seek: 256, toggle: 512 };
+const PROGRESS_TICK_MS = 250;
 
-export function PlaybackControls({
+export const PlaybackControls = memo(function PlaybackControls({
   snapshot,
   onError,
 }: {
@@ -113,10 +114,10 @@ export function PlaybackControls({
       </XStack>
     </YStack>
   );
-}
+});
 
 // Keep frequent progress and gesture updates inside this small subtree.
-function PlaybackProgress({
+const PlaybackProgress = memo(function PlaybackProgress({
   snapshot,
   disabled,
   onError,
@@ -135,6 +136,7 @@ function PlaybackProgress({
   const awaiting = useRef<{ target: number; sentAt: number } | null>(null);
   const releaseTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const np = snapshot?.nowPlaying;
+  const playing = Boolean(np?.isPlaying);
   const duration = Math.max(0, np?.duration || 0);
 
   useEffect(() => {
@@ -151,18 +153,32 @@ function PlaybackProgress({
       setPreview(null);
       clearTimeout(releaseTimer.current);
     }
-  }, [snapshot, np]);
+    if (!playing && !previewing) {
+      const next = clock.current.position(performance.now());
+      setPosition((previous) => (previous === next ? previous : next));
+    }
+  }, [snapshot, np, playing, previewing]);
 
   useEffect(() => {
-    let frame = 0;
-    const tick = () => {
-      setPosition(clock.current.position(performance.now()));
-      frame = requestAnimationFrame(tick);
+    if (previewing) return;
+    const sync = () => {
+      if (document.hidden) return;
+      const next = clock.current.position(performance.now());
+      setPosition((previous) =>
+        Math.floor(previous / 1000) === Math.floor(next / 1000) && Math.abs(next - previous) < PROGRESS_TICK_MS
+          ? previous
+          : next,
+      );
     };
-    if (np?.isPlaying && !previewing) frame = requestAnimationFrame(tick);
-    else setPosition(clock.current.position(performance.now()));
-    return () => cancelAnimationFrame(frame);
-  }, [np?.isPlaying, snapshot?.sampledAt, previewing]);
+    sync();
+    if (!playing) return;
+    const timer = setInterval(sync, PROGRESS_TICK_MS);
+    document.addEventListener('visibilitychange', sync);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', sync);
+    };
+  }, [playing, previewing]);
   useEffect(() => () => clearTimeout(releaseTimer.current), []);
 
   async function seek(value: number) {
@@ -247,4 +263,4 @@ function PlaybackProgress({
       </Slider>
     </YStack>
   );
-}
+});

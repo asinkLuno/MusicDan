@@ -1,6 +1,6 @@
 import { Maximize, MessagesSquare, Minimize, Search, Settings as SettingsIcon } from './icons';
 import { AppSlider as Slider } from './AppSlider';
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   Button as TamaguiButton,
@@ -86,6 +86,10 @@ function App() {
     lyricSongs.find((song) => song.songId === (lyricChoice.key === lyricKey ? lyricChoice.id : null)) ??
     lyricSongs.find((song) => song.songId === snapshot?.song?.songId) ??
     lyricSongs[0];
+  const totalComments = useMemo(
+    () => snapshot?.comments.reduce((sum, comment) => sum + (comment.occurrences || 1), 0) || 0,
+    [snapshot?.comments],
+  );
   const selectionKey = useRef<string | null>(null);
   useEffect(() => {
     selectionKey.current = null;
@@ -282,7 +286,7 @@ function App() {
               borderRadius="8"
               borderWidth={1}
               borderColor="border-color"
-              backgroundImage={musicAtmosphere.player}
+              backgroundImage={np && lyricSong?.songId ? undefined : musicAtmosphere.player}
               overflow="hidden"
               aria-label="弹幕播放器"
             >
@@ -324,8 +328,8 @@ function App() {
                 <YStack width="100%" gap="2">
                   <XStack alignItems="center" justifyContent="space-between" gap="3">
                     <Text flex={1} fontSize="xs" color="color-10" numberOfLines={1}>
-                      {snapshot?.comments.reduce((sum, comment) => sum + (comment.occurrences || 1), 0) || 0} 条评论 ·
-                      显示 {Math.min(snapshot?.comments.length || 0, cfg.commentLimit ?? Infinity)} 条
+                      {totalComments} 条评论 · 显示{' '}
+                      {Math.min(snapshot?.comments.length || 0, cfg.commentLimit ?? Infinity)} 条
                       {snapshot?.loading && snapshot.comments.length > 0 ? ' · 后台补充中' : ''}
                     </Text>
                     <Button

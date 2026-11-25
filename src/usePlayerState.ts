@@ -9,6 +9,43 @@ interface OverlayStatus {
   supported: boolean;
 }
 
+const CLOCK_DRIFT_MS = 150;
+const CLOCK_SYNC_MS = 3000;
+
+function sameSnapshot(previous: Snapshot | null, next: Snapshot): boolean {
+  if (!previous) return false;
+  if (
+    previous.revision !== next.revision ||
+    previous.loading !== next.loading ||
+    previous.error !== next.error ||
+    previous.permissionGranted !== next.permissionGranted ||
+    previous.manualMatch !== next.manualMatch
+  ) {
+    return false;
+  }
+  const a = previous.nowPlaying;
+  const b = next.nowPlaying;
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (
+    a.title !== b.title ||
+    a.artist !== b.artist ||
+    a.album !== b.album ||
+    a.duration !== b.duration ||
+    a.isPlaying !== b.isPlaying ||
+    a.playbackSpeed !== b.playbackSpeed ||
+    a.packageName !== b.packageName ||
+    a.playbackActions !== b.playbackActions
+  ) {
+    return false;
+  }
+  if (!b.isPlaying) return a.position === b.position;
+  const elapsed = Math.max(0, next.sampledAt - previous.sampledAt);
+  if (elapsed >= CLOCK_SYNC_MS) return false;
+  const expected = a.position + elapsed * b.playbackSpeed;
+  return Math.abs(b.position - expected) < CLOCK_DRIFT_MS;
+}
+
 export function usePlayerState() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [cfg, setCfg] = useState<Settings>(defaults);
@@ -35,7 +72,10 @@ export function usePlayerState() {
         ]);
         if (stopped) return;
         revision = state.revision;
-        setSnapshot((previous) => ({ ...state, comments: state.comments ?? previous?.comments ?? [] }));
+        setSnapshot((previous) => {
+          const merged: Snapshot = { ...state, comments: state.comments ?? previous?.comments ?? [] };
+          return sameSnapshot(previous, merged) ? previous : merged;
+        });
         setOverlay((previous) =>
           previous.granted === status.granted &&
           previous.running === status.running &&
