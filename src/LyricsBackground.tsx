@@ -44,11 +44,13 @@ export const LyricsBackground = memo(function LyricsBackground({
   const snapTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const requestTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const clock = useRef(new PlaybackClock());
+  const wake = useRef<(() => void) | null>(null);
   const np = snapshot?.nowPlaying;
   const playing = Boolean(np?.isPlaying);
 
   useEffect(() => {
     clock.current.update(snapshot, performance.now(), Date.now());
+    wake.current?.();
     if (
       requested &&
       snapshot &&
@@ -103,24 +105,53 @@ export const LyricsBackground = memo(function LyricsBackground({
     return () => observer.disconnect();
   }, [hasLines]);
 
+  // 只在下一条歌词开始的那一刻唤醒一次，替代每 100ms 轮询
   useEffect(() => {
-    if (!parsed.lines.length) return;
-    const tick = () => {
-      if (!document.hidden)
-        setPosition((previous) => {
-          const next = clock.current.position(performance.now());
-          return activeLine(parsed.lines, previous) === activeLine(parsed.lines, next) ? previous : next;
-        });
+    const lines = parsed.lines;
+    if (!lines.length || !playing) return;
+    const speed = Math.max(0.1, np?.playbackSpeed ?? 1);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let stopped = false;
+
+    const update = () => {
+      setPosition((previous) => {
+        const next = clock.current.position(performance.now());
+        return activeLine(lines, previous) === activeLine(lines, next) ? previous : next;
+      });
     };
-    tick();
-    if (!playing) return;
-    const timer = setInterval(tick, 100);
-    document.addEventListener('visibilitychange', tick);
+
+    const arm = () => {
+      clearTimeout(timer);
+      timer = undefined;
+      if (stopped || document.hidden) return;
+      const position = clock.current.position(performance.now());
+      const upcoming = lines[activeLine(lines, position) + 1];
+      if (!upcoming) return;
+      timer = setTimeout(
+        () => {
+          update();
+          arm();
+        },
+        Math.max(16, (upcoming.start - position) / speed),
+      );
+    };
+
+    update();
+    arm();
+    const onVisibility = () => {
+      update();
+      arm();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    // 进度跳变或新一轮轮询后重新对齐
+    wake.current = arm;
     return () => {
-      clearInterval(timer);
-      document.removeEventListener('visibilitychange', tick);
+      stopped = true;
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisibility);
+      wake.current = null;
     };
-  }, [parsed.lines, playing]);
+  }, [parsed.lines, playing, np?.playbackSpeed]);
 
   const index = activeLine(parsed.lines, requested?.target ?? (playing ? position : (np?.position ?? position)));
   const center = Math.max(0, index);

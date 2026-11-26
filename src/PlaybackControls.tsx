@@ -15,7 +15,6 @@ const LyricsSourceDialog = lazy(() => import('./LyricsSourceDialog'));
 
 // Android PlaybackState action bits, supplied by the selected media session.
 const actions = { pause: 2, play: 4, previous: 16, next: 32, seek: 256, toggle: 512 };
-const PROGRESS_TICK_MS = 250;
 const PERCENT_FORMAT: Intl.NumberFormatOptions = { style: 'percent', maximumFractionDigits: 0 };
 const MID_MARK = <DialMark value={0.5} tone="amber" />;
 
@@ -115,20 +114,27 @@ export const PlaybackControls = memo(function PlaybackControls({
 
   useEffect(() => {
     if (previewing) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let stopped = false;
+    // 只在整秒边界唤醒，代替每 250ms 空转
     const sync = () => {
-      if (document.hidden) return;
+      clearTimeout(timer);
+      timer = undefined;
+      if (stopped || document.hidden) return;
       const next = clock.current.position(performance.now());
       setPosition((previous) => (Math.floor(previous / 1000) === Math.floor(next / 1000) ? previous : next));
+      if (!playing) return;
+      const speed = Math.max(0.1, np?.playbackSpeed ?? 1);
+      timer = setTimeout(sync, (1000 - (next % 1000)) / speed + 8);
     };
     sync();
-    if (!playing) return;
-    const timer = setInterval(sync, PROGRESS_TICK_MS);
     document.addEventListener('visibilitychange', sync);
     return () => {
-      clearInterval(timer);
+      stopped = true;
+      clearTimeout(timer);
       document.removeEventListener('visibilitychange', sync);
     };
-  }, [playing, previewing]);
+  }, [playing, previewing, np?.playbackSpeed]);
 
   useEffect(
     () => () => {

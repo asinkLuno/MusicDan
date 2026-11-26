@@ -58,21 +58,6 @@ export default function SearchView({
         if (id === searchId.current) {
           setResults(songs);
           setSearched(true);
-          let next = 0;
-          const ids = [...new Set(songs.map((song) => song.songId))];
-          const loadCounts = async () => {
-            while (id === searchId.current && next < ids.length) {
-              const songId = ids[next++];
-              let count: number | null = null;
-              try {
-                count = await invoke('get_song_comment_count', { songId });
-              } catch {
-                /* Keep the song selectable if counts fail. */
-              }
-              if (id === searchId.current) setCommentCounts((previous) => ({ ...previous, [songId]: count }));
-            }
-          };
-          void Promise.all(Array.from({ length: Math.min(4, ids.length) }, loadCounts));
         }
       } catch (e) {
         if (id === searchId.current) onError(e);
@@ -96,6 +81,38 @@ export default function SearchView({
       setResults([]);
     }
   }, [autoSearch, searchSongs]);
+
+  // 评论数只对进入视口的歌曲取：一次搜索不该打出几十个网易云请求
+  const askedCounts = useRef(new Set<number>());
+  const requestCount = useCallback(async (songId: number) => {
+    if (askedCounts.current.has(songId)) return;
+    askedCounts.current.add(songId);
+    let count: number | null = null;
+    try {
+      count = await invoke('get_song_comment_count', { songId });
+    } catch {
+      /* Keep the song selectable if counts fail. */
+    }
+    setCommentCounts((previous) => ({ ...previous, [songId]: count }));
+  }, []);
+
+  const listRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const songId = Number((entry.target as HTMLElement).dataset.songId);
+          if (songId) void requestCount(songId);
+        }
+      },
+      { rootMargin: '240px' },
+    );
+    for (const row of list.children) observer.observe(row);
+    return () => observer.disconnect();
+  }, [results, selectedSongs, requestCount]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -163,7 +180,7 @@ export default function SearchView({
         </Key>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex flex-col gap-2.5">
+        <div ref={listRef} className="flex flex-col gap-2.5">
           {searching && (
             <p role="status" className="py-8 text-center text-sm text-muted-foreground">
               正在搜索歌曲版本…

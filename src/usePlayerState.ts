@@ -12,6 +12,8 @@ export interface OverlayStatus {
 const CLOCK_DRIFT_MS = 150;
 const CLOCK_SYNC_MS = 3000;
 const POLL_INTERVAL_MS = 750;
+// 悬浮窗状态只会在设置页改变，低频同步即可
+const OVERLAY_SYNC_MS = 5000;
 
 function sameSnapshot(previous: Snapshot | null, next: Snapshot): boolean {
   if (!previous) return false;
@@ -55,6 +57,9 @@ export function usePlayerState() {
   const initialized = useRef(false);
   const pendingSettings = useRef<Settings | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // change() 要在 updater 之外算下一份设置，updater 里不能写 ref / 起定时器
+  const cfgRef = useRef(cfg);
+  cfgRef.current = cfg;
 
   const fail = useCallback((e: unknown) => setError(e instanceof Error ? e.message : String(e)), []);
 
@@ -63,6 +68,7 @@ export function usePlayerState() {
     let inFlight = false;
     let revision: number | undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let overlayAt = 0;
 
     function schedule() {
       if (stopped || document.hidden) return;
@@ -76,11 +82,13 @@ export function usePlayerState() {
       if (stopped || document.hidden || inFlight) return;
       inFlight = true;
       try {
+        const syncOverlay = Date.now() - overlayAt >= OVERLAY_SYNC_MS;
+        if (syncOverlay) overlayAt = Date.now();
         const [state, status] = await Promise.all([
           invoke('get_player_state', {
             sinceRevision: revision,
           }),
-          invoke('plugin:media|overlay_status'),
+          syncOverlay ? invoke('plugin:media|overlay_status') : null,
         ]);
         if (stopped) return;
         revision = state.revision;
@@ -88,13 +96,15 @@ export function usePlayerState() {
           const merged: Snapshot = { ...state, comments: state.comments ?? previous?.comments ?? [] };
           return sameSnapshot(previous, merged) ? previous : merged;
         });
-        setOverlay((previous) =>
-          previous.granted === status.granted &&
-          previous.running === status.running &&
-          previous.supported === status.supported
-            ? previous
-            : status,
-        );
+        if (status) {
+          setOverlay((previous) =>
+            previous.granted === status.granted &&
+            previous.running === status.running &&
+            previous.supported === status.supported
+              ? previous
+              : status,
+          );
+        }
         if (!initialized.current) {
           initialized.current = true;
           setCfg(state.settings);
@@ -142,18 +152,17 @@ export function usePlayerState() {
 
   const change = useCallback(
     (patch: Partial<Settings>) => {
-      setCfg((previous) => {
-        const next = { ...previous, ...patch };
-        pendingSettings.current = next;
-        if (saveTimer.current) clearTimeout(saveTimer.current);
-        saveTimer.current = setTimeout(() => {
-          saveTimer.current = null;
-          const settings = pendingSettings.current;
-          pendingSettings.current = null;
-          if (settings) void invoke('update_settings', { settings }).catch(fail);
-        }, 180);
-        return next;
-      });
+      const next = { ...cfgRef.current, ...patch };
+      cfgRef.current = next;
+      setCfg(next);
+      pendingSettings.current = next;
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => {
+        saveTimer.current = null;
+        const settings = pendingSettings.current;
+        pendingSettings.current = null;
+        if (settings) void invoke('update_settings', { settings }).catch(fail);
+      }, 180);
     },
     [fail],
   );
