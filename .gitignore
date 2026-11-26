@@ -38,3 +38,6 @@ src-tauri/gen/android/keystore.properties
 /website/public/brand/icon-128.webp
 /website/public/brand/favicon-64.png
 /artifacts/releases/
+
+# impeccable skill scratch output
+.impeccable/
