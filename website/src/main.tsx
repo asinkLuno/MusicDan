@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { LazyMotion, MotionConfig, domAnimation, m } from 'motion/react';
 import { ArrowDownToLine, AudioLines, Code2, Layers, MessageCircle, Search, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,12 +22,6 @@ import './index.css';
 
 const repository = 'https://github.com/asinkLuno/MusicDan';
 const downloadPrefix = `${repository}/releases/download/`;
-const reveal = {
-  initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, amount: 0.2 },
-  transition: { duration: 0.6, ease: 'easeOut' },
-} as const;
 type Release = {
   version: string;
   name: string;
@@ -53,6 +46,7 @@ function validRelease(value: unknown): value is Release {
     release.download_url.startsWith(downloadPrefix) &&
     release.download_url.endsWith('.apk') &&
     !release.download_url.includes('..') &&
+    (release.notes === undefined || typeof release.notes === 'string') &&
     typeof release.published_at === 'string' &&
     Number.isFinite(Date.parse(release.published_at))
   );
@@ -90,6 +84,21 @@ function App() {
       clearTimeout(timeout);
       controller.abort();
     };
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.setAttribute('data-reveal', 'shown');
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.2 },
+    );
+    for (const element of document.querySelectorAll('[data-reveal]')) observer.observe(element);
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -138,7 +147,7 @@ function App() {
               </Button>
             </div>
           </div>
-          <m.div className="mx-auto w-full max-w-sm" {...reveal}>
+          <div className="mx-auto w-full max-w-sm" data-reveal>
             <Card className="gap-0 p-0">
               <CardContent className="p-0">
                 <AspectRatio ratio={6 / 13}>
@@ -158,19 +167,19 @@ function App() {
                 </AspectRatio>
               </CardContent>
             </Card>
-          </m.div>
+          </div>
         </section>
 
         <section id="experience" aria-labelledby="experience-title" className="space-y-8">
-          <m.div className="max-w-xl space-y-3" {...reveal}>
+          <div className="max-w-xl space-y-3" data-reveal>
             <h2 id="experience-title" className="text-3xl font-semibold tracking-tight">
               本地音乐，在线评论
             </h2>
             <p className="leading-relaxed text-muted-foreground">
               不用换播放器。自动识别正在播放的歌曲，把散落在评论区的文字带到你眼前。
             </p>
-          </m.div>
-          <m.div className="grid gap-6 md:grid-cols-2" {...reveal}>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2" data-reveal>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
@@ -229,10 +238,10 @@ function App() {
                 <AudioLines aria-hidden="true" className="mr-2 size-4" /> 字号、不透明度、显示上限随时调整
               </CardFooter>
             </Card>
-          </m.div>
+          </div>
         </section>
 
-        <m.section id="download" aria-labelledby="download-title" {...reveal}>
+        <section id="download" aria-labelledby="download-title" data-reveal>
           <Card>
             <CardHeader className="gap-3">
               <CardTitle id="download-title" role="heading" aria-level={2} className="text-3xl">
@@ -344,7 +353,7 @@ function App() {
               </Accordion>
             </CardContent>
           </Card>
-        </m.section>
+        </section>
 
         <footer className="flex flex-wrap items-center justify-between gap-4 border-t pt-6 text-sm text-muted-foreground">
           <p>MusicDan · 让喜欢的歌，多一点共鸣。</p>
@@ -357,10 +366,4 @@ function App() {
   );
 }
 
-createRoot(document.getElementById('root')!).render(
-  <LazyMotion features={domAnimation} strict>
-    <MotionConfig reducedMotion="user">
-      <App />
-    </MotionConfig>
-  </LazyMotion>,
-);
+createRoot(document.getElementById('root')!).render(<App />);

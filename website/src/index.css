@@ -95,3 +95,23 @@
     @apply font-sans;
   }
 }
+
+/* Scroll reveal driven by the IntersectionObserver in main.tsx. */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
+}
+[data-reveal='shown'] {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
