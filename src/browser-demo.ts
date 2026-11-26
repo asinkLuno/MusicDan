@@ -104,7 +104,7 @@ export async function demoInvoke<T>(command: string, args?: Record<string, unkno
           isPlaying: playing,
           playbackSpeed: frozen ? 0 : 1,
           packageName: 'demo.player',
-          playbackActions: 767,
+          playbackActions: 1023,
         },
         song: songs[0] || null,
         songs,

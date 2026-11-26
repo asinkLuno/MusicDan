@@ -1,0 +1,1042 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+:root {
+  --bevel-highlight: oklch(1 0 0 / 0.22);
+  --bevel-highlight-strong: oklch(1 0 0 / 0.35);
+  --bevel-shade: oklch(0 0 0 / 0.32);
+  --bevel-shade-strong: oklch(0 0 0 / 0.5);
+  --bevel-cast: oklch(0.25 0.03 50 / 0.22);
+  --bevel-deboss: 0 -1px 0 oklch(0 0 0 / 0.45), 0 1px 0 oklch(1 0 0 / 0.12);
+  --bevel-material: oklch(0.47 0.085 52);
+  --bevel-material-edge: oklch(0.3 0.06 44);
+  --bevel-material-recess: oklch(0.2 0.008 260);
+  --bevel-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .7 0 0 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --bevel-grain-size: 180px;
+  --bevel-depth-recessed: inset 0 1px 2px var(--bevel-shade-strong), 0 1px 0 var(--bevel-highlight);
+  --bevel-depth-flush: inset 0 1px 0 var(--bevel-highlight), inset 0 -1px 0 var(--bevel-shade);
+  --bevel-depth-raised:
+    inset 0 1px 0 var(--bevel-highlight), 0 1px 0 var(--bevel-material-edge), 0 2px 0 var(--bevel-material-edge),
+    0 3px 5px var(--bevel-shade);
+  --bevel-depth-pressed: inset 0 1px 2px var(--bevel-shade), 0 1px 0 var(--bevel-highlight);
+  --bevel-depth-object:
+    inset 0 1px 0 var(--bevel-highlight), inset 0 -1px 0 var(--bevel-shade), 0 0 0 1px var(--bevel-material-edge),
+    0 1px 1px var(--bevel-cast), 0 6px 12px -2px var(--bevel-cast), 0 18px 32px -8px var(--bevel-cast);
+  --bevel-depth-cast-sm: 0 4px 6px var(--bevel-cast);
+  --bevel-depth-sheet:
+    inset 0 1px 0 var(--bevel-highlight-strong), inset 0 0 0 1px oklch(0 0 0 / 0.12), 0 -1px 2px oklch(0 0 0 / 0.18);
+  --bevel-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --bevel-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --bevel-ease-spring: linear(
+    0,
+    0.06,
+    0.202,
+    0.38,
+    0.561,
+    0.723,
+    0.856,
+    0.955,
+    1.023,
+    1.062,
+    1.081,
+    1.083,
+    1.075,
+    1.062,
+    1.047,
+    1.032,
+    1.019,
+    1.009,
+    1.002,
+    0.997,
+    0.994,
+    0.993,
+    0.993,
+    0.994,
+    1
+  );
+  --bevel-duration-press: 100ms;
+  --bevel-duration-small: 200ms;
+  --bevel-duration-move: 300ms;
+  --bevel-duration-ambient: 520ms;
+  --bevel-stagger: 30ms;
+  --bevel-lift: 3px;
+  --bevel-perspective: 30rem;
+  --bevel-dim: 0.82;
+  --bevel-radius-xs: 0.25rem;
+  --bevel-radius-sm: 0.5rem;
+  --bevel-radius-md: 0.625rem;
+  --bevel-radius-lg: 1rem;
+  --bevel-radius-xl: 1.5rem;
+  --bevel-stitch-width: 1.5px;
+  --bevel-stitch-inset: 0.375rem;
+  --bevel-amount: 2.25rem;
+  --bevel-amount-minor: 1.25rem;
+  --bevel-label: 0.75rem;
+  --bevel-fine: 0.6875rem;
+  --bevel-tracking-label: 0.08em;
+  --bevel-tracking-print: 0.06em;
+  --bevel-paper: oklch(0.975 0.008 85);
+  --bevel-paper-foreground: oklch(0.28 0.02 260);
+  --bevel-paper-muted: oklch(0.48 0.015 260);
+  --bevel-paper-rule: oklch(0.78 0.04 240 / 0.45);
+  --bevel-paper-margin: oklch(0.68 0.14 25 / 0.45);
+  --bevel-fibre: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9 .35' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .18 0 0 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+  --bevel-ink-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='i'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.4 0 0 0 2.1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23i)'/%3E%3C/svg%3E");
+  --bevel-ink-red: oklch(0.52 0.19 27);
+  --bevel-ink-blue: oklch(0.44 0.14 262);
+  --bevel-ink-green: oklch(0.5 0.12 155);
+  --bevel-ink-black: oklch(0.3 0.01 260);
+  --bevel-ink-amber: oklch(0.55 0.13 65);
+  --bevel-brass: oklch(0.76 0.11 82);
+  --bevel-brass-edge: oklch(0.52 0.08 70);
+  --bevel-ivory: oklch(0.95 0.025 90);
+  --bevel-ivory-foreground: oklch(0.25 0.015 60);
+  --bevel-needle: oklch(0.55 0.2 27);
+  --bevel-pad: oklch(0.95 0.075 98);
+  --bevel-pad-foreground: oklch(0.27 0.03 255);
+  --bevel-pad-rule: oklch(0.72 0.06 235 / 0.45);
+  --bevel-pad-margin: oklch(0.62 0.16 25 / 0.55);
+  --bevel-pen-red: oklch(0.52 0.2 27);
+  --bevel-pen-blue: oklch(0.42 0.15 262);
+  --bevel-pencil: oklch(0.55 0.01 260);
+  --bevel-sticker: oklch(0.9 0.12 95);
+  --bevel-sticker-foreground: oklch(0.26 0.03 70);
+  --bevel-font-marker:
+    'Permanent Marker', 'Marker Felt', 'Chalkboard SE', ui-rounded, 'Arial Rounded MT Bold', system-ui, sans-serif;
+  --badge-plate-color: oklch(0.955 0.004 250);
+  --badge-plate-foreground: oklch(0.38 0.012 250);
+  --badge-neutral: oklch(0.86 0.02 90);
+  --badge-info: oklch(0.7 0.14 245);
+  --badge-success: oklch(0.74 0.17 150);
+  --badge-warning: oklch(0.8 0.16 75);
+  --badge-danger: oklch(0.63 0.22 27);
+  --text-field-well: oklch(0.955 0.004 90);
+  --text-field-shade: oklch(0 0 0 / 0.2);
+  --text-field-glow: oklch(0.76 0.15 68);
+  --text-field-glow-soft: oklch(0.76 0.15 68 / 0.35);
+  --text-field-error: oklch(0.6 0.21 27);
+  --text-field-error-soft: oklch(0.6 0.21 27 / 0.3);
+  --text-field-error-print: oklch(0.5 0.19 27);
+  --text-field-print: oklch(0.45 0.01 260);
+  --text-field-key: oklch(0.97 0.004 90);
+  --text-field-key-edge: oklch(0.8 0.006 90);
+  --text-field-key-print: oklch(0.4 0.01 260);
+  --text-field-height: 2.25rem;
+  --text-field-textarea-height: 5.5rem;
+  --dialog-panel: oklch(0.985 0.005 85);
+  --dialog-panel-foreground: oklch(0.26 0.015 260);
+  --dialog-panel-muted: oklch(0.5 0.015 260);
+  --dialog-ledge: oklch(0.955 0.007 85);
+  --dialog-rim: oklch(0 0 0 / 0.12);
+  --dialog-rule-shade: oklch(0 0 0 / 0.1);
+  --dialog-rule-light: oklch(1 0 0 / 0.8);
+  --dialog-dim: oklch(0.14 0.01 260 / 0.42);
+  --dialog-dim-brightness: 0.8;
+  --dialog-screw: oklch(0.8 0.01 250);
+  --dialog-screw-slot: oklch(0.35 0.01 250 / 0.7);
+  --dialog-stitch: oklch(0.55 0.02 260 / 0.35);
+  --dialog-key: oklch(0.97 0.004 85);
+  --dialog-key-edge: oklch(0.76 0.008 250);
+  --dialog-key-foreground: oklch(0.26 0.015 260);
+  --dialog-danger: oklch(0.55 0.2 27);
+  --dialog-danger-edge: oklch(0.38 0.15 27);
+  --dialog-danger-foreground: oklch(0.99 0.005 90);
+  --dialog-depth:
+    inset 0 1px 0 var(--bevel-highlight-strong), 0 0 0 1px var(--dialog-rim), 0 2px 4px var(--bevel-cast),
+    0 30px 60px -20px var(--bevel-cast);
+  --dialog-width: 32rem;
+  --dialog-alert-width: 26rem;
+  --dialog-top: 12vh;
+  --dialog-rise: 1rem;
+  --dialog-screw-size: 0.4375rem;
+  --dialog-screw-inset: 0.5rem;
+  --key-primary: oklch(0.76 0.14 68);
+  --key-primary-side: oklch(0.58 0.13 55);
+  --key-primary-foreground: oklch(0.24 0.04 55);
+  --key-secondary: oklch(0.97 0.004 250);
+  --key-secondary-side: oklch(0.8 0.008 250);
+  --key-secondary-foreground: oklch(0.27 0.012 250);
+  --key-danger: oklch(0.55 0.19 27);
+  --key-danger-side: oklch(0.4 0.15 27);
+  --key-danger-foreground: oklch(0.98 0.01 27);
+  --key-ghost-foreground: currentColor;
+  --key-ghost-hover: oklch(0.5 0.01 250 / 0.08);
+  --key-ghost-well: oklch(0.5 0.01 250 / 0.14);
+  --key-lamp: oklch(0.82 0.17 145);
+  --key-lamp-off: oklch(0.45 0.01 250 / 0.55);
+  --key-travel-sm: 2px;
+  --key-travel: 3px;
+  --key-travel-lg: 3px;
+  --preset-keys-bed: oklch(0.87 0.004 260);
+  --preset-keys-key: oklch(0.985 0.003 90);
+  --preset-keys-key-edge: oklch(0.76 0.006 90);
+  --preset-keys-print: oklch(0.45 0.01 260);
+  --preset-keys-print-down: oklch(0.2 0.01 260);
+  --preset-keys-lamp-off: oklch(0.8 0.006 260);
+  --preset-keys-lamp-on: oklch(0.76 0.16 66);
+  --preset-keys-lamp-shade: oklch(0 0 0 / 0.25);
+  --preset-keys-focus: oklch(0.7 0.15 66);
+  --preset-keys-shade: oklch(0 0 0 / 0.25);
+  --preset-keys-inset: 0.1875rem;
+  --preset-keys-gap: 0.1875rem;
+  --preset-keys-key-radius: 0.3125rem;
+  --preset-keys-travel: 0.125rem;
+  --preset-keys-height: 2rem;
+  --preset-keys-pad: 0.875rem;
+  --preset-keys-text: 0.875rem;
+  --toggle-lever-plate: oklch(0.88 0.004 260);
+  --toggle-lever-plate-edge: oklch(0.68 0.006 260);
+  --toggle-lever-print: oklch(0.42 0.01 260);
+  --toggle-lever-print-lit: oklch(0.2 0.01 260);
+  --toggle-lever-print-size: 0.5625rem;
+  --toggle-lever-chrome: oklch(0.97 0.003 260);
+  --toggle-lever-chrome-shaft: oklch(0.8 0.004 260);
+  --toggle-lever-chrome-edge: oklch(0.55 0.006 260);
+  --toggle-lever-bushing: oklch(0.6 0.006 260);
+  --toggle-lever-lamp-off: oklch(0.55 0.01 260);
+  --toggle-lever-lamp-on: oklch(0.8 0.17 145);
+  --toggle-lever-focus: oklch(0.76 0.15 68);
+  --toggle-lever-cast: 0 1px 0.5px oklch(0 0 0 / 0.45);
+  --toggle-lever-glint: oklch(1 0 0);
+  --toggle-lever-lamp-shade: oklch(0 0 0 / 0.35);
+  --toggle-lever-throw: 1.5rem;
+  --toggle-lever-reach: 0.6875rem;
+  --latch-checkbox-collar: oklch(0.86 0.004 260);
+  --latch-checkbox-cap-face: oklch(0.985 0.004 90);
+  --latch-checkbox-cap-edge: oklch(0.74 0.008 90);
+  --latch-checkbox-lit: oklch(0.7 0.16 62);
+  --latch-checkbox-glow: drop-shadow(0 0 2px oklch(0.78 0.16 68 / 0.75));
+  --latch-checkbox-focus: oklch(0.76 0.15 68);
+  --latch-checkbox-shade: oklch(0 0 0 / 0.28);
+  --latch-checkbox-size: 1.25rem;
+  --latch-checkbox-cap: 1rem;
+  --latch-checkbox-cap-radius: 0.125rem;
+  --latch-checkbox-glyph: 0.75rem;
+  --latch-checkbox-travel: 0.125rem;
+  --latch-checkbox-half: 0.0625rem;
+  --detent-knob-cap: oklch(0.3 0.01 260);
+  --detent-knob-cap-edge: oklch(0.18 0.01 260);
+  --detent-knob-pointer: oklch(0.95 0.02 90);
+  --detent-knob-active: oklch(0.82 0.15 85);
+  --detent-knob-label-radius: 5.5rem;
+  --detent-knob-bump: 4deg;
+  --dip-switch-red: oklch(0.5 0.17 27);
+  --dip-switch-red-edge: oklch(0.34 0.12 27);
+  --dip-switch-blue: oklch(0.45 0.13 258);
+  --dip-switch-blue-edge: oklch(0.3 0.09 258);
+  --dip-switch-black: oklch(0.26 0.01 260);
+  --dip-switch-black-edge: oklch(0.16 0.01 260);
+  --dip-switch-slot: oklch(0.18 0.01 260);
+  --dip-switch-actuator: oklch(0.96 0.005 90);
+  --dip-switch-actuator-edge: oklch(0.72 0.01 90);
+  --dip-switch-print: oklch(0.97 0.01 90);
+  --dip-switch-focus: oklch(0.97 0.01 90);
+  --dip-switch-print-size: 0.625rem;
+  --dip-switch-slot-width: 1.25rem;
+  --dip-switch-slot-height: 2.75rem;
+  --dip-switch-actuator-height: 1.125rem;
+  --dip-switch-throw: 1.375rem;
+  --dip-switch-gap: 0.5rem;
+  --breaker-panel: oklch(0.36 0.008 260);
+  --breaker-panel-edge: oklch(0.22 0.008 260);
+  --breaker-body: oklch(0.2 0.006 260);
+  --breaker-lever: oklch(0.93 0.008 90);
+  --breaker-lever-edge: oklch(0.7 0.01 90);
+  --breaker-tripped: oklch(0.6 0.21 27);
+  --breaker-on: oklch(0.8 0.17 150);
+  --breaker-off: oklch(0.4 0.01 260);
+  --breaker-throw: 1.25rem;
+  --breaker-slot-height: 4.5rem;
+  --dial-mark-red: oklch(0.58 0.2 27);
+  --dial-mark-amber: oklch(0.75 0.16 70);
+  --dial-mark-green: oklch(0.6 0.15 150);
+  --number-wheel-cell: 1.25em;
+  --number-wheel-drum: 0.72em;
+  --number-wheel-plate: 0.08em;
+}
+.dark {
+  color-scheme: dark;
+  --bevel-highlight: oklch(1 0 0 / 0.14);
+  --bevel-paper: oklch(0.88 0.008 85);
+  --bevel-ivory: oklch(0.86 0.022 90);
+  --bevel-pad: oklch(0.86 0.07 98);
+  --bevel-cast: oklch(0 0 0 / 0.55);
+  --badge-plate-color: oklch(0.27 0.008 250);
+  --badge-plate-foreground: oklch(0.86 0.01 250);
+  --text-field-well: oklch(0.17 0.005 260);
+  --text-field-shade: oklch(0 0 0 / 0.7);
+  --text-field-error-print: oklch(0.72 0.17 25);
+  --text-field-print: oklch(0.72 0.01 260);
+  --text-field-key: oklch(0.32 0.006 260);
+  --text-field-key-edge: oklch(0.2 0.006 260);
+  --text-field-key-print: oklch(0.86 0.005 260);
+  --dialog-panel: oklch(0.29 0.008 260);
+  --dialog-panel-foreground: oklch(0.95 0.005 90);
+  --dialog-panel-muted: oklch(0.72 0.01 260);
+  --dialog-ledge: oklch(0.255 0.008 260);
+  --dialog-rim: oklch(1 0 0 / 0.08);
+  --dialog-rule-shade: oklch(0 0 0 / 0.45);
+  --dialog-rule-light: oklch(1 0 0 / 0.06);
+  --dialog-dim: oklch(0.05 0.01 260 / 0.6);
+  --dialog-dim-brightness: 0.6;
+  --dialog-screw: oklch(0.55 0.01 250);
+  --dialog-screw-slot: oklch(0.15 0.01 250 / 0.8);
+  --dialog-stitch: oklch(0.85 0.02 260 / 0.25);
+  --dialog-key: oklch(0.38 0.008 260);
+  --dialog-key-edge: oklch(0.2 0.008 260);
+  --dialog-key-foreground: oklch(0.95 0.005 90);
+  --dialog-danger: oklch(0.55 0.19 27);
+  --dialog-danger-edge: oklch(0.32 0.13 27);
+  --key-primary: oklch(0.74 0.13 68);
+  --key-primary-side: oklch(0.5 0.11 55);
+  --key-secondary: oklch(0.36 0.008 250);
+  --key-secondary-side: oklch(0.22 0.008 250);
+  --key-secondary-foreground: oklch(0.94 0.01 90);
+  --key-danger: oklch(0.56 0.18 27);
+  --key-danger-side: oklch(0.36 0.13 27);
+  --key-ghost-hover: oklch(1 0 0 / 0.06);
+  --key-ghost-well: oklch(0 0 0 / 0.3);
+  --preset-keys-bed: oklch(0.15 0.005 260);
+  --preset-keys-key: oklch(0.34 0.006 260);
+  --preset-keys-key-edge: oklch(0.2 0.006 260);
+  --preset-keys-print: oklch(0.74 0.01 260);
+  --preset-keys-print-down: oklch(0.96 0.005 260);
+  --preset-keys-lamp-off: oklch(0.24 0.006 260);
+  --preset-keys-lamp-on: oklch(0.8 0.16 70);
+  --preset-keys-shade: oklch(0 0 0 / 0.7);
+  --toggle-lever-plate: oklch(0.34 0.006 260);
+  --toggle-lever-plate-edge: oklch(0.22 0.006 260);
+  --toggle-lever-print: oklch(0.66 0.01 260);
+  --toggle-lever-print-lit: oklch(0.95 0.005 260);
+  --toggle-lever-bushing: oklch(0.24 0.006 260);
+  --toggle-lever-lamp-off: oklch(0.3 0.01 260);
+  --latch-checkbox-collar: oklch(0.15 0.005 260);
+  --latch-checkbox-cap-face: oklch(0.36 0.006 260);
+  --latch-checkbox-cap-edge: oklch(0.22 0.006 260);
+  --latch-checkbox-lit: oklch(0.8 0.16 72);
+  --latch-checkbox-shade: oklch(0 0 0 / 0.7);
+}
+
+@utility bevel-recessed {
+  background-color: var(--bevel-material-recess);
+  box-shadow: var(--bevel-depth-recessed);
+}
+
+@utility bevel-flush {
+  box-shadow: var(--bevel-depth-flush);
+}
+
+@utility bevel-raised {
+  background-color: color-mix(in oklch, var(--bevel-material), white 7%);
+  background-image: linear-gradient(to bottom, var(--bevel-highlight), transparent 60%);
+  box-shadow: var(--bevel-depth-raised);
+}
+
+@utility bevel-pressed {
+  background-color: color-mix(in oklch, var(--bevel-material), black 4%);
+  background-image: none;
+  box-shadow: var(--bevel-depth-pressed);
+}
+
+@utility bevel-object {
+  box-shadow: var(--bevel-depth-object);
+}
+
+@utility bevel-leather {
+  background-color: var(--bevel-material);
+  background-image:
+    var(--bevel-grain),
+    linear-gradient(to bottom, var(--bevel-highlight), transparent 28%, transparent 72%, var(--bevel-shade));
+  background-size:
+    var(--bevel-grain-size) var(--bevel-grain-size),
+    100% 100%;
+  background-blend-mode: soft-light, normal;
+}
+
+@utility bevel-plastic {
+  background-color: var(--bevel-material);
+  background-image:
+    linear-gradient(115deg, var(--bevel-highlight-strong), transparent 40%),
+    linear-gradient(to bottom, transparent 25%, oklch(0 0 0 / 0.45));
+  box-shadow: var(--bevel-depth-sheet);
+}
+
+@utility bevel-metal {
+  background-color: var(--bevel-material);
+  background-image:
+    linear-gradient(to bottom, var(--bevel-highlight-strong), transparent 45%, var(--bevel-shade) 100%),
+    repeating-linear-gradient(90deg, oklch(1 0 0 / 0.06) 0 1px, transparent 1px 3px);
+  box-shadow:
+    inset 0 0 0 1px oklch(0 0 0 / 0.25),
+    inset 0 1px 0 var(--bevel-highlight-strong);
+}
+
+@utility bevel-deboss {
+  text-shadow: var(--bevel-deboss);
+}
+
+@utility bevel-stitch {
+  border-color: var(--bevel-stitch, oklch(0.88 0.05 82 / 0.8));
+  border-style: dashed;
+  border-width: var(--bevel-stitch-width);
+  filter: drop-shadow(0 1px 0 var(--bevel-shade));
+}
+
+@utility bevel-fill {
+  background-color: var(--bevel-fill);
+  background-image: linear-gradient(to bottom, oklch(1 0 0 / 0.55), transparent 55%, oklch(0 0 0 / 0.18));
+  box-shadow: 0 0 6px -1px var(--bevel-fill);
+}
+
+@utility bevel-led {
+  background-color: var(--bevel-led);
+  background-image: radial-gradient(circle at 35% 30%, oklch(1 0 0 / 0.85), transparent 45%);
+  box-shadow:
+    0 0 6px var(--bevel-led),
+    inset 0 -1px 1px oklch(0 0 0 / 0.35),
+    0 1px 0 var(--bevel-highlight);
+}
+
+@utility bevel-paper {
+  background-color: var(--bevel-paper);
+  background-image: var(--bevel-fibre);
+  background-size: 240px 240px;
+  color: var(--bevel-paper-foreground);
+  box-shadow:
+    0 1px 1px var(--bevel-cast),
+    0 6px 14px -4px var(--bevel-cast);
+}
+
+@utility bevel-ink {
+  color: var(--bevel-ink, var(--bevel-ink-red));
+  border-color: currentColor;
+  mix-blend-mode: multiply;
+  mask-image: var(--bevel-ink-texture);
+  mask-size: 160px 160px;
+}
+
+@utility bevel-glass {
+  pointer-events: none;
+  background-image: linear-gradient(
+    165deg,
+    var(--bevel-highlight-strong) 0%,
+    transparent 38%,
+    transparent 70%,
+    var(--bevel-shade) 100%
+  );
+}
+[data-bevel-family='leather'] {
+  --bevel-cast: oklch(0.25 0.03 50 / 0.22);
+}
+[data-bevel-family='paper'] {
+  --bevel-cast: oklch(0.3 0.01 250 / 0.16);
+}
+.dark :is([data-bevel-family='leather'], [data-bevel-family='paper']) {
+  --bevel-cast: oklch(0 0 0 / 0.55);
+}
+
+@utility bevel-ruled {
+  background-color: var(--bevel-sheet, var(--bevel-paper));
+  background-image:
+    linear-gradient(
+      to right,
+      transparent calc(var(--bevel-rule-margin) - 1px),
+      var(--bevel-sheet-margin, var(--bevel-paper-margin)) calc(var(--bevel-rule-margin) - 1px)
+        calc(var(--bevel-rule-margin) + 1px),
+      transparent calc(var(--bevel-rule-margin) + 1px)
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 calc(var(--bevel-rule-height) - 1px),
+      var(--bevel-sheet-rule, var(--bevel-paper-rule)) calc(var(--bevel-rule-height) - 1px) var(--bevel-rule-height)
+    ),
+    var(--bevel-fibre);
+  background-size:
+    100% 100%,
+    100% 100%,
+    240px 240px;
+  background-attachment: local;
+  color: var(--bevel-paper-foreground);
+  box-shadow:
+    0 1px 1px var(--bevel-cast),
+    0 6px 14px -4px var(--bevel-cast);
+}
+[data-bevel-theme] {
+  --bevel-theme-panel-edge: oklch(from var(--bevel-theme-panel) calc(l - 0.1) c h);
+  --bevel-theme-panel-deep: oklch(from var(--bevel-theme-panel) calc(l - 0.06) c h);
+  --bevel-theme-key: oklch(from var(--bevel-theme-panel) calc(l + 0.1) c h);
+  --bevel-theme-hardware-edge: oklch(from var(--bevel-theme-hardware) calc(l - 0.24) calc(c * 0.7) h);
+  --bevel-brass: var(--bevel-theme-hardware);
+  --bevel-brass-edge: var(--bevel-theme-hardware-edge);
+  --bevel-ivory: var(--bevel-theme-face);
+  --annunciator-panel: var(--bevel-theme-panel);
+  --annunciator-panel-edge: var(--bevel-theme-panel-edge);
+  --annunciator-off: var(--bevel-theme-panel-deep);
+  --dip-switch-black: var(--bevel-theme-panel);
+  --dip-switch-black-edge: var(--bevel-theme-panel-edge);
+  --breaker-panel: var(--bevel-theme-panel);
+  --breaker-panel-edge: var(--bevel-theme-panel-edge);
+  --breaker-body: var(--bevel-theme-panel-deep);
+  --detent-knob-cap: var(--bevel-theme-panel);
+  --detent-knob-cap-edge: var(--bevel-theme-panel-edge);
+  --detent-knob-pointer: var(--bevel-theme-face);
+  --guarded-switch-plate: var(--bevel-theme-panel);
+  --guarded-switch-plate-edge: var(--bevel-theme-panel-edge);
+  --meter-face: var(--bevel-theme-panel-deep);
+  --meter-foreground: var(--bevel-theme-face);
+  --mixer-strip-panel: var(--bevel-theme-panel);
+  --mixer-strip-panel-edge: var(--bevel-theme-panel-edge);
+  --mixer-strip-key: var(--bevel-theme-key);
+  --motorized-fader-panel: var(--bevel-theme-panel);
+  --motorized-fader-panel-edge: var(--bevel-theme-panel-edge);
+  --motorized-fader-line: var(--bevel-theme-panel-deep);
+  --patch-bay-panel: var(--bevel-theme-panel);
+  --patch-bay-panel-edge: var(--bevel-theme-panel-edge);
+  --patch-bay-ring: var(--bevel-theme-hardware);
+  --push-to-talk-body: var(--bevel-theme-panel);
+  --push-to-talk-body-edge: var(--bevel-theme-panel-edge);
+  --push-to-talk-key: var(--bevel-theme-key);
+  --split-flap-housing: var(--bevel-theme-panel);
+  --split-flap-housing-edge: var(--bevel-theme-panel-edge);
+  --split-flap-foreground: var(--bevel-theme-face);
+  --time-card-key: var(--bevel-theme-panel);
+  --time-card-key-edge: var(--bevel-theme-panel-edge);
+  --vigilance-panel: var(--bevel-theme-panel);
+  --vigilance-panel-edge: var(--bevel-theme-panel-edge);
+  --key-primary: var(--bevel-theme-hardware);
+  --key-primary-side: var(--bevel-theme-hardware-edge);
+  --key-primary-foreground: oklch(from var(--bevel-theme-hardware) 0.25 c h);
+  --key-secondary: var(--bevel-theme-key);
+  --key-secondary-side: var(--bevel-theme-panel-edge);
+  --key-secondary-foreground: var(--bevel-theme-face);
+  --bevel-radius-xs: calc(0.25rem * var(--bevel-radius-scale, 1));
+  --bevel-radius-sm: calc(0.5rem * var(--bevel-radius-scale, 1));
+  --bevel-radius-md: calc(0.625rem * var(--bevel-radius-scale, 1));
+  --bevel-radius-lg: calc(1rem * var(--bevel-radius-scale, 1));
+  --bevel-radius-xl: calc(1.5rem * var(--bevel-radius-scale, 1));
+  --bevel-duration-press: calc(100ms * var(--bevel-speed, 1));
+  --bevel-duration-small: calc(200ms * var(--bevel-speed, 1));
+  --bevel-duration-move: calc(300ms * var(--bevel-speed, 1));
+  --bevel-duration-ambient: calc(520ms * var(--bevel-speed, 1));
+}
+[data-bevel-theme='brass'] {
+  --bevel-theme-panel: oklch(0.33 0.045 62);
+  --bevel-theme-hardware: oklch(0.79 0.13 82);
+  --bevel-theme-face: oklch(0.94 0.04 85);
+  --bevel-highlight: oklch(1 0.03 85 / 0.26);
+  --bevel-shade: oklch(0.1 0.03 50 / 0.36);
+  --bevel-cast: oklch(0.3 0.06 55 / 0.28);
+  --bevel-radius-scale: 1;
+  --bevel-speed: 1.15;
+}
+[data-bevel-theme='bakelite'] {
+  --bevel-theme-panel: oklch(0.3 0.06 32);
+  --bevel-theme-hardware: oklch(0.84 0.012 90);
+  --bevel-theme-face: oklch(0.92 0.045 88);
+  --bevel-highlight: oklch(1 0 0 / 0.34);
+  --bevel-shade: oklch(0.08 0.03 30 / 0.42);
+  --bevel-cast: oklch(0.22 0.05 30 / 0.26);
+  --bevel-radius-scale: 1.6;
+  --bevel-speed: 1;
+}
+[data-bevel-theme='anodized'] {
+  --bevel-theme-panel: oklch(0.46 0.1 252);
+  --bevel-theme-hardware: oklch(0.86 0.012 250);
+  --bevel-theme-face: oklch(0.97 0.006 250);
+  --bevel-highlight: oklch(1 0 0 / 0.3);
+  --bevel-shade: oklch(0.1 0.04 255 / 0.34);
+  --bevel-cast: oklch(0.25 0.05 255 / 0.22);
+  --bevel-radius-scale: 0.55;
+  --bevel-speed: 0.8;
+}
+.dark [data-bevel-theme],
+.dark[data-bevel-theme] {
+  --bevel-highlight: oklch(1 0 0 / 0.16);
+  --bevel-cast: oklch(0 0 0 / 0.55);
+}
+[data-slot='badge'] {
+  --badge-plate: var(--badge-plate-color);
+  --badge-foreground: var(--badge-plate-foreground);
+  --badge-plate-edge: inset 0 1px 0 var(--bevel-highlight), inset 0 0 0 1px oklch(0 0 0 / 0.08);
+  --badge-lamp: var(--badge-neutral);
+  --bevel-led: var(--badge-lamp);
+  --badge-lamp-off: color-mix(in oklch, var(--badge-lamp), black 55%);
+}
+[data-slot='badge'][data-tone='neutral'] {
+  --badge-lamp: var(--badge-neutral);
+}
+[data-slot='badge'][data-tone='info'] {
+  --badge-lamp: var(--badge-info);
+}
+[data-slot='badge'][data-tone='success'] {
+  --badge-lamp: var(--badge-success);
+}
+[data-slot='badge'][data-tone='warning'] {
+  --badge-lamp: var(--badge-warning);
+}
+[data-slot='badge'][data-tone='danger'] {
+  --badge-lamp: var(--badge-danger);
+}
+[data-slot='text-field'][data-size='sm'] {
+  --text-field-height: 2rem;
+  --text-field-textarea-height: 4.5rem;
+}
+
+@utility text-field-well {
+  --bevel-material-recess: var(--text-field-well);
+  --bevel-shade-strong: var(--text-field-shade);
+  background-color: var(--bevel-material-recess);
+  box-shadow: var(--bevel-depth-recessed);
+}
+[data-slot='text-field-slot'] :is([data-slot='text-field-input'], [data-slot='text-field-textarea']) {
+  background-color: transparent;
+  box-shadow: none;
+}
+[data-slot='text-field-slot']:has([data-slot='text-field-textarea']) {
+  align-items: flex-start;
+}
+[data-slot='text-field-slot']:focus-within,
+:is([data-slot='text-field-input'], [data-slot='text-field-textarea']):not(
+    [data-slot='text-field-slot'] *
+  ):focus-visible {
+  box-shadow:
+    var(--bevel-depth-recessed),
+    0 0 0 1px var(--text-field-glow),
+    0 0 0 3px var(--text-field-glow-soft);
+}
+[data-slot='text-field'][data-invalid]
+  :is([data-slot='text-field-slot'], [data-slot='text-field-input'], [data-slot='text-field-textarea']):not(
+    [data-slot='text-field-slot'] *
+  ) {
+  box-shadow:
+    var(--bevel-depth-recessed),
+    0 0 0 1px var(--text-field-error);
+}
+[data-slot='text-field'][data-invalid]
+  :is(
+    [data-slot='text-field-slot']:focus-within,
+    :is([data-slot='text-field-input'], [data-slot='text-field-textarea']):not(
+        [data-slot='text-field-slot'] *
+      ):focus-visible
+  ) {
+  box-shadow:
+    var(--bevel-depth-recessed),
+    0 0 0 1px var(--text-field-error),
+    0 0 0 3px var(--text-field-error-soft);
+}
+[data-slot='text-field-lamp'] {
+  --bevel-led: var(--text-field-error);
+}
+[data-slot='text-field-kbd'] {
+  --bevel-material: var(--text-field-key);
+  --bevel-material-edge: var(--text-field-key-edge);
+}
+
+@media (forced-colors: active) {
+  [data-slot='text-field-slot'],
+  :is([data-slot='text-field-input'], [data-slot='text-field-textarea']):not([data-slot='text-field-slot'] *) {
+    border: 1px solid CanvasText;
+  }
+  [data-slot='text-field-slot']:focus-within,
+  :is([data-slot='text-field-input'], [data-slot='text-field-textarea']):not(
+      [data-slot='text-field-slot'] *
+    ):focus-visible {
+    outline: 2px solid Highlight;
+  }
+  [data-slot='preset-tabs-tab'],
+  [data-slot='preset-key'] {
+    border: 1px solid ButtonText;
+  }
+  :is([data-slot='preset-tabs-tab'][data-active], [data-slot='preset-key'][data-checked]) {
+    border-color: Highlight;
+    outline: 1px solid Highlight;
+  }
+  [data-slot='toggle-lever'] {
+    border: 1px solid CanvasText;
+  }
+  [data-slot='toggle-lever-bat'] > * {
+    background: CanvasText;
+  }
+  [data-slot='toggle-lever'][data-checked] [data-slot='toggle-lever-lamp'] {
+    background: Highlight;
+  }
+  [data-slot='latch-checkbox'] {
+    border: 1px solid CanvasText;
+  }
+  [data-slot='latch-checkbox-mark'] {
+    color: Highlight;
+    filter: none;
+  }
+  [data-slot='dip-switch-toggle'] {
+    border: 1px solid CanvasText;
+  }
+  [data-slot='dip-switch-actuator'] {
+    background: ButtonText;
+  }
+}
+
+@utility dialog-panel {
+  background-color: var(--dialog-panel);
+  background-image: linear-gradient(to bottom, var(--bevel-highlight), transparent 20%);
+  box-shadow: var(--dialog-depth);
+  color: var(--dialog-panel-foreground);
+}
+
+@utility dialog-dim {
+  background-color: var(--dialog-dim);
+  backdrop-filter: brightness(var(--dialog-dim-brightness));
+}
+
+@utility dialog-screw {
+  width: var(--dialog-screw-size);
+  height: var(--dialog-screw-size);
+  border-radius: 9999px;
+  background-color: var(--dialog-screw);
+  background-image:
+    linear-gradient(
+      var(--dialog-screw-angle, 30deg),
+      transparent 42%,
+      var(--dialog-screw-slot) 42% 58%,
+      transparent 58%
+    ),
+    radial-gradient(circle at 35% 30%, var(--bevel-highlight-strong), transparent 60%);
+  box-shadow:
+    inset 0 -1px 1px var(--bevel-shade),
+    0 1px 0 var(--bevel-highlight-strong);
+}
+[data-slot='dialog-screws'] > :nth-child(1) {
+  --dialog-screw-angle: 20deg;
+}
+[data-slot='dialog-screws'] > :nth-child(2) {
+  --dialog-screw-angle: 75deg;
+}
+[data-slot='dialog-screws'] > :nth-child(3) {
+  --dialog-screw-angle: 130deg;
+}
+[data-slot='dialog-screws'] > :nth-child(4) {
+  --dialog-screw-angle: 160deg;
+}
+[data-slot='dialog-close'],
+[data-slot='alert-dialog-cancel'],
+[data-slot='alert-dialog-action'] {
+  --bevel-material: var(--dialog-key);
+  --bevel-material-edge: var(--dialog-key-edge);
+  --dialog-key-ink: var(--dialog-key-foreground);
+}
+[data-tone='destructive']:is([data-slot='dialog-close'], [data-slot='alert-dialog-action']) {
+  --bevel-material: var(--dialog-danger);
+  --bevel-material-edge: var(--dialog-danger-edge);
+  --dialog-key-ink: var(--dialog-danger-foreground);
+}
+[data-slot='key'] {
+  --key-depth: var(--key-travel);
+  --key-cap: var(--key-primary);
+  --key-cap-side: var(--key-primary-side);
+  --key-cap-foreground: var(--key-primary-foreground);
+  --bevel-led: var(--key-lamp);
+  --key-cap-sheen: var(--bevel-highlight);
+  --key-cap-light: inset 0 1px 0 var(--bevel-highlight-strong), inset 0 0 0 1px oklch(0 0 0 / 0.06);
+  --key-cast: 0 1px 2px var(--bevel-cast);
+}
+[data-slot='key'][data-size='sm'] {
+  --key-depth: var(--key-travel-sm);
+}
+[data-slot='key'][data-size='lg'] {
+  --key-depth: var(--key-travel-lg);
+}
+[data-slot='key'][data-variant='secondary'] {
+  --key-cap: var(--key-secondary);
+  --key-cap-side: var(--key-secondary-side);
+  --key-cap-foreground: var(--key-secondary-foreground);
+}
+[data-slot='key'][data-variant='danger'] {
+  --key-cap: var(--key-danger);
+  --key-cap-side: var(--key-danger-side);
+  --key-cap-foreground: var(--key-danger-foreground);
+}
+[data-slot='key'][data-variant='ghost'] {
+  --key-depth: 0px;
+  --key-cap: transparent;
+  --key-cap-side: transparent;
+  --key-cap-foreground: var(--key-ghost-foreground);
+  --key-cap-sheen: transparent;
+  --key-cap-light: none;
+  --key-cast: none;
+}
+[data-slot='key'][data-variant='ghost']:hover:not([data-state]) {
+  --key-cap: var(--key-ghost-hover);
+}
+[data-slot='key'][data-variant='ghost']:is([data-pressed], [data-state='pending']) {
+  --key-cap: var(--key-ghost-well);
+  --key-cap-light: var(--bevel-depth-pressed);
+}
+[data-slot='key'][data-state='disabled'] {
+  --key-cap-light: none;
+}
+:is([data-slot='preset-tabs-list'], [data-slot='preset-keys'])[data-size='sm'] {
+  --preset-keys-height: 1.75rem;
+  --preset-keys-pad: 0.625rem;
+  --preset-keys-text: 0.75rem;
+  --preset-keys-inset: 0.125rem;
+  --preset-keys-key-radius: 0.375rem;
+  --preset-keys-travel: 0.09375rem;
+}
+[data-slot='preset-tabs-list'],
+[data-slot='preset-keys'] {
+  --bevel-material-recess: var(--preset-keys-bed);
+  --bevel-shade-strong: var(--preset-keys-shade);
+}
+[data-slot='preset-tabs-tab'],
+[data-slot='preset-key'] {
+  --bevel-material: var(--preset-keys-key);
+  --bevel-material-edge: var(--preset-keys-key-edge);
+  --bevel-led: var(--preset-keys-lamp-on);
+}
+
+@utility preset-keys-lamp {
+  background-color: var(--preset-keys-lamp-off);
+  box-shadow: inset 0 1px 1px var(--preset-keys-lamp-shade);
+}
+:is([data-slot='preset-tabs-tab'][data-active], [data-slot='preset-key'][data-checked]) [data-slot='preset-keys-lamp'] {
+  background-color: var(--bevel-led);
+  background-image: radial-gradient(circle at 35% 30%, var(--bevel-highlight-strong), transparent 45%);
+  box-shadow: 0 0 5px var(--bevel-led);
+}
+[data-slot='toggle-lever'] {
+  --bevel-material: var(--toggle-lever-plate);
+  --bevel-material-edge: var(--toggle-lever-plate-edge);
+  --bevel-led: var(--toggle-lever-lamp-off);
+}
+[data-slot='toggle-lever'][data-checked] {
+  --bevel-led: var(--toggle-lever-lamp-on);
+}
+[data-slot='toggle-lever']:not([data-checked]) [data-slot='toggle-lever-lamp'] {
+  box-shadow:
+    inset 0 -1px 1px var(--toggle-lever-lamp-shade),
+    0 1px 0 var(--bevel-highlight);
+}
+
+@utility toggle-lever-print {
+  font-size: var(--toggle-lever-print-size);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: var(--bevel-tracking-label);
+  text-transform: uppercase;
+  color: var(--toggle-lever-print);
+  text-shadow: var(--bevel-deboss);
+}
+[data-slot='toggle-lever'][data-checked] [data-side='on'],
+[data-slot='toggle-lever'][data-unchecked] [data-side='off'] {
+  color: var(--toggle-lever-print-lit);
+}
+
+@utility toggle-lever-bat {
+  filter: drop-shadow(var(--toggle-lever-cast));
+}
+
+@utility toggle-lever-ball {
+  background-color: var(--toggle-lever-chrome);
+  background-image: radial-gradient(circle at 35% 30%, var(--toggle-lever-glint), transparent 55%);
+  box-shadow: inset 0 0 0 0.5px var(--toggle-lever-chrome-edge);
+}
+
+@utility toggle-lever-bushing {
+  background-color: var(--toggle-lever-bushing);
+  background-image: radial-gradient(circle at 50% 35%, var(--bevel-highlight-strong), transparent 60%);
+  box-shadow:
+    inset 0 0 0 1px var(--toggle-lever-chrome-edge),
+    0 1px 0 var(--bevel-highlight);
+}
+[data-slot='latch-checkbox'] {
+  --bevel-material-recess: var(--latch-checkbox-collar);
+  --bevel-shade-strong: var(--latch-checkbox-shade);
+}
+[data-slot='latch-checkbox-cap'] {
+  --bevel-material: var(--latch-checkbox-cap-face);
+  --bevel-material-edge: var(--latch-checkbox-cap-edge);
+}
+
+@utility latch-checkbox-mark {
+  color: var(--latch-checkbox-lit);
+  filter: var(--latch-checkbox-glow);
+}
+
+/* Official SciFiCN tokens, Alien dark theme & scanlines (from baxy5/scificn-ui src/styles/globals.css) */
+@theme inline {
+  --font-sans: 'Figtree Variable', 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'Azeret Mono Variable', ui-monospace, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--text-secondary);
+  --color-primary: var(--color-amber);
+  --color-muted: color-mix(in oklch, var(--text-muted) 42%, var(--surface));
+  --color-muted-foreground: var(--text-muted);
+  --color-border: var(--border);
+  --color-ring: var(--color-amber);
+  @keyframes detent-knob-bump {
+    40% {
+      rotate: var(--detent-knob-bump-to);
+    }
+  }
+}
+
+:root {
+  --clip-corner-sm: polygon(6px 0%, 100% 0%, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0% 100%, 0% 6px);
+  --clip-corner-md: polygon(10px 0%, 100% 0%, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0% 100%, 0% 10px);
+  --clip-corner-lg: polygon(16px 0%, 100% 0%, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0% 100%, 0% 16px);
+}
+
+[data-theme='alien'] {
+  --color-green: #e0d5be;
+  --color-amber: #ff8800;
+  --color-red: #cc2200;
+  --color-blue: #00ed3f;
+  --background: #040302;
+  --surface: #080604;
+  --surface-raised: #0e0a06;
+  --border: #201808;
+  --border-active: #e0d5be;
+  --text-primary: #e0d5be;
+  --text-secondary: #c8b99a;
+  --text-muted: #7a6852;
+  --text-warning: #ff8800;
+  --text-danger: #cc2200;
+  --glow-green: 0 0 8px rgba(224, 213, 190, 0.35), 0 0 20px rgba(224, 213, 190, 0.15);
+  --glow-amber: 0 0 8px rgba(255, 136, 0, 0.4), 0 0 20px rgba(255, 136, 0, 0.2);
+  --glow-red: 0 0 8px rgba(204, 34, 0, 0.4), 0 0 20px rgba(204, 34, 0, 0.2);
+  --glow-blue: 0 0 8px rgba(0, 237, 63, 0.4), 0 0 20px rgba(0, 237, 63, 0.2);
+  --text-glow-green: 0 0 6px rgba(224, 213, 190, 0.55), 0 0 14px rgba(224, 213, 190, 0.25);
+  --text-glow-amber: 0 0 6px rgba(255, 136, 0, 0.6), 0 0 14px rgba(255, 136, 0, 0.3);
+  --text-glow-red: 0 0 6px rgba(204, 34, 0, 0.6), 0 0 14px rgba(204, 34, 0, 0.3);
+  --text-glow-blue: 0 0 6px rgba(0, 237, 63, 0.6), 0 0 14px rgba(0, 237, 63, 0.3);
+}
+
+.scanlines {
+  position: relative;
+  overflow: hidden;
+}
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0, 0, 0, 0.18) 3px,
+    rgba(0, 0, 0, 0.18) 4px
+  );
+  pointer-events: none;
+  z-index: 20;
+}
+[data-bevel-family='leather'] {
+  --bevel-cast: oklch(0.25 0.03 50 / 0.22);
+}
+[data-bevel-family='paper'] {
+  --bevel-cast: oklch(0.3 0.01 250 / 0.16);
+}
+.dark :is([data-bevel-family='leather'], [data-bevel-family='paper']) {
+  --bevel-cast: oklch(0 0 0 / 0.55);
+}
+[data-slot='detent-knob-cap'] {
+  --bevel-material: var(--detent-knob-cap);
+  --bevel-material-edge: var(--detent-knob-cap-edge);
+}
+
+@utility detent-knob-knurl {
+  background-image: repeating-conic-gradient(var(--bevel-highlight) 0deg 3deg, var(--bevel-shade) 3deg 6deg);
+}
+[data-slot='detent-knob-body'][data-bump='up'] {
+  --detent-knob-bump-to: var(--detent-knob-bump);
+}
+[data-slot='detent-knob-body'][data-bump='down'] {
+  --detent-knob-bump-to: calc(var(--detent-knob-bump) * -1);
+}
+
+@utility detent-knob-bump {
+  animation: detent-knob-bump var(--bevel-duration-small) var(--bevel-ease-out);
+}
+[data-slot='dip-switch'] {
+  --dip-switch-body: var(--dip-switch-red);
+  --dip-switch-body-edge: var(--dip-switch-red-edge);
+}
+[data-slot='dip-switch'][data-variant='blue'] {
+  --dip-switch-body: var(--dip-switch-blue);
+  --dip-switch-body-edge: var(--dip-switch-blue-edge);
+}
+[data-slot='dip-switch'][data-variant='black'] {
+  --dip-switch-body: var(--dip-switch-black);
+  --dip-switch-body-edge: var(--dip-switch-black-edge);
+}
+[data-slot='dip-switch-bank'] {
+  --bevel-material: var(--dip-switch-body);
+  --bevel-material-edge: var(--dip-switch-body-edge);
+  --bevel-material-recess: var(--dip-switch-slot);
+}
+[data-slot='dip-switch-actuator'] {
+  --bevel-material: var(--dip-switch-actuator);
+  --bevel-material-edge: var(--dip-switch-actuator-edge);
+}
+
+@utility dip-switch-arrow {
+  width: 0;
+  height: 0;
+  border-inline: 0.1875rem solid transparent;
+  border-bottom: 0.3125rem solid currentColor;
+}
+[data-slot='breaker-panel'] {
+  --bevel-material: var(--breaker-panel);
+  --bevel-material-edge: var(--breaker-panel-edge);
+}
+[data-slot='breaker-switch'] {
+  --bevel-material-recess: var(--breaker-body);
+}
+[data-slot='breaker-lever'] {
+  --bevel-material: var(--breaker-lever);
+  --bevel-material-edge: var(--breaker-lever-edge);
+}
+[data-slot='breaker'] {
+  --bevel-led: var(--breaker-off);
+}
+[data-slot='breaker'][data-state='on'] {
+  --bevel-led: var(--breaker-on);
+}
+[data-slot='breaker'][data-state='tripped'] {
+  --bevel-led: var(--breaker-tripped);
+}
+[data-slot='gauge'],
+[data-slot='dial'] {
+  --bevel-material: var(--bevel-brass);
+  --bevel-material-edge: var(--bevel-brass-edge);
+}
+[data-slot='dial-mark'] {
+  --dial-mark: var(--dial-mark-red);
+}
+[data-slot='dial-mark'][data-tone='amber'] {
+  --dial-mark: var(--dial-mark-amber);
+}
+[data-slot='dial-mark'][data-tone='green'] {
+  --dial-mark: var(--dial-mark-green);
+}
+[data-slot='number-wheel'] {
+  --bevel-material-recess: oklch(0.16 0.01 260);
+  --number-wheel-face: var(--bevel-ivory);
+  --number-wheel-foreground: var(--bevel-ivory-foreground);
+}
+[data-slot='number-wheel'][data-tone='black'] {
+  --number-wheel-face: oklch(0.22 0.01 260);
+  --number-wheel-foreground: oklch(0.95 0.01 90);
+}
+
+@utility number-wheel-drum {
+  background-color: var(--number-wheel-face);
+  background-image: linear-gradient(
+    to bottom,
+    var(--bevel-shade-strong) 0%,
+    transparent 28%,
+    transparent 72%,
+    var(--bevel-shade-strong) 100%
+  );
+  color: var(--number-wheel-foreground);
+}

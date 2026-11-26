@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "appVersion": "0.1.4",
-  "sourceCommit": "3470a7e9bbd5104ba95ff76973378376b342331f",
-  "generatedAt": "2026-11-15T17:02:53.219Z",
+  "appVersion": "0.1.7",
+  "sourceCommit": "95c4068d7493e743b64e78e85e0365f9852751b2",
+  "generatedAt": "2026-11-26T04:04:30.220Z",
   "screen": {
     "width": 1080,
     "height": 2340
@@ -19,32 +19,32 @@
   ],
   "screenshots": {
     "app-danmaku.png": {
-      "sha256": "d419ddfa2d235eb7e9e23bf392cfd0faad3486e85ae764e9f8f6a07f4c341e62",
+      "sha256": "56c10da16bd3baba48837fbecc8405580edce1937d01f2984e4e1fa81d5061e1",
       "width": 1080,
       "height": 2340
     },
     "app-fullscreen.png": {
-      "sha256": "6e19bb7902cbaa5e547af97b2b4fba96df1a16432be3d844417fb44e43ae3f09",
+      "sha256": "21a1e7904ef10831745e7cce96ef24aa3151441448271928105eb910e8451178",
       "width": 1080,
       "height": 2340
     },
     "app-search.png": {
-      "sha256": "55fa1fd1a8a94d184404ea7f3fa01dfed4744ac110e936677329ca033ab5503c",
+      "sha256": "bb656b232a41e6fe6493d7ea3f084f8d1acc2be8d02664065bf148b3ac276f29",
       "width": 1080,
       "height": 2340
     },
     "november-rain-danmaku.png": {
-      "sha256": "c8fee87cd76414961df13062738140c8aaec7843899c1f7e7e8c1967918202cb",
+      "sha256": "8a854678bcc0036c1aef7050312414f7715da8e1798e0f6c7058f2f776e1375c",
       "width": 1080,
       "height": 2340
     },
     "november-rain-fullscreen.png": {
-      "sha256": "ae997fab0f6c24fd4ed230f3c5737156854700a7d7c3d71faf39e88adbf97a6f",
+      "sha256": "9a27def4c8cdb37bc57236d538ea3a1df28535ffe96d42e9806a37b34e45a19c",
       "width": 1080,
       "height": 2340
     },
     "november-rain-search.png": {
-      "sha256": "3ed747f1ddb4feb74e9da50ff0a459af47324606d83e8e84625fc4979ea83dde",
+      "sha256": "a79cfa1b10e63397b7b38b4e109cb4cf94f64e1e722d7a5a6db6c6c4a738aeee",
       "width": 1080,
       "height": 2340
     }

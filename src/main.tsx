@@ -1,87 +1,69 @@
-import { Maximize, MessagesSquare, Minimize, Search, Settings as SettingsIcon } from './icons';
-import { AppSlider as Slider } from './AppSlider';
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import '@fontsource-variable/figtree';
+import '@fontsource-variable/azeret-mono';
+import './index.css';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import {
-  Button as TamaguiButton,
-  Card,
-  Checkbox,
-  Dialog,
-  H3,
-  Input,
-  Label,
-  Paragraph,
-  Progress,
-  ProgressIndicator,
-  Separator,
-  Switch,
-  TamaguiProvider,
-  Text,
-  XStack,
-  YStack,
-  styled,
-  useMedia,
-} from 'tamagui';
-import { musicAtmosphere, tamaguiConfig } from './tamagui.config';
-import { PlaybackControls } from './PlaybackControls';
-import { LyricsBackground } from './LyricsBackground';
+import { MessagesSquare, Search, Settings as SettingsIcon } from 'lucide-react';
+import { BevelFeedback } from '@/lib/feedback';
+import { Alert, AlertDescription } from '@/components/ui/alert/alert';
+import { Badge, BadgeLamp } from '@/components/ui/badge';
+import { Key } from '@/components/ui/key';
+import { Panel, PanelContent, PanelFooter, PanelHeader } from '@/components/ui/panel/panel';
+import { PresetTabs, PresetTabsList, PresetTabsTab } from '@/components/ui/preset-keys';
+import { cn } from '@/lib/utils';
 import { Danmaku } from './Danmaku';
+import { LyricsBackground } from './LyricsBackground';
 import { MarqueeText } from './MarqueeText';
-import { compareVersions, parseReleaseNotes } from './release';
-import type { ReleaseInfo, UpdateStatus } from './release';
-import { durationsMatch, formatTime, trackKey } from './types';
-import { invoke, listen } from './commands';
-import type { DownloadProgress } from './commands';
+import { PlaybackControls } from './PlaybackControls';
+import type { SearchRequest } from './SearchView';
+import { trackKey } from './types';
 import type { Song } from './types';
+import { invoke } from './commands';
 import { usePlayerState } from './usePlayerState';
-import '@tamagui/core/reset.css';
 
-const AnimatedButton = styled(TamaguiButton, {
-  transition: 'quickerLessBouncy',
-  scale: '1 hover:1.015 press:0.97',
-  minHeight: 44,
-});
+const loadSearchView = () => import('./SearchView');
+const loadSettingsView = () => import('./SettingsView');
+const SearchView = lazy(loadSearchView);
+const SettingsView = lazy(loadSettingsView);
 
-// GitHub Pages 是应用发布与下载的统一入口
-const DOWNLOAD_PAGE = 'https://asinkluno.github.io/MusicDan/';
-// 设置页多次进出时复用检查结果，避免重复请求
-let updateCache: UpdateStatus | null = null;
-
-function Button(props: React.ComponentProps<typeof AnimatedButton>) {
-  const { reduceMotion } = useMedia();
-  // 调用方显式传入的 transition 优先（例如底部导航的颜色过渡）
-  return (
-    <AnimatedButton
-      {...props}
-      transition={props.transition ?? (reduceMotion ? undefined : 'quickerLessBouncy')}
-      scale={reduceMotion ? 1 : '1 hover:1.015 press:0.97'}
-    />
-  );
-}
+const EMPTY_SONGS: Song[] = [];
+const SAFE_AREA_STYLE = {
+  paddingTop: 'max(env(safe-area-inset-top, 0px), var(--system-inset-top, 0px))',
+  paddingBottom: 'max(env(safe-area-inset-bottom, 0px), var(--system-inset-bottom, 0px))',
+  paddingLeft: 'max(env(safe-area-inset-left, 0px), var(--system-inset-left, 0px))',
+  paddingRight: 'max(env(safe-area-inset-right, 0px), var(--system-inset-right, 0px))',
+} as const;
+const PANEL_HEADER_STYLE = { justifyContent: 'space-between', padding: '0.65rem 0.9rem' } as const;
+const PANEL_CONTENT_STYLE = { padding: 0 } as const;
+const PANEL_FOOTER_STYLE = { padding: '0.75rem 0.9rem' } as const;
+const TAB_FALLBACK = (
+  <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">加载中…</div>
+);
 
 function App() {
-  const media = useMedia();
   const [lyricChoice, setLyricChoice] = useState<{ key: string; id: number | null }>({ key: '', id: null });
   const [tab, setTab] = useState('danmaku');
-  const { snapshot, cfg, commentLimitDraft, setCommentLimitDraft, overlay, setOverlay, error, setError, fail, change } =
-    usePlayerState();
+  const { snapshot, cfg, overlay, setOverlay, error, setError, fail, change } = usePlayerState();
   const [full, setFull] = useState(false);
-  const [query, setQuery] = useState('');
-  const [selectedSongs, setSelectedSongs] = useState<Song[]>([]);
-  const [results, setResults] = useState<Song[]>([]);
-  const [commentCounts, setCommentCounts] = useState<Record<number, number | null>>({});
-  const [searched, setSearched] = useState(false);
-  const [searching, setSearching] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const searchId = useRef(0);
+  const [selectedSongs, setSelectedSongs] = useState<Song[]>(EMPTY_SONGS);
+  const [autoSearch, setAutoSearch] = useState<SearchRequest | null>(null);
+  const autoSearchNonce = useRef(0);
+
   const np = snapshot?.nowPlaying;
   const currentKey = np ? trackKey(np) : '';
   const merged = (snapshot?.songs?.length || 0) > 1;
-  const lyricSongs = snapshot?.songs?.length ? snapshot.songs : snapshot?.song ? [snapshot.song] : [];
-  const lyricKey = `${currentKey}:${lyricSongs
-    .map((song) => song.songId)
-    .sort((a, b) => a - b)
-    .join(',')}`;
+  const lyricSongs = useMemo(
+    () => (snapshot?.songs?.length ? snapshot.songs : snapshot?.song ? [snapshot.song] : EMPTY_SONGS),
+    [snapshot?.songs, snapshot?.song],
+  );
+  const lyricKey = useMemo(
+    () =>
+      `${currentKey}:${lyricSongs
+        .map((song) => song.songId)
+        .sort((a, b) => a - b)
+        .join(',')}`,
+    [currentKey, lyricSongs],
+  );
   const lyricSong =
     lyricSongs.find((song) => song.songId === (lyricChoice.key === lyricKey ? lyricChoice.id : null)) ??
     lyricSongs.find((song) => song.songId === snapshot?.song?.songId) ??
@@ -90,10 +72,13 @@ function App() {
     () => snapshot?.comments.reduce((sum, comment) => sum + (comment.occurrences || 1), 0) || 0,
     [snapshot?.comments],
   );
+  const visibleComments = Math.min(snapshot?.comments.length || 0, cfg.commentLimit ?? Infinity);
+  const loadingMore = Boolean(snapshot?.loading && snapshot.comments.length > 0);
+
   const selectionKey = useRef<string | null>(null);
   useEffect(() => {
     selectionKey.current = null;
-    setSelectedSongs([]);
+    setSelectedSongs(EMPTY_SONGS);
   }, [currentKey]);
   useEffect(() => {
     if (currentKey && snapshot?.song && selectionKey.current !== currentKey) {
@@ -101,6 +86,7 @@ function App() {
       selectionKey.current = currentKey;
     }
   }, [currentKey, snapshot?.song, snapshot?.songs]);
+
   const selectSongs = useCallback((songs: Song[], selected: boolean) => {
     setSelectedSongs((previous) => {
       const next = new Map(previous.map((song) => [song.songId, song]));
@@ -111,6 +97,19 @@ function App() {
       return [...next.values()];
     });
   }, []);
+  const clearSelection = useCallback(() => setSelectedSongs(EMPTY_SONGS), []);
+  const clearError = useCallback(() => setError(''), [setError]);
+  const toggleFull = useCallback(() => setFull((value) => !value), []);
+  const returnToDanmaku = useCallback(() => setTab('danmaku'), []);
+  const selectLyric = useCallback((id: number) => setLyricChoice({ key: lyricKey, id }), [lyricKey]);
+
+  const openManualMatch = useCallback(() => {
+    const keyword = np ? `${np.title} ${np.artist}`.trim() : '';
+    setSelectedSongs(snapshot?.songs || (snapshot?.song ? [snapshot.song] : EMPTY_SONGS));
+    setAutoSearch({ keyword, nonce: ++autoSearchNonce.current });
+    setTab('search');
+  }, [np, snapshot?.song, snapshot?.songs]);
+
   useEffect(() => {
     if (!full || tab !== 'danmaku' || !cfg.keepScreenOnFullscreen) return;
     void invoke('plugin:media|set_keep_screen_on', { enabled: true }).catch(fail);
@@ -118,6 +117,7 @@ function App() {
       void invoke('plugin:media|set_keep_screen_on', { enabled: false }).catch(fail);
     };
   }, [full, tab, cfg.keepScreenOnFullscreen, fail]);
+
   useEffect(() => {
     const back = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setFull(false);
@@ -125,8 +125,7 @@ function App() {
     window.addEventListener('keydown', back);
     return () => window.removeEventListener('keydown', back);
   }, []);
-  // Android 返回键走 WebView 历史：离开弹幕 tab（或全屏）时压入一条历史记录，
-  // 第一次返回消费它并回到弹幕 tab，之后没有历史记录，原生返回键才退出应用。
+
   useEffect(() => {
     if (full || tab !== 'danmaku') {
       const back = () => {
@@ -138,92 +137,10 @@ function App() {
       window.addEventListener('popstate', back);
       return () => window.removeEventListener('popstate', back);
     }
-    // 通过 Escape 或“应用选择”等应用内路径回到弹幕时，顺手消费掉压入的历史记录，
-    // 保证下一次返回键（而非再上一次）直接退出。
     if (window.history.state?.musicdanBack) window.history.back();
     return undefined;
   }, [tab, full]);
-  async function search(e: React.FormEvent) {
-    e.preventDefault();
-    await searchSongs(query);
-  }
-  async function searchSongs(keyword: string) {
-    keyword = keyword.trim();
-    if (!keyword) return;
-    const id = ++searchId.current;
-    setSearching(true);
-    setError('');
-    setSearched(false);
-    try {
-      const songs = await invoke('search_songs', { keyword });
-      if (id === searchId.current) {
-        setResults(songs);
-        setSearched(true);
-        // Show results immediately; at most four count requests run at once.
-        let next = 0;
-        const ids = [...new Set(songs.map((song) => song.songId))];
-        const loadCounts = async () => {
-          while (id === searchId.current && next < ids.length) {
-            const songId = ids[next++];
-            let count: number | null = null;
-            try {
-              count = await invoke('get_song_comment_count', { songId });
-            } catch {
-              /* Keep the song selectable if counts fail. */
-            }
-            if (id === searchId.current) setCommentCounts((previous) => ({ ...previous, [songId]: count }));
-          }
-        };
-        void Promise.all(Array.from({ length: Math.min(4, ids.length) }, loadCounts));
-      }
-    } catch (e) {
-      if (id === searchId.current) fail(e);
-    } finally {
-      if (id === searchId.current) setSearching(false);
-    }
-  }
-  function openManualMatch() {
-    const keyword = np ? `${np.title} ${np.artist}`.trim() : '';
-    setQuery(keyword);
-    setSelectedSongs(snapshot?.songs || (snapshot?.song ? [snapshot.song] : []));
-    setTab('search');
-    if (keyword) void searchSongs(keyword);
-    else {
-      searchId.current++;
-      setSearching(false);
-      setSearched(false);
-      setResults([]);
-    }
-  }
-  async function mergeMatches() {
-    if (!currentKey || busy || !selectedSongs.length) return;
-    setBusy(true);
-    setError('');
-    try {
-      await invoke('set_song_matches', { key: currentKey, songs: selectedSongs });
-      setTab('danmaku');
-    } catch (e) {
-      fail(e);
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function toggleOverlay() {
-    setBusy(true);
-    setError('');
-    try {
-      if (!overlay.granted) {
-        await invoke('plugin:media|open_overlay_settings');
-      } else {
-        await invoke('plugin:media|set_overlay', { enabled: !overlay.running });
-        setOverlay({ ...overlay, running: !overlay.running });
-      }
-    } catch (e) {
-      fail(e);
-    } finally {
-      setBusy(false);
-    }
-  }
+
   const waiting = !snapshot?.permissionGranted
     ? '需要授权读取播放信息'
     : !np
@@ -235,901 +152,187 @@ function App() {
           : snapshot.error
             ? '暂时没有匹配成功'
             : '这首歌还没有可用评论';
+
   return (
-    <YStack
-      position="fixed"
-      inset={0}
-      backgroundColor="background"
-      backgroundImage={musicAtmosphere.backdrop}
-      overflow="hidden"
-      paddingTop="max(env(safe-area-inset-top, 0px), var(--system-inset-top, 0px))"
-      paddingBottom="max(env(safe-area-inset-bottom, 0px), var(--system-inset-bottom, 0px))"
-      paddingLeft="max(env(safe-area-inset-left, 0px), var(--system-inset-left, 0px))"
-      paddingRight="max(env(safe-area-inset-right, 0px), var(--system-inset-right, 0px))"
-    >
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background text-foreground" style={SAFE_AREA_STYLE}>
       {error && (
-        <XStack role="alert" padding="3" gap="3" alignItems="center" backgroundColor="background-hover">
-          <Paragraph flex={1}>{error}</Paragraph>
-          <Button size="sm" aria-label="关闭提示" onPress={() => setError('')}>
-            关闭
-          </Button>
-        </XStack>
+        <Alert variant="WARNING" className="shrink-0">
+          <div className="flex items-center justify-between gap-3">
+            <AlertDescription>{error}</AlertDescription>
+            <Key size="sm" variant="secondary" aria-label="关闭提示" onClick={clearError}>
+              关闭
+            </Key>
+          </div>
+        </Alert>
       )}
-      <YStack
-        key={tab}
-        render="main"
-        transition={media.reduceMotion ? undefined : 'quickLessBouncy'}
-        opacity={media.reduceMotion ? 1 : '1 enter:0'}
-        y={media.reduceMotion ? 0 : '0 enter:8px'}
-        flex={1}
-        minHeight={0}
-        width="100%"
-        maxWidth={full ? undefined : 850}
-        alignSelf="center"
-        paddingHorizontal={media.sm ? '6' : '4'}
-        paddingVertical={full ? '0' : media.sm ? '6' : '4'}
-        gap="4"
-        overflowY={tab === 'settings' ? 'auto' : 'hidden'}
+
+      <PresetTabs
+        value={tab}
+        onValueChange={(value) => {
+          setTab(String(value));
+          void invoke('plugin:media|haptic_feedback', { kind: 'tick' }).catch(() => {});
+        }}
+        className="flex min-h-0 flex-1 flex-col gap-0"
       >
-        {tab === 'danmaku' && (
-          <>
-            {np && (
-              <YStack minWidth={0} gap="1" flexShrink={0} paddingTop={full ? '3' : '0'}>
-                <MarqueeText text={np.title} kind="title" />
-                {np.artist ? <MarqueeText text={np.artist} /> : null}
-                <MarqueeText text={`专辑 · ${np.album || snapshot?.song?.album || '未知专辑'}`} kind="caption" />
-              </YStack>
-            )}
-            <Card
-              flex={1}
-              minHeight={100}
-              borderRadius="8"
-              borderWidth={1}
-              borderColor="border-color"
-              backgroundImage={np && lyricSong?.songId ? undefined : musicAtmosphere.player}
-              overflow="hidden"
-              aria-label="弹幕播放器"
-            >
-              <YStack position="relative" flex={1} minHeight={0} overflow="hidden">
+        <main
+          className={cn(
+            'mx-auto flex min-h-0 w-full flex-1 flex-col overflow-hidden',
+            full ? 'p-0' : 'max-w-[850px] gap-3 px-4 pt-4 pb-3 sm:px-6',
+          )}
+        >
+          {tab === 'danmaku' && (
+            <Panel notch={full ? 'none' : 'md'} aria-label="弹幕播放器" className="flex min-h-[120px] flex-1 flex-col">
+              {(np || !full) && (
+                <PanelHeader style={PANEL_HEADER_STYLE}>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <MarqueeText text={np ? np.title : 'MusicDan'} kind="title" />
+                    <MarqueeText
+                      text={
+                        np
+                          ? [np.artist, np.album || snapshot?.song?.album].filter(Boolean).join(' · ') || '未知专辑'
+                          : '等待识别当前播放歌曲'
+                      }
+                      kind="caption"
+                    />
+                  </div>
+                  {!full && (
+                    <Badge
+                      tone={merged ? 'warning' : snapshot?.song ? 'success' : 'neutral'}
+                      lit={Boolean(merged || snapshot?.song)}
+                      className="max-w-[52%] shrink-0"
+                    >
+                      <BadgeLamp />
+                      <span className="truncate">
+                        {merged && snapshot?.songs
+                          ? `已合并 ${snapshot.songs.length} 首歌曲的评论`
+                          : snapshot?.manualMatch
+                            ? `已保存的匹配${snapshot.song && np && snapshot.song.name !== np.title ? ` · ${snapshot.song.name}` : ''}`
+                            : snapshot?.song
+                              ? `自动匹配${np && snapshot.song.name !== np.title ? ` · ${snapshot.song.name}` : ''}`
+                              : '等待识别当前歌曲'}
+                      </span>
+                    </Badge>
+                  )}
+                </PanelHeader>
+              )}
+
+              <PanelContent className="scanlines relative flex min-h-0 flex-1 flex-col p-0" style={PANEL_CONTENT_STYLE}>
                 <LyricsBackground
                   key={`${currentKey}:${lyricSong?.songId}`}
                   snapshot={snapshot}
                   songId={lyricSong?.songId}
                   onError={fail}
                 />
-                <YStack position="absolute" inset={0} zIndex={1} pointerEvents="none">
+                <div className="pointer-events-none absolute inset-0 z-10">
                   <Danmaku snapshot={snapshot} settings={cfg} />
-                </YStack>
+                </div>
                 {waiting && (
-                  <YStack
-                    position="absolute"
-                    inset={0}
-                    zIndex={2}
-                    padding="4"
-                    gap="4"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Paragraph textAlign="center">{waiting}</Paragraph>
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 p-5 text-center">
+                    <p className="m-0 text-sm text-muted-foreground">{waiting}</p>
                     {!snapshot?.permissionGranted ? (
-                      <Button
-                        theme="accent"
-                        onPress={() => void invoke('plugin:media|open_permission_settings').catch(fail)}
+                      <Key
+                        variant="primary"
+                        onClick={() => void invoke('plugin:media|open_permission_settings').catch(fail)}
                       >
                         授权读取播放信息
-                      </Button>
+                      </Key>
                     ) : snapshot?.error ? (
-                      <Button onPress={() => void invoke('retry_match').catch(fail)}>重新匹配</Button>
+                      <Key variant="secondary" onClick={() => void invoke('retry_match').catch(fail)}>
+                        重新匹配
+                      </Key>
                     ) : null}
-                  </YStack>
+                  </div>
                 )}
-              </YStack>
-              <Card.Footer flexShrink={0} padding="3" borderTopWidth={1} borderColor="border-color">
-                <YStack width="100%" gap="2">
-                  <XStack alignItems="center" justifyContent="space-between" gap="3">
-                    <Text flex={1} fontSize="xs" color="color-10" numberOfLines={1}>
-                      {totalComments} 条评论 · 显示{' '}
-                      {Math.min(snapshot?.comments.length || 0, cfg.commentLimit ?? Infinity)} 条
-                      {snapshot?.loading && snapshot.comments.length > 0 ? ' · 后台补充中' : ''}
-                    </Text>
-                    <Button
-                      circular
-                      size="md"
-                      minWidth={44}
-                      minHeight={44}
-                      variant="quiet"
-                      aria-label={full ? '退出全屏' : '全屏弹幕'}
-                      onPress={() => setFull((value) => !value)}
-                      icon={full ? <Minimize size={22} /> : <Maximize size={22} />}
-                    />
-                  </XStack>
-                  <PlaybackControls key={`${currentKey}:${np?.packageName || ''}`} snapshot={snapshot} onError={fail} />
-                </YStack>
-              </Card.Footer>
-            </Card>
-            {!full && (
-              <XStack alignItems="center" gap="3" flexShrink={0} paddingVertical="2">
-                <YStack flex={1} minWidth={0} gap="1">
-                  <Text fontSize="xs" color="color-10">
-                    {snapshot?.songs && snapshot.songs.length > 1
-                      ? `已合并 ${snapshot.songs.length} 首歌曲的评论`
-                      : snapshot?.manualMatch
-                        ? '已保存的匹配'
-                        : '自动匹配'}
-                  </Text>
-                  {!merged && (
-                    <>
-                      <MarqueeText
-                        text={snapshot?.song ? `${snapshot.song.name} · ${snapshot.song.artists}` : '等待识别当前歌曲'}
-                      />
-                      {snapshot?.song?.album ? (
-                        <MarqueeText text={`专辑 · ${snapshot.song.album}`} kind="caption" />
-                      ) : null}
-                    </>
-                  )}
-                </YStack>
-                {lyricSongs.length > 1 && (
-                  <LyricsSourceDialog
-                    key={lyricKey}
-                    songs={lyricSongs}
-                    selectedId={lyricSong?.songId}
-                    onSelect={(id) => setLyricChoice({ key: lyricKey, id })}
-                  />
-                )}
-                <Button size="sm" flexShrink={0} aria-label="手动匹配" onPress={openManualMatch}>
-                  手动匹配
-                </Button>
-              </XStack>
-            )}
-          </>
-        )}
-        {tab === 'search' && (
-          <YStack flex={1} minHeight={0} gap="4">
-            <YStack gap="1" flexShrink={0}>
-              <H3>搜索匹配</H3>
-              <Paragraph size="sm" color="color-10">
-                选择与当前播放一致的歌曲版本{np && np.duration > 0 ? ` · 当前时长 ${formatTime(np.duration)}` : ''}
-              </Paragraph>
-            </YStack>
-            <XStack render={<form onSubmit={search} />} gap="2" alignItems="center" flexShrink={0}>
-              <Input
-                flex={1}
-                minWidth={0}
-                size="md"
-                aria-label="搜索歌名或歌手"
-                value={query}
-                onChangeText={setQuery}
-                placeholder="搜索歌名、歌手"
+              </PanelContent>
+
+              <PanelFooter style={PANEL_FOOTER_STYLE}>
+                <PlaybackControls
+                  key={`${currentKey}:${np?.packageName || ''}`}
+                  snapshot={snapshot}
+                  full={full}
+                  totalComments={totalComments}
+                  visibleComments={visibleComments}
+                  loadingMore={loadingMore}
+                  lyricSongs={lyricSongs}
+                  lyricKey={lyricKey}
+                  lyricSongId={lyricSong?.songId}
+                  onError={fail}
+                  onToggleFull={toggleFull}
+                  onOpenManualMatch={openManualMatch}
+                  onSelectLyric={selectLyric}
+                />
+              </PanelFooter>
+            </Panel>
+          )}
+
+          {tab === 'search' && (
+            <Suspense fallback={TAB_FALLBACK}>
+              <SearchView
+                nowPlaying={np}
+                currentKey={currentKey}
+                selectedSongs={selectedSongs}
+                onSelectSongs={selectSongs}
+                onClearSelection={clearSelection}
+                onApplied={returnToDanmaku}
+                onClearError={clearError}
+                onError={fail}
+                autoSearch={autoSearch}
               />
-              <Button type="submit" flexShrink={0} theme="accent" disabled={searching || !query.trim()}>
-                {searching ? '搜索中' : '搜索'}
-              </Button>
-            </XStack>
-            <XStack gap="2" alignItems="center" flexWrap="wrap" flexShrink={0}>
-              <Paragraph size="sm" flex={1}>
-                勾选多首可合并弹幕 · 已选 {selectedSongs.length} 首
-              </Paragraph>
-              <Button size="sm" disabled={!selectedSongs.length || busy} onPress={() => setSelectedSongs([])}>
-                清空
-              </Button>
-              <Button
-                size="sm"
-                theme="accent"
-                disabled={!np || busy || !selectedSongs.length}
-                onPress={() => void mergeMatches()}
-              >
-                应用选择
-              </Button>
-            </XStack>
-            <YStack flex={1} minHeight={0} gap="3" overflowY="auto" paddingBottom="2">
-              {searching && (
-                <Paragraph role="status" textAlign="center" padding="6">
-                  正在搜索歌曲版本…
-                </Paragraph>
-              )}
-              {!searching && (
-                <SearchResults
-                  songs={results}
-                  selectedSongs={selectedSongs}
-                  onSelect={selectSongs}
-                  commentCounts={commentCounts}
-                  playingDuration={np?.duration || 0}
-                  disabled={!np || busy}
-                />
-              )}
-              {!searching && !searched && (
-                <Paragraph textAlign="center" color="color-10" padding="6">
-                  输入歌名或歌手，查找这首歌的评论
-                </Paragraph>
-              )}
-              {!searching && searched && !results.length && (
-                <YStack padding="6" gap="3" alignItems="center">
-                  <Paragraph textAlign="center">没有找到歌曲，试试更短的关键词</Paragraph>
-                </YStack>
-              )}
-            </YStack>
-          </YStack>
-        )}
-        {tab === 'settings' && (
-          <YStack gap="7" paddingBottom="4" flexShrink={0}>
-            <YStack gap="1" flexShrink={0}>
-              <H3>设置</H3>
-              <Paragraph size="sm" color="color-10">
-                调整弹幕外观与跨应用显示
-              </Paragraph>
-            </YStack>
-            <YStack render="section" aria-labelledby="permissions-title" gap="3">
-              <H3 id="permissions-title" fontSize="sm" color="color-10" paddingHorizontal="1">
-                权限设置
-              </H3>
-              <Card padding="4" gap="4" borderRadius="6" borderWidth={1} borderColor="border-color">
-                <XStack gap="3" minHeight={44} flexWrap="wrap" alignItems="center" justifyContent="space-between">
-                  <Paragraph flex={1}>播放信息权限</Paragraph>
-                  <Text fontSize="xs" color="color-10">
-                    {snapshot?.permissionGranted ? '已授权' : '未授权'}
-                  </Text>
-                  <Button size="sm" onPress={() => void invoke('plugin:media|open_permission_settings').catch(fail)}>
-                    管理
-                  </Button>
-                </XStack>
-                <Separator />
-                <YStack gap="3">
-                  <XStack gap="3" minHeight={44} alignItems="center">
-                    <Paragraph flex={1}>跨应用悬浮弹幕</Paragraph>
-                    <Switch
-                      transition="quickerLessBouncy"
-                      size="sm"
-                      aria-label="跨应用悬浮弹幕"
-                      checked={overlay.running}
-                      disabled={busy || !overlay.supported}
-                      onCheckedChange={() => void toggleOverlay()}
-                    >
-                      <Switch.Thumb transition="quickLessBouncy" />
-                    </Switch>
-                  </XStack>
-                  {!overlay.granted && (
-                    <Button size="sm" variant="quiet" alignSelf="flex-start" onPress={() => void toggleOverlay()}>
-                      允许显示在其他应用上层
-                    </Button>
-                  )}
-                </YStack>
-              </Card>
-            </YStack>
-            <YStack render="section" aria-labelledby="comments-title" gap="3">
-              <H3 id="comments-title" fontSize="sm" color="color-10" paddingHorizontal="1">
-                评论更新与显示
-              </H3>
-              <Card padding="4" gap="3" borderRadius="6" borderWidth={1} borderColor="border-color">
-                <SettingSlider
-                  id="comment-refresh-percent"
-                  label="评论增长后重新抓取"
-                  value={cfg.commentRefreshPercent}
-                  min={1}
-                  max={100}
-                  unit="%"
-                  onChange={(v) => change({ commentRefreshPercent: v })}
-                />
-                <Paragraph size="sm" color="color-10">
-                  默认增长 10% 后更新。仅在打开或切换歌曲时检查总评论数，未达到阈值时继续使用本地缓存。
-                </Paragraph>
-                <Separator />
-                <Label htmlFor="comment-limit">合并后的弹幕显示上限</Label>
-                <Input
-                  id="comment-limit"
-                  aria-label="合并后的弹幕显示上限"
-                  inputMode="numeric"
-                  placeholder="不限，显示全部合并弹幕"
-                  value={commentLimitDraft}
-                  onChangeText={setCommentLimitDraft}
-                />
-                <Button
-                  size="sm"
-                  alignSelf="flex-start"
-                  onPress={() => {
-                    const value = commentLimitDraft.trim();
-                    if (!value) {
-                      change({ commentLimit: null });
-                      return;
-                    }
-                    const limit = Number(value);
-                    if (!/^\d+$/.test(value) || !Number.isSafeInteger(limit) || limit < 1 || limit > 4294967295) {
-                      fail('请输入有效的正整数，或留空表示不限');
-                      return;
-                    }
-                    change({ commentLimit: limit });
-                  }}
+            </Suspense>
+          )}
+
+          {tab === 'settings' && (
+            <Suspense fallback={TAB_FALLBACK}>
+              <SettingsView
+                permissionGranted={Boolean(snapshot?.permissionGranted)}
+                cfg={cfg}
+                overlay={overlay}
+                onSetOverlay={setOverlay}
+                onChange={change}
+                onClearError={clearError}
+                onError={fail}
+              />
+            </Suspense>
+          )}
+        </main>
+
+        {!full && (
+          <nav aria-label="主导航" className="w-full shrink-0 px-4 pt-1 pb-3">
+            <div className="mx-auto w-full max-w-[850px]">
+              <PresetTabsList className="grid w-full grid-cols-3">
+                <PresetTabsTab value="danmaku" className="w-full">
+                  <MessagesSquare />
+                  弹幕
+                </PresetTabsTab>
+                <PresetTabsTab
+                  value="search"
+                  className="w-full"
+                  onPointerEnter={() => void loadSearchView()}
+                  onFocus={() => void loadSearchView()}
                 >
-                  保存显示上限
-                </Button>
-                <Paragraph size="sm" color="color-10">
-                  后台始终全量抓取，每新增 1000
-                  条更新弹幕。合并后的一组算一条，留空则全部显示；设置上限后优先显示高赞弹幕。修改显示上限无需重新抓取。
-                </Paragraph>
-              </Card>
-            </YStack>
-            <YStack render="section" aria-labelledby="playback-settings-title" gap="3">
-              <H3 id="playback-settings-title" fontSize="sm" color="color-10" paddingHorizontal="1">
-                播放设置
-              </H3>
-              <Card padding="4" gap="3" borderRadius="6" borderWidth={1} borderColor="border-color">
-                <XStack gap="3" minHeight={44} alignItems="center">
-                  <Label htmlFor="keep-screen-on-fullscreen" flex={1}>
-                    全屏时保持屏幕常亮
-                  </Label>
-                  <Switch
-                    id="keep-screen-on-fullscreen"
-                    size="sm"
-                    aria-label="全屏时保持屏幕常亮"
-                    transition={media.reduceMotion ? undefined : 'quickerLessBouncy'}
-                    checked={cfg.keepScreenOnFullscreen}
-                    onCheckedChange={(value) => change({ keepScreenOnFullscreen: value })}
-                  >
-                    <Switch.Thumb transition={media.reduceMotion ? undefined : 'quickLessBouncy'} />
-                  </Switch>
-                </XStack>
-                <Paragraph size="sm" color="color-10">
-                  开启后，全屏播放时屏幕保持常亮；退出全屏或切到后台后，按系统设置息屏。
-                </Paragraph>
-              </Card>
-            </YStack>
-            <YStack render="section" aria-labelledby="appearance-title" gap="3">
-              <H3 id="appearance-title" fontSize="sm" color="color-10" paddingHorizontal="1">
-                弹幕外观
-              </H3>
-              <Card padding="4" gap="5" borderRadius="6" borderWidth={1} borderColor="border-color">
-                <SettingSlider
-                  id="font-size"
-                  label="字号"
-                  value={cfg.fontSize}
-                  min={12}
-                  max={32}
-                  unit="px"
-                  onChange={(v) => change({ fontSize: v })}
-                />
-                <Separator />
-                <SettingSlider
-                  id="opacity"
-                  label="不透明度"
-                  value={Math.round(cfg.opacity * 100)}
-                  min={20}
-                  max={80}
-                  unit="%"
-                  onChange={(v) => change({ opacity: v / 100 })}
-                />
-                <Separator />
-                <XStack gap="3" minHeight={44} alignItems="center">
-                  <Label htmlFor="pin-long-comments" flex={1}>
-                    长评驻留顶部
-                  </Label>
-                  <Switch
-                    id="pin-long-comments"
-                    size="sm"
-                    aria-label="长评驻留顶部"
-                    transition={media.reduceMotion ? undefined : 'quickerLessBouncy'}
-                    checked={cfg.pinLongComments}
-                    onCheckedChange={(value) => change({ pinLongComments: value })}
-                  >
-                    <Switch.Thumb transition={media.reduceMotion ? undefined : 'quickLessBouncy'} />
-                  </Switch>
-                </XStack>
-                <Paragraph size="sm" color="color-10">
-                  来不及读完的长评不再快速穿屏，改为在顶部或底部居中停留数秒后淡出，不遮挡当前歌词；是否驻留由穿屏速度和评论长度自动判定。
-                </Paragraph>
-                <Paragraph size="sm" color="color-10">
-                  轨道数量与穿屏速度随屏幕和评论量自动调整，允许弹幕重叠。
-                </Paragraph>
-              </Card>
-            </YStack>
-            <YStack render="section" aria-labelledby="version-title" gap="3">
-              <H3 id="version-title" fontSize="sm" color="color-10" paddingHorizontal="1">
-                版本与更新
-              </H3>
-              <VersionSection />
-            </YStack>
-          </YStack>
+                  <Search />
+                  搜索匹配
+                </PresetTabsTab>
+                <PresetTabsTab
+                  value="settings"
+                  className="w-full"
+                  onPointerEnter={() => void loadSettingsView()}
+                  onFocus={() => void loadSettingsView()}
+                >
+                  <SettingsIcon />
+                  设置
+                </PresetTabsTab>
+              </PresetTabsList>
+            </div>
+          </nav>
         )}
-      </YStack>
-      {!full && (
-        <YStack flexShrink={0}>
-          <Separator />
-          <XStack
-            render="nav"
-            aria-label="主导航"
-            width="100%"
-            maxWidth={850}
-            alignSelf="center"
-            paddingHorizontal="4"
-            paddingVertical="2"
-            gap="2"
-            justifyContent="center"
-          >
-            {[
-              { id: 'danmaku', label: '弹幕', icon: MessagesSquare },
-              { id: 'search', label: '搜索匹配', icon: Search },
-              { id: 'settings', label: '设置', icon: SettingsIcon },
-            ].map(({ id, label, icon: Icon }) => (
-              <Button
-                key={id}
-                size="sm"
-                minHeight={44}
-                minWidth={0}
-                paddingHorizontal="2"
-                gap="2"
-                flex={1}
-                icon={<Icon size={18} />}
-                theme={tab === id ? 'accent' : undefined}
-                backgroundColor={tab === id ? 'background' : 'transparent'}
-                borderColor={tab === id ? 'border-color' : 'transparent'}
-                transition={media.reduceMotion ? undefined : 'quickLessBouncy'}
-                aria-current={tab === id ? 'page' : undefined}
-                onPress={() => {
-                  setTab(id);
-                  void invoke('plugin:media|haptic_feedback', { kind: 'tick' }).catch(() => {});
-                }}
-              >
-                {label}
-              </Button>
-            ))}
-          </XStack>
-        </YStack>
-      )}
-    </YStack>
-  );
-}
-
-function LyricsSourceDialog({
-  songs,
-  selectedId,
-  onSelect,
-}: {
-  songs: Song[];
-  selectedId?: number;
-  onSelect: (id: number) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <Dialog modal open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger asChild>
-        <Button size="sm" flexShrink={0}>
-          歌词来源
-        </Button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay backgroundColor="background" opacity={0.7} />
-        <Dialog.Content
-          width="90%"
-          maxWidth={480}
-          maxHeight="80%"
-          padding="4"
-          gap="3"
-          borderRadius="6"
-          borderWidth={1}
-          borderColor="border-color"
-          backgroundColor="background"
-        >
-          <Dialog.Title fontSize="lg" fontWeight="700">
-            选择歌词来源
-          </Dialog.Title>
-          <Dialog.Description color="color-10" fontSize="sm">
-            从已合并评论的歌曲中选择背景歌词，弹幕保持合并显示。
-          </Dialog.Description>
-          <YStack minHeight={0} flexShrink={1} overflowY="auto" gap="2">
-            {songs.map((song) => (
-              <Button
-                key={song.songId}
-                height="auto"
-                minHeight={64}
-                padding="3"
-                flexShrink={0}
-                theme={selectedId === song.songId ? 'accent' : undefined}
-                aria-pressed={selectedId === song.songId}
-                onPress={() => {
-                  onSelect(song.songId);
-                  setOpen(false);
-                }}
-              >
-                <YStack flex={1} minWidth={0} gap="1">
-                  <Text fontWeight="600" numberOfLines={2}>
-                    {song.name} · {song.artists}
-                  </Text>
-                  <Text fontSize="xs" numberOfLines={2}>
-                    {song.album} · {formatTime(song.duration)}
-                  </Text>
-                </YStack>
-                {selectedId === song.songId && (
-                  <Text fontSize="xs" flexShrink={0}>
-                    使用中
-                  </Text>
-                )}
-              </Button>
-            ))}
-          </YStack>
-          <Dialog.Close asChild>
-            <Button size="sm" alignSelf="flex-end">
-              取消
-            </Button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog>
-  );
-}
-
-const SearchResults = memo(function SearchResults({
-  songs,
-  selectedSongs,
-  onSelect,
-  commentCounts,
-  playingDuration,
-  disabled,
-}: {
-  songs: Song[];
-  selectedSongs: Song[];
-  onSelect: (songs: Song[], selected: boolean) => void;
-  commentCounts: Record<number, number | null>;
-  playingDuration: number;
-  disabled: boolean;
-}) {
-  const selected = new Set(selectedSongs.map((song) => song.songId));
-  // Keep selected versions visible when a later search does not include them.
-  const visibleSongs = [
-    ...selectedSongs.filter((song) => !songs.some((result) => result.songId === song.songId)),
-    ...songs,
-  ];
-  return visibleSongs.map((song) => (
-    <Card
-      key={song.songId}
-      data-song-id={song.songId}
-      padding="4"
-      borderRadius="6"
-      borderWidth={1}
-      borderColor={selected.has(song.songId) ? 'color-6' : 'border-color'}
-      flexShrink={0}
-    >
-      <XStack alignItems="center" gap="3">
-        <Checkbox
-          width={44}
-          height={44}
-          padding="0"
-          flexShrink={0}
-          borderWidth={0}
-          borderRadius="4"
-          backgroundColor="transparent hover:background-hover"
-          aria-label={`选择 ${song.name} · ${song.album}`}
-          checked={selected.has(song.songId)}
-          disabled={disabled}
-          onCheckedChange={(checked) => onSelect([song], checked === true)}
-        >
-          <YStack
-            width={20}
-            height={20}
-            borderRadius={6}
-            borderWidth={1}
-            pointerEvents="none"
-            alignItems="center"
-            justifyContent="center"
-            backgroundColor={selected.has(song.songId) ? 'accent-background' : 'background'}
-            borderColor={selected.has(song.songId) ? 'accent-background' : 'color-6'}
-          >
-            <Checkbox.Indicator>
-              <Text fontSize={12} lineHeight={16} fontWeight="700" color="accent-color">
-                ✓
-              </Text>
-            </Checkbox.Indicator>
-          </YStack>
-        </Checkbox>
-        <YStack flex={1} minWidth={0} gap="1">
-          <Paragraph fontWeight="600" numberOfLines={2}>
-            {song.name}
-          </Paragraph>
-          <Text fontSize="sm" color="color-10" numberOfLines={1}>
-            {song.artists}
-          </Text>
-          <Text fontSize="xs" color="color-10" numberOfLines={1}>
-            {song.album}
-          </Text>
-          <XStack gap="2" flexWrap="wrap" alignItems="center">
-            <Text fontSize="xs" color="color-10">
-              {song.duration > 0 ? formatTime(song.duration) : '时长未知'}
-            </Text>
-            {durationsMatch(song.duration, playingDuration) && (
-              <Text fontSize="xs" theme="accent" color="color">
-                时长一致
-              </Text>
-            )}
-            <Text fontSize="xs" color="color-10">
-              {commentCounts[song.songId] === undefined
-                ? '评论数加载中…'
-                : commentCounts[song.songId] === null
-                  ? '评论数暂不可用'
-                  : `${commentCounts[song.songId]!.toLocaleString()} 条评论`}
-            </Text>
-          </XStack>
-        </YStack>
-      </XStack>
-    </Card>
-  ));
-});
-
-function SettingSlider({
-  id,
-  label,
-  value,
-  min,
-  max,
-  unit,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  unit: string;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <YStack gap="3">
-      <XStack alignItems="center" justifyContent="space-between">
-        <Label id={`${id}-label`} htmlFor={id}>
-          {label}
-        </Label>
-        <Text fontSize="sm">
-          {value} {unit}
-        </Text>
-      </XStack>
-      <Slider
-        id={id}
-        aria-labelledby={`${id}-label`}
-        value={[value]}
-        min={min}
-        max={max}
-        step={1}
-        onValueChange={([next]) => onChange(next)}
-      >
-        <Slider.Track>
-          <Slider.TrackActive />
-        </Slider.Track>
-        <Slider.Thumb index={0} aria-label={label} />
-      </Slider>
-    </YStack>
-  );
-}
-
-/** Release 说明（已按发布规范裁剪）渲染为设置页段落 */
-function ReleaseNotes({ label, release }: { label: string; release?: ReleaseInfo | null }) {
-  if (!release?.notes) return null;
-  const blocks = parseReleaseNotes(release.notes);
-  if (!blocks.length) return null;
-  return (
-    <YStack gap="2">
-      <Paragraph size="sm" fontWeight="700">
-        {label}
-      </Paragraph>
-      {blocks.map((block, index) =>
-        block.kind === 'heading' ? (
-          <Paragraph key={index} size="sm" fontWeight="600" paddingTop={index ? '1' : undefined}>
-            {block.text}
-          </Paragraph>
-        ) : block.kind === 'item' ? (
-          <XStack key={index} gap="2" alignItems="flex-start">
-            <Text fontSize="sm" color="color-10">
-              ·
-            </Text>
-            <Paragraph size="sm" flex={1}>
-              {block.text}
-            </Paragraph>
-          </XStack>
-        ) : (
-          <Paragraph key={index} size="sm" color="color-10">
-            {block.text}
-          </Paragraph>
-        ),
-      )}
-    </YStack>
-  );
-}
-
-/** 设置页“版本与更新”：当前版本号、检查更新、应用内下载安装、本版本的更新内容 */
-function VersionSection() {
-  const [status, setStatus] = useState<UpdateStatus | null>(updateCache);
-  const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>(updateCache ? 'ready' : 'loading');
-  const [checkError, setCheckError] = useState('');
-  const [updateError, setUpdateError] = useState('');
-  const [busy, setBusy] = useState<'download' | 'install' | null>(null);
-  const [progress, setProgress] = useState<number | null>(null);
-  const [installerOpened, setInstallerOpened] = useState(false);
-  const [needsPermission, setNeedsPermission] = useState(false);
-  const check = useCallback(async () => {
-    setPhase('loading');
-    setCheckError('');
-    setUpdateError('');
-    try {
-      const next = await invoke('check_update');
-      updateCache = next;
-      setStatus(next);
-      setPhase('ready');
-    } catch (e) {
-      setCheckError(e instanceof Error ? e.message : String(e));
-      setPhase('error');
-    }
-  }, []);
-  useEffect(() => {
-    if (!updateCache) void check();
-  }, [check]);
-  // 下载进度由 Rust 侧边写边算 SHA-256 时发出，total 未知时只显示不定进度。
-  useEffect(() => {
-    let stop: (() => void) | null = null;
-    let cancelled = false;
-    void listen<DownloadProgress>('update://progress', (payload) => {
-      setProgress(payload.total > 0 ? Math.min(1, payload.received / payload.total) : null);
-    }).then((unlisten) => {
-      if (cancelled) unlisten();
-      else stop = unlisten;
-    });
-    return () => {
-      cancelled = true;
-      stop?.();
-    };
-  }, []);
-  const latest = status?.latest ?? null;
-  const hasUpdate = !!status && !!latest && compareVersions(status.currentVersion, latest.version) < 0;
-  const openUrl = async (url: string) => {
-    setUpdateError('');
-    try {
-      await invoke('plugin:media|open_url', { url });
-    } catch (e) {
-      setUpdateError(e instanceof Error ? e.message : String(e));
-    }
-  };
-  const openInstallPermission = async () => {
-    setUpdateError('');
-    try {
-      await invoke('plugin:media|open_install_permission_settings');
-    } catch (e) {
-      setUpdateError(e instanceof Error ? e.message : String(e));
-    }
-  };
-  /** 应用内下载 → SHA-256 校验 → 交给系统安装器 */
-  const installUpdate = async () => {
-    if (!latest?.apkUrl) return;
-    if (!latest.sha256) {
-      setUpdateError('该版本未提供 SHA-256 校验值，请到发布页手动下载');
-      return;
-    }
-    setUpdateError('');
-    setInstallerOpened(false);
-    try {
-      const permission = await invoke('plugin:media|install_permission');
-      if (!permission.supported) {
-        setUpdateError('当前平台不支持应用内安装');
-        return;
-      }
-      if (!permission.granted) {
-        setNeedsPermission(true);
-        await openInstallPermission();
-        setUpdateError('请在系统设置中允许 MusicDan 安装应用，然后返回重试');
-        return;
-      }
-      setNeedsPermission(false);
-      setBusy('download');
-      setProgress(0);
-      const file = await invoke('download_update', { url: latest.apkUrl, sha256: latest.sha256 });
-      setBusy('install');
-      await invoke('plugin:media|install_apk', { path: file.path });
-      setInstallerOpened(true);
-    } catch (e) {
-      setUpdateError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(null);
-      setProgress(null);
-    }
-  };
-  const percent = progress === null ? null : Math.round(progress * 100);
-  return (
-    <Card padding="4" gap="3" borderRadius="6" borderWidth={1} borderColor="border-color">
-      <XStack gap="3" minHeight={44} alignItems="center" justifyContent="space-between">
-        <Paragraph flex={1}>当前版本</Paragraph>
-        <Text fontSize="xs" color="color-10">
-          {status ? `v${status.currentVersion}` : '…'}
-        </Text>
-        <Button size="sm" disabled={phase === 'loading'} onPress={() => void check()}>
-          {phase === 'loading' ? '检查中…' : '检查更新'}
-        </Button>
-      </XStack>
-      {phase === 'error' && (
-        <YStack gap="2">
-          <Paragraph size="sm" color="color-10">
-            检查更新失败：{checkError}
-          </Paragraph>
-          <Button size="sm" variant="quiet" alignSelf="flex-start" onPress={() => void openUrl(DOWNLOAD_PAGE)}>
-            打开下载页
-          </Button>
-        </YStack>
-      )}
-      {phase === 'ready' && hasUpdate && latest && (
-        <YStack gap="2">
-          <XStack gap="3" minHeight={44} alignItems="center" justifyContent="space-between">
-            <Paragraph flex={1} fontWeight="600">
-              发现新版本 v{latest.version}
-            </Paragraph>
-            <Button size="sm" theme="accent" disabled={!!busy} onPress={() => void installUpdate()}>
-              {busy === 'download'
-                ? '下载中…'
-                : busy === 'install'
-                  ? '安装中…'
-                  : installerOpened
-                    ? '再次安装'
-                    : '下载并安装'}
-            </Button>
-          </XStack>
-          {busy === 'download' && (
-            <YStack gap="2">
-              <Progress
-                value={(progress ?? 0) * 100}
-                max={100}
-                width="100%"
-                height={6}
-                borderRadius="3"
-                overflow="hidden"
-                backgroundColor="color-3"
-              >
-                <ProgressIndicator backgroundColor="accent-background" />
-              </Progress>
-              <Paragraph size="sm" color="color-10">
-                {percent === null ? '正在下载并校验安装包…' : `正在下载并校验安装包 ${percent}%`}
-              </Paragraph>
-            </YStack>
-          )}
-          {installerOpened && (
-            <Paragraph size="sm" color="color-10">
-              安装包已通过 SHA-256 校验，请在系统安装器中确认安装。
-            </Paragraph>
-          )}
-          {needsPermission && (
-            <Button size="sm" variant="quiet" alignSelf="flex-start" onPress={() => void openInstallPermission()}>
-              打开安装授权设置
-            </Button>
-          )}
-          {updateError && (
-            <Paragraph size="sm" color="color-10">
-              {updateError}
-            </Paragraph>
-          )}
-        </YStack>
-      )}
-      {phase === 'ready' && latest && !hasUpdate && (
-        <Paragraph size="sm" color="color-10">
-          已是最新版本
-        </Paragraph>
-      )}
-      {phase === 'ready' && !latest && (
-        <Paragraph size="sm" color="color-10">
-          暂时无法获取更新信息
-        </Paragraph>
-      )}
-      {updateError && phase !== 'ready' && (
-        <Paragraph size="sm" color="color-10">
-          操作失败：{updateError}
-        </Paragraph>
-      )}
-      <Separator />
-      {status?.currentRelease ? (
-        <ReleaseNotes label={`v${status.currentVersion} 更新内容`} release={status.currentRelease} />
-      ) : (
-        <Paragraph size="sm" color="color-10">
-          暂无本版本的更新说明
-        </Paragraph>
-      )}
-      {phase === 'ready' && hasUpdate && latest && (
-        <ReleaseNotes label={`v${latest.version} 更新内容`} release={latest} />
-      )}
-    </Card>
+      </PresetTabs>
+    </div>
   );
 }
 
 createRoot(document.getElementById('root')!).render(
-  <TamaguiProvider config={tamaguiConfig} defaultTheme="dark">
+  <BevelFeedback haptics>
     <App />
-  </TamaguiProvider>,
+  </BevelFeedback>,
 );

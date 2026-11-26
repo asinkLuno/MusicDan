@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MusicDan — 复古真空管图标探索（6 套方案）</title>
+    <style>
+      :root {
+        --bg: #080604;
+        --panel: #110d09;
+        --border: #2a2013;
+        --text: #e8dcc5;
+        --muted: #98866c;
+        --amber: #ff951a;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: 'Figtree Variable', 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        padding: 40px 28px 56px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+      header {
+        text-align: center;
+        margin-bottom: 36px;
+      }
+      header .kicker {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        letter-spacing: 0.2em;
+        color: var(--amber);
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+      header h1 {
+        font-size: 32px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        margin-bottom: 8px;
+      }
+      header p {
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 22px;
+      }
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 600px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px 22px 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        transition: transform 0.25s ease, border-color 0.25s ease;
+      }
+      .card:hover {
+        transform: translateY(-3px);
+        border-color: #5b4120;
+      }
+      .stage {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        padding: 18px 12px;
+        background: #070503;
+        border: 1px solid #1e160d;
+        border-radius: 12px;
+      }
+      .hero-icon {
+        width: 120px;
+        height: 120px;
+        filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.7));
+      }
+      .sizes {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+      .size-row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+      .size-row span {
+        font-family: ui-monospace, monospace;
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .meta {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .meta .num {
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        color: var(--amber);
+        text-transform: uppercase;
+      }
+      .meta h2 {
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .meta p {
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="kicker">MusicDan · App Icon Exploration</div>
+        <h1>复古真空管 / 胆机硬件风格图标候选</h1>
+        <p>适配暗暖黑金胆机界面（#040302 / 黄铜金 / 琥珀辉光 #ff8800），兼顾 16px Favicon 到 512px 桌面图标清晰度</p>
+      </header>
+      <div class="grid">
+        <article class="card">
+          <div class="stage">
+            <img class="hero-icon" src="./01-triode-note.svg" alt="01 灯丝音符" />
+            <div class="sizes">
+              <div class="size-row">
+                <img src="./01-triode-note.svg" width="44" height="44" alt="" />
+                <span>44px</span>
+              </div>
+              <div class="size-row">
+                <img src="./01-triode-note.svg" width="20" height="20" alt="" />
+                <span>20px</span>
+              </div>
+            </div>
+          </div>
+          <div class="meta">
+            <div class="num">01 · Triode Note</div>
+            <h2>灯丝音符</h2>
+            <p>黄铜描边真空管玻璃罩与底座三脚，内部炽热琥珀灯丝直接弯折成一枚发光八分音符，一眼辨识「真空管 + 音乐」。</p>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="stage">
+            <img class="hero-icon" src="./02-scanline-note.svg" alt="02 扫描弹幕音符" />
+            <div class="sizes">
+              <div class="size-row">
+                <img src="./02-scanline-note.svg" width="44" height="44" alt="" />
+                <span>44px</span>
+              </div>
+              <div class="size-row">
+                <img src="./02-scanline-note.svg" width="20" height="20" alt="" />
+                <span>20px</span>
+              </div>
+            </div>
+          </div>
+          <div class="meta">
+            <div class="num">02 · Scanline Danmaku</div>
+            <h2>扫描弹幕音符</h2>
+            <p>延续「弹幕组成音符」的品牌基因，提炼为 7 条高对比 CRT 扫描线胶囊与右侧流动残影，小尺寸下依旧犀利。</p>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="stage">
+            <img class="hero-icon" src="./03-brass-dial.svg" alt="03 胆机指针盘" />
+            <div class="sizes">
+              <div class="size-row">
+                <img src="./03-brass-dial.svg" width="44" height="44" alt="" />
+                <span>44px</span>
+              </div>
+              <div class="size-row">
+                <img src="./03-brass-dial.svg" width="20" height="20" alt="" />
+                <span>20px</span>
+              </div>
+            </div>
+          </div>
+          <div class="meta">
+            <div class="num">03 · Brass Tuning Dial</div>
+            <h2>胆机指针盘</h2>
+            <p>与新界面核心黄铜进度旋钮直接呼应：270° 刻度黄铜表圈、琥珀指针与斜椭圆音符中轴，底部点缀弹幕双横条。</p>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="stage">
+            <img class="hero-icon" src="./04-crt-oscilloscope.svg" alt="04 示波器声波屏" />
+            <div class="sizes">
+              <div class="size-row">
+                <img src="./04-crt-oscilloscope.svg" width="44" height="44" alt="" />
+                <span>44px</span>
+              </div>
+              <div class="size-row">
+                <img src="./04-crt-oscilloscope.svg" width="20" height="20" alt="" />
+                <span>20px</span>
+              </div>
+            </div>
+          </div>
+          <div class="meta">
+            <div class="num">04 · CRT Oscilloscope</div>
+            <h2>示波器声波屏</h2>
+            <p>复刻应用切角 CRT 终端框与扫描线底纹，中央一条发光琥珀示波波形折出首字母 M，上下漂浮两条弹幕光带。</p>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="stage">
+            <img class="hero-icon" src="./05-vfd-matrix.svg" alt="05 VFD 荧光点阵" />
+            <div class="sizes">
+              <div class="size-row">
+                <img src="./05-vfd-matrix.svg" width="44" height="44" alt="" />
+                <span>44px</span>
+              </div>
+              <div class="size-row">
+                <img src="./05-vfd-matrix.svg" width="20" height="20" alt="" />
+                <span>20px</span>
+              </div>
+            </div>
+          </div>
+          <div class="meta">
+            <div class="num">05 · VFD Dot-Matrix</div>
+            <h2>VFD 荧光点阵</h2>
+            <p>5×5 复古荧光屏格栅中点亮暖白至琥珀色块构成音符与飘过亮点，还原老式音响 VFD 频谱的工业秩序感。</p>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="stage">
+            <img class="hero-icon" src="./06-knurled-broadcast.svg" alt="06 滚花旋钮电波" />
+            <div class="sizes">
+              <div class="size-row">
+                <img src="./06-knurled-broadcast.svg" width="44" height="44" alt="" />
+                <span>44px</span>
+              </div>
+              <div class="size-row">
+                <img src="./06-knurled-broadcast.svg" width="20" height="20" alt="" />
+                <span>20px</span>
+              </div>
+            </div>
+          </div>
+          <div class="meta">
+            <div class="num">06 · Knurled Broadcast</div>
+            <h2>滚花旋钮电波</h2>
+            <p>左下角滚花黄铜旋钮作为视觉重心，琥珀指针斜指右上并辐射出三道弹幕电波弧，非对称构图极具辨识度。</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,9 +1,8 @@
-import { View, useTheme } from 'tamagui';
 import { memo, useEffect, useRef, useState } from 'react';
 import type { Settings, Snapshot, Comment } from './types';
 import { commentFontSize, makePlan, pinDurationMs, visibleRange } from './plan';
 import { getEmoteImage, parseSegments, removeEmoteListener, type Segment } from './emotes';
-import { danmakuEffects } from './tamagui.config';
+import { APP_FONT_FAMILY, danmakuEffects } from './theme';
 import { PlaybackClock } from './playbackClock';
 
 type SpriteLine = { segs: Segment[]; widths: number[]; width: number };
@@ -31,46 +30,66 @@ export const Danmaku = memo(function Danmaku({
   snapshot: Snapshot | null;
   settings: Settings;
 }) {
-  const theme = useTheme();
-  // Canvas cannot resolve the CSS variable returned by .get(); use the literal color.
-  const textColor = theme.color.val;
+  const textColor = danmakuEffects.textColor;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const clock = useRef(new PlaybackClock());
   const playing = snapshot?.nowPlaying?.isPlaying ?? false;
+  const playingRef = useRef(playing);
   const opacity = useRef(settings.opacity);
   opacity.current = settings.opacity;
+  const commentsRef = useRef<Comment[]>(snapshot?.comments || []);
+  commentsRef.current = snapshot?.comments || [];
   const wake = useRef<(() => void) | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
+  const width = size.width;
+  const height = size.height;
+
   useEffect(() => {
     clock.current.update(snapshot, performance.now(), Date.now());
     wake.current?.();
   }, [snapshot]);
+
+  useEffect(() => {
+    playingRef.current = playing;
+    wake.current?.();
+  }, [playing]);
+
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      setSize((previous) => (previous.width === width && previous.height === height ? previous : { width, height }));
+      const nextWidth = entry.contentRect.width;
+      const nextHeight = entry.contentRect.height;
+      setSize((previous) =>
+        previous.width === nextWidth && previous.height === nextHeight
+          ? previous
+          : { width: nextWidth, height: nextHeight },
+      );
     });
     observer.observe(canvasRef.current!);
     return () => observer.disconnect();
   }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current!;
-    if (!size.width || !size.height) return;
+    if (!width || !height) return;
     const drawingContext = canvas.getContext('2d');
     if (!drawingContext) return;
     const context = drawingContext;
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.round(size.width * dpr);
-    canvas.height = Math.round(size.height * dpr);
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
     context.scale(dpr, dpr);
-    const height = size.height;
     const duration = snapshot?.nowPlaying?.duration || snapshot?.song?.duration || 240000;
     const { list, lanes, spacing, crossing, pinned } = makePlan(
-      snapshot?.comments || [],
+      commentsRef.current,
       duration,
       height,
-      settings,
-      size.width,
+      {
+        ...settings,
+        fontSize: settings.fontSize,
+        commentLimit: settings.commentLimit,
+        pinLongComments: settings.pinLongComments,
+      },
+      width,
     );
     // Dense screens need many cached tiles; bound their resolution and memory.
     const concurrent = (list.length * crossing) / Math.max(1, duration);
@@ -89,10 +108,10 @@ export const Danmaku = memo(function Danmaku({
         lines.push(line);
         return line;
       };
-      const push = (line: SpriteLine, seg: Segment, width: number) => {
+      const push = (line: SpriteLine, seg: Segment, segWidth: number) => {
         line.segs.push(seg);
-        line.widths.push(width);
-        line.width += width;
+        line.widths.push(segWidth);
+        line.width += segWidth;
       };
       for (const [index, seg] of segs.entries()) {
         let line = lines[lines.length - 1];
@@ -113,9 +132,9 @@ export const Danmaku = memo(function Danmaku({
           }
           if (text) push(line, { type: 'text', text }, measured);
         } else {
-          const width = widths[index];
-          if (line.width > 0 && line.width + width > maxWidth) line = newLine();
-          push(line, seg, width);
+          const segWidth = widths[index];
+          if (line.width > 0 && line.width + segWidth > maxWidth) line = newLine();
+          push(line, seg, segWidth);
         }
       }
       return lines;
@@ -124,8 +143,8 @@ export const Danmaku = memo(function Danmaku({
     function makeSprite(comment: Comment, maxWidth?: number, pageIndex = 0): Sprite {
       const fontSize = commentFontSize(settings.fontSize, comment.occurrences);
       const lineHeight = Math.round(fontSize * 1.3);
-      const font = `500 ${fontSize}px system-ui, sans-serif`;
-      const badgeFont = `600 ${Math.round(fontSize * 0.65)}px system-ui, sans-serif`;
+      const font = `500 ${fontSize}px ${APP_FONT_FAMILY}`;
+      const badgeFont = `600 ${Math.round(fontSize * 0.65)}px ${APP_FONT_FAMILY}`;
       const emoteSize = Math.round(fontSize * 1.5);
       context.font = font;
       const label = comment.content.replaceAll('\n', ' ');
@@ -137,7 +156,8 @@ export const Danmaku = memo(function Danmaku({
         .join('  ');
       const segs = parseSegments(label);
       const widths = segs.map((seg) => (seg.type === 'text' ? context.measureText(seg.text).width : emoteSize));
-      const textWidth = widths.reduce((sum, width) => sum + width, 0);
+      let textWidth = 0;
+      for (const w of widths) textWidth += w;
       context.font = badgeFont;
       const measuredBadge = badge ? context.measureText(badge).width : 0;
       context.font = font;
@@ -151,9 +171,12 @@ export const Danmaku = memo(function Danmaku({
       const pageCount = Math.ceil(allLines.length / rowsPerPage);
       const lines = allLines.slice(pageIndex * rowsPerPage, (pageIndex + 1) * rowsPerPage);
       const hasBadge = pageIndex === pageCount - 1;
-      const width = Math.ceil(
-        Math.max(...lines.map((line, index) => line.width + (hasBadge && index === lines.length - 1 ? badgeWidth : 0))),
-      );
+      let maxLineWidth = 0;
+      for (let i = 0; i < lines.length; i++) {
+        const w = lines[i].width + (hasBadge && i === lines.length - 1 ? badgeWidth : 0);
+        if (w > maxLineWidth) maxLineWidth = w;
+      }
+      const spriteWidth = Math.ceil(maxLineWidth);
       const effect =
         comment.liked_count >= danmakuEffects.top.minLikes
           ? 'top'
@@ -175,11 +198,12 @@ export const Danmaku = memo(function Danmaku({
         emoteSize,
         effect,
         badge: hasBadge ? badge : '',
-        width,
+        width: spriteWidth,
         tiles,
         invalidate,
       };
     }
+
     function spriteFor(index: number) {
       let sprite = sprites.get(index);
       if (!sprite) {
@@ -188,30 +212,36 @@ export const Danmaku = memo(function Danmaku({
       }
       return sprite;
     }
-    // 长评驻留队列：按各自驻留时长首尾相接，读一条换一条
+
+    // 长评驻留队列：预先计算入场时间与驻留时长，避免 60fps 帧循环内重复切分字符
     const pinList = pinned.list;
-    const pinEnters: number[] = [];
+    const pinEnters = new Array<number>(pinList.length);
+    const pinDurations = new Array<number>(pinList.length);
     {
       let acc = 0;
-      for (const comment of pinList) {
-        pinEnters.push(acc);
-        acc += pinDurationMs(comment.content);
+      for (let i = 0; i < pinList.length; i++) {
+        const dwell = pinDurationMs(pinList[i].content);
+        pinEnters[i] = acc;
+        pinDurations[i] = dwell;
+        acc += dwell;
       }
     }
+
     function pinnedSpriteFor(index: number, elapsed: number, dwell: number) {
       let sprite = pinnedSprites.get(index);
       if (!sprite) {
-        sprite = makeSprite(pinList[index], size.width - 24);
+        sprite = makeSprite(pinList[index], width - 24);
         pinnedSprites.set(index, sprite);
       }
       const page = Math.min(sprite.pageCount - 1, Math.floor((elapsed / dwell) * sprite.pageCount));
       if (sprite.pageIndex !== page) {
         removeEmoteListener(sprite.invalidate);
-        sprite = makeSprite(pinList[index], size.width - 24, page);
+        sprite = makeSprite(pinList[index], width - 24, page);
         pinnedSprites.set(index, sprite);
       }
       return sprite;
     }
+
     function activePinned(position: number): number {
       let lo = 0;
       let hi = pinEnters.length - 1;
@@ -224,8 +254,9 @@ export const Danmaku = memo(function Danmaku({
         } else hi = mid - 1;
       }
       if (found < 0) return -1;
-      return position - pinEnters[found] < pinDurationMs(pinList[found].content) ? found : -1;
+      return position - pinEnters[found] < pinDurations[found] ? found : -1;
     }
+
     function tileFor(sprite: Sprite, tile: number) {
       const { font, badgeFont, fontSize, lineHeight, emoteSize, lines } = sprite;
       let image = sprite.tiles.get(tile);
@@ -256,7 +287,13 @@ export const Danmaku = memo(function Danmaku({
                 ink.save();
                 if (sprite.effect === 'top') {
                   ink.shadowColor = danmakuEffects.top.colors[0];
-                  ink.shadowBlur = Math.min(6, fontSize * 0.2) * rasterScale;
+                  ink.shadowBlur = Math.min(9, fontSize * 0.3) * rasterScale;
+                } else if (sprite.effect === 'high') {
+                  ink.shadowColor = danmakuEffects.high.colors[0];
+                  ink.shadowBlur = Math.min(5, fontSize * 0.16) * rasterScale;
+                } else {
+                  ink.shadowColor = 'rgba(255, 204, 140, 0.26)';
+                  ink.shadowBlur = 2.5 * rasterScale;
                 }
                 ink.fillText(seg.text, cursor, y);
                 ink.restore();
@@ -286,9 +323,10 @@ export const Danmaku = memo(function Danmaku({
       }
       return image;
     }
+
     function drawSprite(sprite: Sprite, x: number, y: number) {
       const first = Math.max(0, Math.floor(-x / tileWidth));
-      const last = Math.min(Math.floor(sprite.width / tileWidth), Math.floor((size.width - x) / tileWidth));
+      const last = Math.min(Math.floor(sprite.width / tileWidth), Math.floor((width - x) / tileWidth));
       for (const tile of sprite.tiles.keys()) if (tile < first || tile > last) sprite.tiles.delete(tile);
       for (let tile = first; tile <= last; tile++) {
         const image = tileFor(sprite, tile);
@@ -305,11 +343,12 @@ export const Danmaku = memo(function Danmaku({
         );
       }
     }
+
     let animation = 0;
     function draw(frameTime: number) {
       animation = 0;
-      context.clearRect(0, 0, size.width, size.height);
-      if (playing && !document.hidden) {
+      context.clearRect(0, 0, width, height);
+      if (playingRef.current && !document.hidden) {
         const position = clock.current.position(frameTime);
         if (list.length) {
           const [start, end] = visibleRange(position, crossing, spacing, list.length);
@@ -323,7 +362,7 @@ export const Danmaku = memo(function Danmaku({
           for (let i = start; i <= end; i++) {
             const sprite = spriteFor(i);
             const progress = (position - i * spacing) / crossing;
-            const x = size.width - (size.width + sprite.width) * progress;
+            const x = width - (width + sprite.width) * progress;
             const y = (((i % lanes) + 0.5) * height) / lanes - sprite.height / 2;
             drawSprite(sprite, x, y);
           }
@@ -332,7 +371,7 @@ export const Danmaku = memo(function Danmaku({
         const pinIndex = activePinned(position);
         if (pinIndex >= 0) {
           const elapsed = position - pinEnters[pinIndex];
-          const dwell = pinDurationMs(pinList[pinIndex].content);
+          const dwell = pinDurations[pinIndex];
           const fade = Math.max(0, Math.min(1, elapsed / 400, (dwell - elapsed) / 400));
           for (const [index, sprite] of pinnedSprites) {
             if (index < pinIndex - 1 || index > pinIndex + 2) {
@@ -343,11 +382,14 @@ export const Danmaku = memo(function Danmaku({
           const sprite = pinnedSpriteFor(pinIndex, elapsed, dwell);
           const y = pinIndex % 2 === 0 ? 4 : height - sprite.height - 4;
           context.globalAlpha = fade * opacity.current;
-          drawSprite(sprite, (size.width - sprite.width) / 2, y);
+          drawSprite(sprite, (width - sprite.width) / 2, y);
         }
       }
-      if (playing && (list.length || pinList.length) && !document.hidden) animation = requestAnimationFrame(draw);
+      if (playingRef.current && (list.length || pinList.length) && !document.hidden) {
+        animation = requestAnimationFrame(draw);
+      }
     }
+
     function resume() {
       // Polling updates the clock without interrupting the vsync frame already queued.
       if (document.hidden) {
@@ -357,6 +399,7 @@ export const Danmaku = memo(function Danmaku({
         animation = requestAnimationFrame(draw);
       }
     }
+
     wake.current = resume;
     document.addEventListener('visibilitychange', resume);
     resume();
@@ -368,8 +411,8 @@ export const Danmaku = memo(function Danmaku({
       document.removeEventListener('visibilitychange', resume);
     };
   }, [
-    size,
-    playing,
+    width,
+    height,
     snapshot?.revision,
     snapshot?.nowPlaying?.duration,
     snapshot?.song?.duration,
@@ -378,18 +421,8 @@ export const Danmaku = memo(function Danmaku({
     settings.pinLongComments,
     textColor,
   ]);
+
   return (
-    <View
-      render="canvas"
-      position="absolute"
-      inset={0}
-      width="100%"
-      height="100%"
-      pointerEvents="none"
-      ref={(element) => {
-        if (element instanceof HTMLCanvasElement) canvasRef.current = element;
-      }}
-      aria-label="实时弹幕"
-    />
+    <canvas ref={canvasRef} aria-label="实时弹幕" className="pointer-events-none absolute inset-0 block size-full" />
   );
 });

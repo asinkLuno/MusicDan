@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="MusicDan — Knurled Rotary Broadcast">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#17110c" />
+      <stop offset="100%" stop-color="#070503" />
+    </linearGradient>
+    <linearGradient id="knobRim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f5e1b8" />
+      <stop offset="50%" stop-color="#c48e44" />
+      <stop offset="100%" stop-color="#6e4718" />
+    </linearGradient>
+    <radialGradient id="knobCap" cx="38%" cy="34%" r="68%">
+      <stop offset="0%" stop-color="#3c2d1f" />
+      <stop offset="100%" stop-color="#17110c" />
+    </radialGradient>
+    <radialGradient id="broadcastGlow" cx="62%" cy="38%" r="48%">
+      <stop offset="0%" stop-color="#ff8800" stop-opacity="0.28" />
+      <stop offset="100%" stop-color="#ff8800" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="100" height="100" rx="22" fill="url(#bg)" />
+  <rect width="100" height="100" rx="22" fill="url(#broadcastGlow)" />
+  <!-- Knurled rotary knob (bottom-left anchor) -->
+  <g>
+    <circle cx="40" cy="60" r="24" fill="none" stroke="url(#knobRim)" stroke-width="4.2" stroke-dasharray="3.2 3.08" />
+    <circle cx="40" cy="60" r="19" fill="url(#knobCap)" stroke="url(#knobRim)" stroke-width="2.6" />
+    <!-- Glowing amber pointer bar -->
+    <line x1="40" y1="60" x2="51.5" y2="48.5" stroke="#ff951a" stroke-width="4.4" stroke-linecap="round" />
+    <circle cx="40" cy="60" r="3" fill="#fff0d4" />
+  </g>
+  <!-- Broadcast / danmaku arcs radiating to upper-right -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M 48 29 A 32 32 0 0 1 71 52" stroke="#ffe7bc" stroke-width="4" />
+    <path d="M 50 20 A 41 41 0 0 1 80 50" stroke="#ff951a" stroke-width="3.8" opacity="0.88" />
+    <path d="M 58 14 A 49 49 0 0 1 86 42" stroke="#c9954c" stroke-width="3.4" opacity="0.52" />
+  </g>
+</svg>

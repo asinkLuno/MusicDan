@@ -17,12 +17,19 @@ export interface LyricLine {
   words: LyricWord[];
 }
 
+const LINE_SPLIT_RE = /\r?\n/;
+const LRC_OFFSET_RE = /\[offset:([+-]?\d+)\]/i;
+const LRC_STAMP_RE = /\[(\d+):(\d{2})(?:[.:](\d{1,3}))?\]/g;
+const LRC_TAG_RE = /\[[^\]]*\]/g;
+const YRC_TIMING_RE = /^\[(\d+),(\d+)\]/;
+const YRC_WORD_RE = /\((\d+),(\d+),\d+\)([^()]*)/g;
+
 export function parseLrc(source: string): LyricLine[] {
   const lines: LyricLine[] = [];
-  const offset = Number(source.match(/\[offset:([+-]?\d+)\]/i)?.[1] || 0);
-  for (const row of source.split(/\r?\n/)) {
-    const stamps = [...row.matchAll(/\[(\d+):(\d{2})(?:[.:](\d{1,3}))?\]/g)];
-    const text = row.replace(/\[[^\]]*\]/g, '').trim();
+  const offset = Number(source.match(LRC_OFFSET_RE)?.[1] || 0);
+  for (const row of source.split(LINE_SPLIT_RE)) {
+    const stamps = [...row.matchAll(LRC_STAMP_RE)];
+    const text = row.replace(LRC_TAG_RE, '').trim();
     for (const stamp of stamps) {
       const start = Math.max(
         0,
@@ -40,10 +47,10 @@ export function parseLrc(source: string): LyricLine[] {
 
 export function parseYrc(source: string): LyricLine[] {
   const lines: LyricLine[] = [];
-  for (const row of source.split(/\r?\n/)) {
-    const timing = row.match(/^\[(\d+),(\d+)\]/);
+  for (const row of source.split(LINE_SPLIT_RE)) {
+    const timing = row.match(YRC_TIMING_RE);
     if (!timing) continue;
-    const words = [...row.matchAll(/\((\d+),(\d+),\d+\)([^()]*)/g)].map((match) => ({
+    const words = [...row.matchAll(YRC_WORD_RE)].map((match) => ({
       start: Number(match[1]),
       end: Number(match[1]) + Number(match[2]),
       text: match[3],

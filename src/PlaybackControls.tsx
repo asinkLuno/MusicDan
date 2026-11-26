@@ -1,22 +1,50 @@
-import { Pause, Play, SkipBack, SkipForward } from './icons';
-import { AppSlider as Slider } from './AppSlider';
-import { memo, useEffect, useRef, useState } from 'react';
+import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Maximize2, Minimize2, Pause, Play, SkipBack, SkipForward } from 'lucide-react';
+import { Dial, DialMark } from '@/components/ui/dial';
+import { IconKey } from '@/components/ui/icon-key';
+import { Key, KeyLamp } from '@/components/ui/key';
+import { NumberWheel } from '@/components/ui/number-wheel';
+import { Progress } from '@/components/ui/progress/progress';
+import { cn } from '@/lib/utils';
 import { PlaybackClock } from './playbackClock';
-import { Button, Text, XStack, YStack } from 'tamagui';
 import { formatTime, trackKey } from './types';
+import type { Snapshot, Song } from './types';
 import { invoke } from './commands';
-import type { Snapshot } from './types';
+
+const LyricsSourceDialog = lazy(() => import('./LyricsSourceDialog'));
 
 // Android PlaybackState action bits, supplied by the selected media session.
 const actions = { pause: 2, play: 4, previous: 16, next: 32, seek: 256, toggle: 512 };
 const PROGRESS_TICK_MS = 250;
+const PERCENT_FORMAT: Intl.NumberFormatOptions = { style: 'percent', maximumFractionDigits: 0 };
+const MID_MARK = <DialMark value={0.5} tone="amber" />;
 
 export const PlaybackControls = memo(function PlaybackControls({
   snapshot,
   onError,
+  full,
+  totalComments,
+  visibleComments,
+  loadingMore,
+  lyricSongs,
+  lyricKey,
+  lyricSongId,
+  onToggleFull,
+  onOpenManualMatch,
+  onSelectLyric,
 }: {
   snapshot: Snapshot | null;
   onError: (error: unknown) => void;
+  full: boolean;
+  totalComments: number;
+  visibleComments: number;
+  loadingMore: boolean;
+  lyricSongs: Song[];
+  lyricKey: string;
+  lyricSongId?: number;
+  onToggleFull: () => void;
+  onOpenManualMatch: () => void;
+  onSelectLyric: (id: number) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
@@ -26,7 +54,22 @@ export const PlaybackControls = memo(function PlaybackControls({
     sentAt: number;
   } | null>(null);
   const releaseTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const clock = useRef(new PlaybackClock());
+  const [position, setPosition] = useState(0);
+  const [preview, setPreview] = useState<number | null>(null);
+  const previewRef = useRef<number | null>(null);
+  const dragging = useRef(false);
+  const seeking = useRef(false);
+  const [submitting, setSubmitting] = useState(false);
+  const previewing = preview != null;
+  const awaiting = useRef<{ target: number; sentAt: number } | null>(null);
+  const seekReleaseTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const commitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
   const np = snapshot?.nowPlaying;
+  const duration = Math.max(0, np?.duration || 0);
+
   useEffect(() => {
     if (!requested || !np || !snapshot || snapshot.sampledAt <= requested.sentAt) return;
     const confirmed =
@@ -42,11 +85,59 @@ export const PlaybackControls = memo(function PlaybackControls({
       clearTimeout(releaseTimer.current);
     }
   }, [snapshot, np, requested]);
-  useEffect(() => () => clearTimeout(releaseTimer.current), []);
+
   const supported = np?.playbackActions || 0;
   const can = (action: keyof typeof actions) => Boolean(np?.packageName && !busy && supported & actions[action]);
   const playing = requested?.action === 'play' ? true : requested?.action === 'pause' ? false : np?.isPlaying === true;
   const canToggle = can(playing ? 'pause' : 'play') || can('toggle');
+  const seekDisabled = !can('seek');
+
+  useEffect(() => {
+    clock.current.update(snapshot, performance.now(), Date.now());
+    const request = awaiting.current;
+    if (
+      request &&
+      snapshot &&
+      snapshot.sampledAt > request.sentAt &&
+      np &&
+      Math.abs(np.position - request.target) < 1000
+    ) {
+      awaiting.current = null;
+      previewRef.current = null;
+      setPreview(null);
+      clearTimeout(seekReleaseTimer.current);
+    }
+    if (!playing && !previewing) {
+      const next = clock.current.position(performance.now());
+      setPosition((previous) => (previous === next ? previous : next));
+    }
+  }, [snapshot, np, playing, previewing]);
+
+  useEffect(() => {
+    if (previewing) return;
+    const sync = () => {
+      if (document.hidden) return;
+      const next = clock.current.position(performance.now());
+      setPosition((previous) => (Math.floor(previous / 1000) === Math.floor(next / 1000) ? previous : next));
+    };
+    sync();
+    if (!playing) return;
+    const timer = setInterval(sync, PROGRESS_TICK_MS);
+    document.addEventListener('visibilitychange', sync);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', sync);
+    };
+  }, [playing, previewing]);
+
+  useEffect(
+    () => () => {
+      clearTimeout(releaseTimer.current);
+      clearTimeout(seekReleaseTimer.current);
+      clearTimeout(commitTimer.current);
+    },
+    [],
+  );
 
   async function control(action: 'play' | 'pause' | 'previous' | 'next') {
     if (!np?.packageName || pending.current) return;
@@ -71,196 +162,173 @@ export const PlaybackControls = memo(function PlaybackControls({
     }
   }
 
-  return (
-    <YStack flexShrink={0} minWidth={0} gap="2" aria-label="播放控制">
-      <PlaybackProgress snapshot={snapshot} disabled={!can('seek')} onError={onError} />
-      <XStack gap="5" alignItems="center" justifyContent="center">
-        <Button
-          circular
-          size="md"
-          minWidth={44}
-          minHeight={44}
-          variant="quiet"
-          aria-label="上一首"
-          disabled={!can('previous')}
-          onPress={() => void control('previous')}
-          icon={<SkipBack size={24} />}
-        />
-        <Button
-          circular
-          size="lg"
-          width={56}
-          height={56}
-          minWidth={56}
-          minHeight={56}
-          backgroundColor="accent-background hover:accent-background-hover press:accent-background-press"
-          color="accent-color"
-          aria-label={playing ? '暂停' : '播放'}
-          disabled={!canToggle}
-          onPress={() => void control(playing ? 'pause' : 'play')}
-          icon={playing ? <Pause size={26} color="accent-color" /> : <Play size={26} color="accent-color" />}
-        />
-        <Button
-          circular
-          size="md"
-          minWidth={44}
-          minHeight={44}
-          variant="quiet"
-          aria-label="下一首"
-          disabled={!can('next')}
-          onPress={() => void control('next')}
-          icon={<SkipForward size={24} />}
-        />
-      </XStack>
-    </YStack>
+  const seek = useCallback(
+    async (value: number) => {
+      if (!np?.packageName || seeking.current || seekDisabled) return;
+      const target = Math.max(0, Math.min(duration, value));
+      seeking.current = true;
+      setSubmitting(true);
+      previewRef.current = target;
+      setPreview(target);
+      clearTimeout(seekReleaseTimer.current);
+      awaiting.current = { target, sentAt: Date.now() };
+      try {
+        await invoke('plugin:media|control_playback', {
+          control: { packageName: np.packageName, action: 'seek', position: Math.round(target) },
+        });
+        if (awaiting.current)
+          seekReleaseTimer.current = setTimeout(() => {
+            awaiting.current = null;
+            previewRef.current = null;
+            setPreview(null);
+          }, 2000);
+      } catch (error) {
+        awaiting.current = null;
+        previewRef.current = null;
+        setPreview(null);
+        onError(error);
+      } finally {
+        seeking.current = false;
+        setSubmitting(false);
+      }
+    },
+    [duration, np?.packageName, onError, seekDisabled],
   );
-});
-
-// Keep frequent progress and gesture updates inside this small subtree.
-const PlaybackProgress = memo(function PlaybackProgress({
-  snapshot,
-  disabled,
-  onError,
-}: {
-  snapshot: Snapshot | null;
-  disabled: boolean;
-  onError: (error: unknown) => void;
-}) {
-  const clock = useRef(new PlaybackClock());
-  const [position, setPosition] = useState(0);
-  const [preview, setPreview] = useState<number | null>(null);
-  const draft = useRef<number | null>(null);
-  const seeking = useRef(false);
-  const [submitting, setSubmitting] = useState(false);
-  const previewing = preview != null;
-  const awaiting = useRef<{ target: number; sentAt: number } | null>(null);
-  const releaseTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const np = snapshot?.nowPlaying;
-  const playing = Boolean(np?.isPlaying);
-  const duration = Math.max(0, np?.duration || 0);
-
-  useEffect(() => {
-    clock.current.update(snapshot, performance.now(), Date.now());
-    const request = awaiting.current;
-    if (
-      request &&
-      snapshot &&
-      snapshot.sampledAt > request.sentAt &&
-      np &&
-      Math.abs(np.position - request.target) < 1000
-    ) {
-      awaiting.current = null;
-      setPreview(null);
-      clearTimeout(releaseTimer.current);
-    }
-    if (!playing && !previewing) {
-      const next = clock.current.position(performance.now());
-      setPosition((previous) => (previous === next ? previous : next));
-    }
-  }, [snapshot, np, playing, previewing]);
-
-  useEffect(() => {
-    if (previewing) return;
-    const sync = () => {
-      if (document.hidden) return;
-      const next = clock.current.position(performance.now());
-      setPosition((previous) =>
-        Math.floor(previous / 1000) === Math.floor(next / 1000) && Math.abs(next - previous) < PROGRESS_TICK_MS
-          ? previous
-          : next,
-      );
-    };
-    sync();
-    if (!playing) return;
-    const timer = setInterval(sync, PROGRESS_TICK_MS);
-    document.addEventListener('visibilitychange', sync);
-    return () => {
-      clearInterval(timer);
-      document.removeEventListener('visibilitychange', sync);
-    };
-  }, [playing, previewing]);
-  useEffect(() => () => clearTimeout(releaseTimer.current), []);
-
-  async function seek(value: number) {
-    if (!np?.packageName || seeking.current || disabled) return;
-    const target = Math.max(0, Math.min(duration, value));
-    seeking.current = true;
-    setSubmitting(true);
-    draft.current = null;
-    setPreview(target);
-    clearTimeout(releaseTimer.current);
-    awaiting.current = { target, sentAt: Date.now() };
-    try {
-      await invoke('plugin:media|control_playback', {
-        control: { packageName: np.packageName, action: 'seek', position: Math.round(target) },
-      });
-      // Media commands return before the session publishes its new position.
-      if (awaiting.current)
-        releaseTimer.current = setTimeout(() => {
-          awaiting.current = null;
-          setPreview(null);
-        }, 2000);
-    } catch (error) {
-      awaiting.current = null;
-      setPreview(null);
-      onError(error);
-    } finally {
-      seeking.current = false;
-      setSubmitting(false);
-    }
-  }
 
   const displayed = Math.max(0, Math.min(duration, preview ?? position));
+  const ratio = duration > 0 ? displayed / duration : 0;
+  const dialDisabled = seekDisabled || submitting || duration <= 0;
+
   return (
-    <YStack gap="2">
-      <XStack justifyContent="space-between" gap="2">
-        <Text fontSize="xs" color="color-10">
-          {formatTime(displayed)}
-        </Text>
-        <Text fontSize="xs" color="color-10">
-          {formatTime(duration)}
-        </Text>
-      </XStack>
-      <Slider
-        min={0}
-        max={duration || 1}
-        step={10}
-        value={[displayed]}
-        disabled={disabled || submitting || duration <= 0}
-        aria-label="播放进度"
-        onSlideStart={() => {
-          clearTimeout(releaseTimer.current);
+    <div className="flex w-full min-w-0 items-center gap-3.5" aria-label="播放控制">
+      <div
+        className="flex shrink-0 flex-col items-center"
+        onPointerDownCapture={() => {
+          if (dialDisabled) return;
+          dragging.current = true;
+          clearTimeout(seekReleaseTimer.current);
+          clearTimeout(commitTimer.current);
           awaiting.current = null;
+          void invoke('plugin:media|haptic_feedback', { kind: 'start' }).catch(() => {});
         }}
-        onValueChange={([value]) => {
-          draft.current = value;
-          setPreview(value);
-        }}
-        onSlideEnd={(_, value) => void seek(value)}
-        onPointerCancel={() => {
-          draft.current = null;
-          setPreview(null);
-        }}
-        onKeyUp={(event) => {
-          if (
-            ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(
-              event.key,
-            ) &&
-            draft.current != null
-          ) {
-            void seek(draft.current);
+        onPointerUpCapture={() => {
+          if (!dragging.current) return;
+          dragging.current = false;
+          clearTimeout(commitTimer.current);
+          if (previewRef.current != null) {
+            void invoke('plugin:media|haptic_feedback', { kind: 'end' }).catch(() => {});
+            void seek(previewRef.current);
           }
         }}
+        onPointerCancelCapture={() => {
+          dragging.current = false;
+          clearTimeout(commitTimer.current);
+          previewRef.current = null;
+          setPreview(null);
+        }}
       >
-        <Slider.Track>
-          <Slider.TrackActive />
-        </Slider.Track>
-        <Slider.Thumb
-          index={0}
-          aria-label="拖动播放进度"
-          aria-valuetext={`${formatTime(displayed)} / ${formatTime(duration)}`}
+        <Dial
+          className={cn(full ? 'w-20 gap-1' : 'w-24 gap-1.5')}
+          min={0}
+          max={1}
+          step={0.01}
+          ticks={20}
+          value={ratio}
+          disabled={dialDisabled}
+          format={PERCENT_FORMAT}
+          marks={MID_MARK}
+          label="进度旋钮"
+          onValueChange={(nextRatio) => {
+            if (dialDisabled) return;
+            const target = Math.round(nextRatio * duration);
+            previewRef.current = target;
+            setPreview(target);
+            void invoke('plugin:media|haptic_feedback', { kind: 'tick' }).catch(() => {});
+            if (!dragging.current) {
+              clearTimeout(commitTimer.current);
+              commitTimer.current = setTimeout(() => {
+                void seek(target);
+              }, 200);
+            }
+          }}
         />
-      </Slider>
-    </YStack>
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <NumberWheel value={totalComments} tone="black" className="text-sm" />
+          <span className="truncate font-mono text-xs text-muted-foreground tabular-nums">
+            条评论 · 显示 {visibleComments} 条{loadingMore ? ' · 后台补充中' : ''}
+          </span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between gap-2 font-mono text-xs tabular-nums">
+            <div className="font-semibold text-primary">{formatTime(displayed)}</div>
+            <div className="text-muted-foreground">{formatTime(duration)}</div>
+          </div>
+          <Progress value={ratio * 100} showValue={false} aria-label="播放进度" />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <IconKey
+              size="md"
+              variant="secondary"
+              aria-label="上一首"
+              disabled={!can('previous')}
+              onClick={() => void control('previous')}
+            >
+              <SkipBack />
+            </IconKey>
+            <Key
+              size="md"
+              variant="primary"
+              aria-label={playing ? '暂停' : '播放'}
+              pending={busy && (requested?.action === 'play' || requested?.action === 'pause')}
+              disabled={!canToggle}
+              onClick={() => void control(playing ? 'pause' : 'play')}
+            >
+              <KeyLamp />
+              {playing ? <Pause /> : <Play />}
+              <span>{playing ? '暂停' : '播放'}</span>
+            </Key>
+            <IconKey
+              size="md"
+              variant="secondary"
+              aria-label="下一首"
+              disabled={!can('next')}
+              onClick={() => void control('next')}
+            >
+              <SkipForward />
+            </IconKey>
+          </div>
+          <IconKey size="md" variant="secondary" aria-label={full ? '退出全屏' : '全屏弹幕'} onClick={onToggleFull}>
+            {full ? <Minimize2 /> : <Maximize2 />}
+          </IconKey>
+        </div>
+        {!full && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Key size="sm" variant="secondary" aria-label="手动匹配" onClick={onOpenManualMatch}>
+              手动匹配
+            </Key>
+            {lyricSongs.length > 1 && (
+              <Suspense
+                fallback={
+                  <Key size="sm" variant="secondary" disabled>
+                    歌词来源
+                  </Key>
+                }
+              >
+                <LyricsSourceDialog
+                  key={lyricKey}
+                  songs={lyricSongs}
+                  selectedId={lyricSongId}
+                  onSelect={onSelectLyric}
+                />
+              </Suspense>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 });

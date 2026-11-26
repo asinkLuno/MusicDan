@@ -1,40 +1,53 @@
-import { memo, useEffect, useState } from 'react';
-import { Text, XStack, YStack, useMedia } from 'tamagui';
+import { memo, useEffect, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
+import { useReducedMotion } from './useReducedMotion';
 
-type MarqueeTextProps = { text: string; kind?: 'title' | 'body' | 'caption' };
+type MarqueeTextProps = { text: string; kind?: 'title' | 'body' | 'caption'; className?: string };
 
-// Measure through Tamagui layout events; only overflowing lines animate.
-export const MarqueeText = memo(function MarqueeText({ text, kind = 'body' }: MarqueeTextProps) {
-  const { reduceMotion } = useMedia();
-  const [width, setWidth] = useState(0);
-  const [textWidth, setTextWidth] = useState(0);
-  const distance = Math.max(0, textWidth - width);
+// Measure container & text widths via ResizeObserver; only overflowing lines animate.
+export const MarqueeText = memo(function MarqueeText({ text, kind = 'body', className }: MarqueeTextProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const reduceMotion = useReducedMotion();
+  const [distance, setDistance] = useState(0);
+
+  useEffect(() => {
+    const measure = () => {
+      const box = containerRef.current?.clientWidth ?? 0;
+      const content = textRef.current?.scrollWidth ?? 0;
+      setDistance(box > 0 && !reduceMotion ? Math.max(0, content - box) : 0);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (containerRef.current) observer.observe(containerRef.current);
+    if (textRef.current) observer.observe(textRef.current);
+    return () => observer.disconnect();
+  }, [text, reduceMotion]);
+
+  const Tag = kind === 'title' ? 'h1' : 'span';
   return (
-    <YStack minWidth={0} width="100%" overflow="hidden" onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
-      <MarqueeMotion
-        key={`${text}:${distance}:${reduceMotion}`}
-        distance={width > 0 && !reduceMotion ? distance : 0}
-        wrap={reduceMotion}
-      >
-        <Text
-          render={kind === 'title' ? 'h3' : 'span'}
-          margin={0}
-          fontSize={kind === 'title' ? 'xl' : kind === 'caption' ? 'xs' : 'sm'}
-          fontWeight={kind === 'title' ? '600' : '400'}
-          color={kind === 'title' ? 'color' : 'color-10'}
-          whiteSpace={reduceMotion ? 'normal' : 'nowrap'}
-          onLayout={(event) => setTextWidth(event.nativeEvent.layout.width)}
+    <div ref={containerRef} className="w-full min-w-0 overflow-hidden">
+      <MarqueeMotion key={`${text}:${distance}:${reduceMotion}`} distance={distance} wrap={reduceMotion}>
+        <Tag
+          ref={textRef as React.RefObject<HTMLHeadingElement & HTMLSpanElement>}
+          className={cn(
+            'm-0 block',
+            reduceMotion ? 'whitespace-normal' : 'whitespace-nowrap',
+            kind === 'title' && 'text-lg leading-tight font-bold tracking-[-0.015em] text-foreground',
+            kind === 'body' && 'text-sm text-foreground/85',
+            kind === 'caption' && 'text-xs text-muted-foreground',
+            className,
+          )}
         >
           {text}
-        </Text>
+        </Tag>
       </MarqueeMotion>
-    </YStack>
+    </div>
   );
 });
 
 function MarqueeMotion({ distance, wrap, children }: { distance: number; wrap: boolean; children: React.ReactNode }) {
   const [atEnd, setAtEnd] = useState(false);
-  // Constant reading speed, with a pause at each end before reversing direction.
   const duration = Math.max(1200, (distance / 28) * 1000);
   useEffect(() => {
     if (distance <= 1) return;
@@ -47,15 +60,14 @@ function MarqueeMotion({ distance, wrap, children }: { distance: number; wrap: b
     return () => clearTimeout(timer);
   }, [distance, duration]);
   return (
-    <XStack
-      alignSelf="flex-start"
-      maxWidth={wrap ? '100%' : undefined}
-      flexShrink={0}
-      width={wrap ? '100%' : 'max-content'}
-      x={atEnd ? -distance : 0}
-      transition={distance > 1 ? `${duration}ms linear` : 'none'}
+    <div
+      className={cn('inline-flex shrink-0', wrap ? 'w-full max-w-full' : 'w-max')}
+      style={{
+        transform: `translate3d(${atEnd ? -distance : 0}px, 0, 0)`,
+        transition: distance > 1 ? `transform ${duration}ms linear` : 'none',
+      }}
     >
       {children}
-    </XStack>
+    </div>
   );
 }

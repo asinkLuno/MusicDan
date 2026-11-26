@@ -66,8 +66,11 @@ export function crossingDuration(
   return Math.max(3000, Math.min(readable, dense));
 }
 
+const COMMENT_PUNCTUATION_RE = /[\s!！?？。.，,~～…、]/gu;
+const COMMENT_WORD_CHAR_RE = /[a-z\p{L}\P{ASCII}]/u;
+
 export function commentKey(content: string): string {
-  const chars = Array.from(content.toLowerCase().replace(/[\s!！?？。.，,~～…、]/gu, ''));
+  const chars = Array.from(content.toLowerCase().replace(COMMENT_PUNCTUATION_RE, ''));
   if (!chars.length) return content.trim();
   const prefix = new Uint32Array(chars.length);
   for (let i = 1; i < chars.length; i++) {
@@ -78,7 +81,7 @@ export function commentKey(content: string): string {
   }
   const period = chars.length - prefix[chars.length - 1];
   const unit = chars.slice(0, period).join('');
-  return chars.length % period === 0 && /[a-z\p{L}\P{ASCII}]/u.test(unit) ? unit : chars.join('');
+  return chars.length % period === 0 && COMMENT_WORD_CHAR_RE.test(unit) ? unit : chars.join('');
 }
 
 export function commentFontSize(base: number, occurrences = 1): number {

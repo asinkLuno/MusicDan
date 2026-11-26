@@ -49,15 +49,20 @@
 - 官网 UI 框架使用 **shadcn/ui**，只使用 shadcn/ui 提供的控件并组合页面，**不要手写自定义 UI 控件，也不要手动复制控件源码**。
 - 新增 shadcn/ui 控件必须通过 **yarn 调用官方 shadcn CLI** 安装；依赖同样使用 yarn 管理，不使用 npm、npx 或 pnpm。
 - 布局和主题沿用 shadcn/ui 官方生成的配置，不另行引入其他 UI 框架或自建样式体系。
-- 本节适用于官网与下载页；现有 Tauri / Android 应用继续遵守下节的 Tamagui 规则。
+- 本节适用于官网与下载页；应用前端同样采用 Tailwind CSS v4 + shadcn/ui（叠加 Bevel + SciFiCN 拟物组件），见下节。
 
 ## 应用前端 UI
 
-前端使用 **Tamagui**，样式一律通过 Tamagui 实现：只用 Tamagui 组件、主题 token 和布局属性，并复用 `src/tamagui.config.ts` 中的配置。
+应用前端与官网统一使用 **Tailwind CSS v4 + shadcn/ui**，并直接复用以下两个 shadcn 注册表的现成拟物化组件（见根目录 `components.json`）：
 
-- **不要手写任何样式**：不添加 CSS 文件（如 `styles.css`）、内联 `style`、自定义 CSS 类，也不引入其他样式方案（如 NativeWind、styled-components）。
-- **不要 hack Tamagui**：不要绕过它的类型和机制去强行实现效果，例如直接操作 DOM、伪造/滥用 token、绕过主题系统硬编码颜色、用 `style` 透传兜底等。
-- 如果某个效果 Tamagui 确实做不到，**停下来和用户商量**：说明是哪个效果、尝试过哪些 Tamagui 方案，由用户决定取舍，不要自行 hack 绕过。
+- **Bevel**（`@bevel`：`https://bevel-ui.vercel.app/r/{name}.json`）：黄铜表盘指针旋钮（`Dial` / `DialMark`）、滚花机械档位旋钮（`DetentKnob`）、机械滚轮计数器（`NumberWheel`）、硬件拨码开关（`DipSwitch`）、断路器总闸面板（`BreakerPanel` / `Breaker`）、实体机械按键（`Key` / `IconKey`）、指示灯铭牌（`Badge` / `BadgeLamp`）、收音机联动预设键（`PresetTabs` / `PresetKeys`）、锁存复选框（`LatchCheckbox`）、凹陷输入框（`TextField`）、带螺丝硬件弹窗（`Dialog`）与触觉反馈（`BevelFeedback`）。
+- **SciFiCN**（`@scificn`：`https://www.scificn.dev/r/{name}.json`）：切角终端面板（`Panel`、`PanelHeader`、`PanelContent`、`PanelFooter` + 官方 `.scanlines`）、机架卡片（`Card`）、分隔线（`Separator`）、提示条（`Alert`）与字符进度条（`Progress`）。
+
+约束：
+
+- 新增控件一律通过 **`yarn shadcn add`** 从官方 shadcn、`@bevel` 或 `@scificn` 注册表安装，直接使用组件库原版样式与官方主题（`class="dark" data-theme="alien" data-bevel-theme="brass"`），不手搓裸 HTML 交互控件，不手写自定义 `.tube-*` CSS 类或覆写组件形状，也不用 npm / npx / pnpm。
+- `src/index.css` 仅保留 `yarn shadcn add` 写入的 Bevel 原版样式与 SciFiCN 官方 `alien` 主题变量及 `.scanlines`；共享 Canvas 与安卓悬浮窗的弹幕色阶位于 `public/danmaku-effects.json`（由 `src/theme.ts` 导出）。
+- 图标统一使用 `lucide-react`，不再维护手写 SVG 图标包装或 Tamagui 依赖。
 
 ## 项目级 Skills
 
@@ -76,6 +81,6 @@
 - 应用截图统一使用安卓竖屏 **9:19.5** 比例，默认输出 **1080 × 2340** PNG（浏览器视口 432 × 936 CSS 像素，设备像素比 2.5）；普通页、全屏页和搜索页保持一致，通过运行时视口重新截图，不拉伸旧图片。
 
 - 需要电脑生成应用截图时，运行真实应用前端：`yarn dev`，访问 `http://localhost:1420/?demo=creep`。
-- 允许模拟 Radiohead — Creep 的原生播放状态；歌曲搜索、评论和歌词使用 `tests/fixtures/ncm-creep.json` 中保存的网易云真实数据（歌词为带原时间戳的短片段），不能编造；截图和演示默认离线读取、无有效期，仅显式运行 `yarn fixtures:refresh` 更新。November Rain (2022 Version) 场景使用 `?demo=november-rain&position=433000&freeze=1` 和 `tests/fixtures/ncm-november-rain.json`，通过 `yarn fixtures:refresh november-rain` 更新。界面必须由项目实际 React / Tamagui 代码渲染。
+- 允许模拟 Radiohead — Creep 的原生播放状态；歌曲搜索、评论和歌词使用 `tests/fixtures/ncm-creep.json` 中保存的网易云真实数据（歌词为带原时间戳的短片段），不能编造；截图和演示默认离线读取、无有效期，仅显式运行 `yarn fixtures:refresh` 更新。November Rain (2022 Version) 场景使用 `?demo=november-rain&position=433000&freeze=1` 和 `tests/fixtures/ncm-november-rain.json`，通过 `yarn fixtures:refresh november-rain` 更新。界面必须由项目实际 React 代码渲染。
 - 不得用 SVG、绘制图片或替换网页图片冒充真实运行截图。
 - 浏览器无法验证跨应用悬浮、安卓权限与原生服务；这类截图需使用 Android 模拟器或真机。

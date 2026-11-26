@@ -1,25 +1,18 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, ScrollView, Text, useMedia, XStack, YStack } from 'tamagui';
-import { Play } from './icons';
+import { Play } from 'lucide-react';
+import { IconKey } from '@/components/ui/icon-key';
+import { Key } from '@/components/ui/key';
+import { Separator } from '@/components/ui/separator/separator';
+import { cn } from '@/lib/utils';
 import { activeLine, prepareLyrics } from './lyrics';
 import type { LyricLine, Lyrics } from './lyrics';
 import { PlaybackClock } from './playbackClock';
-import { musicAtmosphere } from './tamagui.config';
 import { formatTime } from './types';
 import { invoke } from './commands';
 import type { Snapshot } from './types';
+import { useReducedMotion } from './useReducedMotion';
 
-// Row pitch follows the lyric font size so lines stay close: one focused line
-// (LYRIC_FONT_SIZE × LYRIC_LINE_HEIGHT) plus roughly one blank line of air.
-const LYRIC_FONT_SIZE = 28;
-const LYRIC_LINE_HEIGHT = 1.36;
-const TRANSLATION_FONT_SIZE = 20;
-// 聚焦与非聚焦行保持同一排版字号，仅通过 GPU scale/opacity 过渡，避免切行或拖动时重排。
-const UNFOCUSED_SCALE = 0.82;
-const LYRIC_ROW_TRANSITION = { opacity: 'quickLessBouncy', transform: 'quickLessBouncy' } as const;
-// 行高由每行内容实测（onLayout），避免两行正文加翻译被固定行距裁剪；
-// 首尾留白跟随实际行高，保证第一行和最后一行也能居中。
-const EST_ROW_HEIGHT = 96;
+const EST_ROW_HEIGHT = 76;
 
 export const LyricsBackground = memo(function LyricsBackground({
   snapshot,
@@ -30,7 +23,8 @@ export const LyricsBackground = memo(function LyricsBackground({
   songId?: number;
   onError: (error: unknown) => void;
 }) {
-  const { reduceMotion } = useMedia();
+  const reduceMotion = useReducedMotion();
+
   const [result, setResult] = useState<{ id: number; data?: Lyrics; error?: string } | null>(null);
   const [retry, setRetry] = useState(0);
   const [position, setPosition] = useState(0);
@@ -39,7 +33,7 @@ export const LyricsBackground = memo(function LyricsBackground({
   const [selected, setSelected] = useState(0);
   const [busy, setBusy] = useState(false);
   const [requested, setRequested] = useState<{ target: number; sentAt: number } | null>(null);
-  const scroll = useRef<ScrollView>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const offset = useRef(0);
   const selectedRef = useRef(0);
   const manual = useRef(false);
@@ -66,6 +60,7 @@ export const LyricsBackground = memo(function LyricsBackground({
       setRequested(null);
     }
   }, [snapshot, np, requested]);
+
   useEffect(
     () => () => {
       clearTimeout(returnTimer.current);
@@ -74,6 +69,7 @@ export const LyricsBackground = memo(function LyricsBackground({
     },
     [],
   );
+
   useEffect(() => {
     if (!songId) return;
     let cancelled = false;
@@ -90,8 +86,23 @@ export const LyricsBackground = memo(function LyricsBackground({
       cancelled = true;
     };
   }, [songId, retry]);
+
   const data = result && result.id === songId ? result.data : undefined;
   const parsed = useMemo(() => prepareLyrics(data), [data]);
+  const lineCount = parsed.lines.length;
+  const hasLines = lineCount > 0;
+
+  useEffect(() => {
+    if (!hasLines) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => setHeight(el.clientHeight);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasLines]);
+
   useEffect(() => {
     if (!parsed.lines.length) return;
     const tick = () => {
@@ -110,7 +121,7 @@ export const LyricsBackground = memo(function LyricsBackground({
       document.removeEventListener('visibilitychange', tick);
     };
   }, [parsed.lines, playing]);
-  const lineCount = parsed.lines.length;
+
   const index = activeLine(parsed.lines, requested?.target ?? (playing ? position : (np?.position ?? position)));
   const center = Math.max(0, index);
   const canSeek = Boolean(
@@ -120,8 +131,6 @@ export const LyricsBackground = memo(function LyricsBackground({
     (playing || (np.playbackActions || 0) & (4 | 512)),
   );
 
-  // Keep measurements tied to the lyric result and reactive so wrapping and
-  // viewport resizing trigger a new centering pass.
   const [measurements, setMeasurements] = useState<{ source: typeof parsed; heights: number[]; count: number }>({
     source: parsed,
     heights: [],
@@ -129,43 +138,77 @@ export const LyricsBackground = memo(function LyricsBackground({
   });
   const heights = useMemo(() => (measurements.source === parsed ? measurements.heights : []), [measurements, parsed]);
   const measured = lineCount > 0 && measurements.source === parsed && measurements.count === lineCount;
+
   useEffect(() => {
     initialized.current = false;
     selectedRef.current = 0;
   }, [parsed]);
-  const reportHeight = useCallback(
-    (lineIndex: number, rowHeight: number) => {
+
+  // Single shared ResizeObserver across all lyric rows batches height updates per frame.
+  const parsedRef = useRef(parsed);
+  parsedRef.current = parsed;
+  const rowIndexMap = useRef(new WeakMap<Element, number>());
+  const rowObserver = useRef<ResizeObserver | null>(null);
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) => {
+      const updates: Array<[number, number]> = [];
+      for (const entry of entries) {
+        const rowIndex = rowIndexMap.current.get(entry.target);
+        if (rowIndex != null) updates.push([rowIndex, entry.target.getBoundingClientRect().height]);
+      }
+      if (!updates.length) return;
+      const source = parsedRef.current;
       setMeasurements((previous) => {
-        const same = previous.source === parsed;
-        const current = same ? previous.heights : [];
-        const prevHeight = current[lineIndex];
-        if (prevHeight === rowHeight) return previous;
-        const next = [...current];
-        next[lineIndex] = rowHeight;
-        const prevCount = same ? previous.count : 0;
-        const delta = (rowHeight > 0 ? 1 : 0) - ((prevHeight ?? 0) > 0 ? 1 : 0);
-        return { source: parsed, heights: next, count: prevCount + delta };
+        const same = previous.source === source;
+        let next = same ? previous.heights : [];
+        let count = same ? previous.count : 0;
+        let changed = !same;
+        for (const [rowIndex, rowHeight] of updates) {
+          const prevHeight = next[rowIndex];
+          if (prevHeight === rowHeight) continue;
+          if (!changed) {
+            next = [...next];
+            changed = true;
+          }
+          next[rowIndex] = rowHeight;
+          count += (rowHeight > 0 ? 1 : 0) - ((prevHeight ?? 0) > 0 ? 1 : 0);
+        }
+        return changed ? { source, heights: next, count } : previous;
       });
-    },
-    [parsed],
-  );
+    });
+    rowObserver.current = observer;
+    return () => {
+      observer.disconnect();
+      rowObserver.current = null;
+    };
+  }, []);
+
+  const observeRow = useCallback((el: HTMLDivElement, lineIndex: number) => {
+    rowIndexMap.current.set(el, lineIndex);
+    rowObserver.current?.observe(el);
+    return () => {
+      rowObserver.current?.unobserve(el);
+      rowIndexMap.current.delete(el);
+    };
+  }, []);
+
   const topPadding = Math.max(0, (height - (heights[0] ?? EST_ROW_HEIGHT)) / 2);
   const bottomPadding = Math.max(0, (height - (heights[lineCount - 1] ?? EST_ROW_HEIGHT)) / 2);
   const offsets = useMemo(() => {
-    const result: number[] = [];
+    const out: number[] = [];
     let y = topPadding;
     for (let i = 0; i < lineCount; i++) {
-      result.push(y);
+      out.push(y);
       y += heights[i] ?? EST_ROW_HEIGHT;
     }
-    return result;
+    return out;
   }, [topPadding, heights, lineCount]);
+
   const centerScroll = useCallback(
-    (line: number): number => {
-      return Math.max(0, (offsets[line] ?? 0) - Math.max(0, height - (heights[line] ?? 0)) / 2);
-    },
+    (line: number): number => Math.max(0, (offsets[line] ?? 0) - Math.max(0, height - (heights[line] ?? 0)) / 2),
     [height, offsets, heights],
   );
+
   const nearestRow = useCallback(
     (offsetY: number): number => {
       const count = offsets.length;
@@ -189,7 +232,10 @@ export const LyricsBackground = memo(function LyricsBackground({
 
   useEffect(() => {
     if (browsing || !height || !lineCount || !measured) return;
-    scroll.current?.scrollTo({ y: centerScroll(center), animated: initialized.current && !reduceMotion });
+    scrollRef.current?.scrollTo({
+      top: centerScroll(center),
+      behavior: initialized.current && !reduceMotion ? 'smooth' : 'auto',
+    });
     initialized.current = true;
   }, [center, browsing, height, lineCount, measured, parsed, reduceMotion, centerScroll]);
 
@@ -209,18 +255,20 @@ export const LyricsBackground = memo(function LyricsBackground({
     clearTimeout(returnTimer.current);
     clearTimeout(snapTimer.current);
     if (dragging.current) return;
-    // Wait for touch momentum or wheel scrolling to settle, then center the nearest line.
     snapTimer.current = setTimeout(() => {
       const target = Math.max(0, Math.min(lineCount - 1, nearestRow(offset.current)));
       if (manual.current && Math.abs(offset.current - centerScroll(target)) > 1) {
-        scroll.current?.scrollTo({ y: centerScroll(target), animated: !reduceMotion });
+        scrollRef.current?.scrollTo({
+          top: centerScroll(target),
+          behavior: reduceMotion ? 'auto' : 'smooth',
+        });
       }
     }, 180);
     returnTimer.current = setTimeout(follow, 5000);
   }
   function browse() {
     if (!manual.current) {
-      scroll.current?.scrollTo({ y: offset.current, animated: false });
+      scrollRef.current?.scrollTo({ top: offset.current, behavior: 'auto' });
       manual.current = true;
       setBrowsing(true);
     }
@@ -267,33 +315,21 @@ export const LyricsBackground = memo(function LyricsBackground({
   if (!np || !songId) return null;
   if (!parsed.lines.length)
     return result?.id === songId && result.error ? (
-      <YStack position="absolute" inset={0} alignItems="center" justifyContent="center" gap="3" padding="4">
-        <Text textAlign="center">歌词加载失败</Text>
-        <Button size="sm" onPress={() => setRetry((value) => value + 1)}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4">
+        <p className="text-center text-sm text-muted-foreground">歌词加载失败</p>
+        <Key size="sm" variant="secondary" onClick={() => setRetry((value) => value + 1)}>
           重试歌词
-        </Button>
-      </YStack>
+        </Key>
+      </div>
     ) : null;
+
   return (
-    <YStack
-      position="absolute"
-      inset={0}
-      zIndex={0}
-      overflow="hidden"
-      contain="layout paint"
-      aria-label="同步歌词"
-      backgroundColor="lyricSurface"
-      backgroundImage={musicAtmosphere.lyrics}
-    >
-      <ScrollView
-        ref={scroll}
-        flex={1}
-        minHeight={0}
-        onLayout={(event) => setHeight(event.nativeEvent.layout.height)}
-        showsVerticalScrollIndicator={false}
+    <div aria-label="同步歌词" className="absolute inset-0 z-0 overflow-hidden">
+      <div
+        ref={scrollRef}
         tabIndex={0}
         aria-label="上下滑动浏览歌词"
-        scrollEventThrottle={16}
+        className="h-full w-full overflow-y-auto outline-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         onWheel={browse}
         onPointerDown={() => {
           dragging.current = true;
@@ -306,13 +342,13 @@ export const LyricsBackground = memo(function LyricsBackground({
           if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)) browse();
         }}
         onScroll={(event) => {
-          offset.current = event.nativeEvent.contentOffset.y;
+          offset.current = event.currentTarget.scrollTop;
           if (!manual.current) return;
           updateSelected(nearestRow(offset.current));
           if (!dragging.current) scheduleReturn();
         }}
       >
-        <YStack flexShrink={0} paddingTop={topPadding} paddingBottom={bottomPadding}>
+        <div className="flex flex-col" style={{ paddingTop: topPadding, paddingBottom: bottomPadding }}>
           {parsed.lines.map((line, lineIndex) => (
             <LyricRow
               key={`${line.start}:${lineIndex}`}
@@ -323,54 +359,38 @@ export const LyricsBackground = memo(function LyricsBackground({
               selected={browsing && lineIndex === selected}
               reduceMotion={reduceMotion}
               lineIndex={lineIndex}
-              onHeight={reportHeight}
+              onObserve={observeRow}
             />
           ))}
-        </YStack>
-      </ScrollView>
-      <YStack position="absolute" inset={0} pointerEvents="none" backgroundImage={musicAtmosphere.lyricEdges} />
+        </div>
+      </div>
       {browsing && (
         <>
-          <XStack
-            position="absolute"
-            top="50%"
-            left="3"
-            right="3"
-            height={44}
-            y={-22}
-            alignItems="center"
-            gap="2"
-            pointerEvents="box-none"
-          >
-            <Button
-              circular
+          <div className="pointer-events-none absolute top-1/2 right-3 left-3 z-30 flex -translate-y-1/2 items-center gap-2">
+            <IconKey
+              variant="primary"
               size="sm"
-              width={44}
-              height={44}
-              minWidth={44}
+              className="pointer-events-auto"
               disabled={!canSeek || busy}
               aria-label={`从 ${formatTime(parsed.lines[selected]?.start ?? 0)} 播放`}
-              onPress={() => void playSelected()}
-              icon={<Play size={20} />}
-            />
-            <YStack flex={1} height={1} backgroundColor="border-color" opacity={0.5} pointerEvents="none" />
-            <Text fontSize="xs" color="color-10" pointerEvents="none">
+              onClick={() => void playSelected()}
+            >
+              <Play />
+            </IconKey>
+            <Separator className="flex-1" />
+            <span className="font-mono text-xs font-semibold text-primary tabular-nums">
               {formatTime(parsed.lines[selected]?.start ?? 0)}
-            </Text>
-          </XStack>
-          <YStack position="absolute" bottom="2" alignSelf="center" gap="1" alignItems="center">
-            {!canSeek && (
-              <Text fontSize="xs" color="color-10">
-                当前音乐 App 不支持从歌词定位播放
-              </Text>
-            )}
-            <Button size="sm" onPress={follow}>
+            </span>
+          </div>
+          <div className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-1">
+            {!canSeek && <span className="text-xs text-muted-foreground">当前音乐 App 不支持从歌词定位播放</span>}
+            <Key size="sm" variant="secondary" onClick={follow}>
               回到当前
-            </Button>
-          </YStack>
+            </Key>
+          </div>
         </>
       )}
-    </YStack>
+    </div>
   );
 });
 
@@ -382,7 +402,7 @@ const LyricRow = memo(function LyricRow({
   selected,
   reduceMotion,
   lineIndex,
-  onHeight,
+  onObserve,
 }: {
   line: LyricLine;
   translation?: string;
@@ -391,59 +411,40 @@ const LyricRow = memo(function LyricRow({
   selected: boolean;
   reduceMotion: boolean;
   lineIndex: number;
-  onHeight: (lineIndex: number, height: number) => void;
+  onObserve: (el: HTMLDivElement, lineIndex: number) => () => void;
 }) {
+  const rowRef = useRef<HTMLDivElement>(null);
   const focused = active || selected;
-  const handleLayout = useCallback(
-    (event: { nativeEvent: { layout: { height: number } } }) => {
-      onHeight(lineIndex, event.nativeEvent.layout.height);
-    },
-    [lineIndex, onHeight],
-  );
-  // Measure the unscaled layout; the visual scale belongs to the inner row.
+
+  useEffect(() => {
+    const el = rowRef.current;
+    if (!el) return;
+    return onObserve(el, lineIndex);
+  }, [lineIndex, onObserve, line.text, translation]);
+
   return (
-    <YStack
-      width="100%"
-      maxWidth={720}
-      alignSelf="center"
-      flexShrink={0}
-      contain="layout style"
-      onLayout={handleLayout}
-    >
-      <YStack
-        width="100%"
-        paddingHorizontal={28}
-        paddingVertical={Math.round(LYRIC_FONT_SIZE * 0.55)}
-        gap="3"
-        alignItems="center"
-        justifyContent="center"
-        transition={reduceMotion ? 'none' : LYRIC_ROW_TRANSITION}
-        scale={focused ? 1 : UNFOCUSED_SCALE}
-        opacity={focused ? 1 : nearby ? 0.38 : 0.16}
+    <div ref={rowRef} className="mx-auto w-full max-w-[720px] shrink-0">
+      <div
+        className={cn(
+          'flex w-full flex-col items-center justify-center gap-2 px-7 py-3 text-center',
+          !reduceMotion && 'transition-[transform,opacity] duration-200 ease-out',
+          focused ? 'scale-100 opacity-100' : nearby ? 'scale-[0.82] opacity-60' : 'scale-[0.82] opacity-25',
+        )}
       >
-        <Text
-          fontSize={LYRIC_FONT_SIZE}
-          lineHeight={LYRIC_LINE_HEIGHT}
-          fontWeight="700"
-          backgroundImage={focused ? musicAtmosphere.lyricInk : undefined}
-          backgroundClip={focused ? 'text' : undefined}
-          color={focused ? 'transparent' : nearby ? 'lyricNearby' : 'lyricRest'}
-          textAlign="center"
+        <p
+          className={cn(
+            'm-0 text-2xl leading-snug font-bold',
+            focused ? 'text-foreground [text-shadow:var(--text-glow-amber)]' : 'text-muted-foreground',
+          )}
         >
           {line.text}
-        </Text>
+        </p>
         {translation && (
-          <Text
-            fontSize={TRANSLATION_FONT_SIZE}
-            lineHeight={1.4}
-            color="lyricTranslation"
-            opacity={focused ? 0.76 : 0.65}
-            textAlign="center"
-          >
+          <p className={cn('m-0 text-base text-muted-foreground', focused ? 'opacity-90' : 'opacity-55')}>
             {translation}
-          </Text>
+          </p>
         )}
-      </YStack>
-    </YStack>
+      </div>
+    </div>
   );
 });

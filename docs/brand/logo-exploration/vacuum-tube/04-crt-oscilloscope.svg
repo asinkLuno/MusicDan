@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="MusicDan — CRT Oscilloscope M">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#17110c" />
+      <stop offset="100%" stop-color="#070503" />
+    </linearGradient>
+    <linearGradient id="bezel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ebd7b0" />
+      <stop offset="55%" stop-color="#be8b45" />
+      <stop offset="100%" stop-color="#764e1b" />
+    </linearGradient>
+    <radialGradient id="crtGlow" cx="50%" cy="50%" r="42%">
+      <stop offset="0%" stop-color="#ff8800" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#ff8800" stop-opacity="0" />
+    </radialGradient>
+    <clipPath id="screenClip">
+      <polygon points="27,19 73,19 81,27 81,73 73,81 27,81 19,73 19,27" />
+    </clipPath>
+  </defs>
+  <rect width="100" height="100" rx="22" fill="url(#bg)" />
+  <!-- Chamfered CRT terminal frame -->
+  <polygon
+    points="26,17 74,17 83,26 83,74 74,83 26,83 17,74 17,26"
+    fill="#090705"
+    stroke="url(#bezel)"
+    stroke-width="3.6"
+    stroke-linejoin="round"
+  />
+  <!-- Subtle CRT scanlines + radial phosphor bloom inside screen -->
+  <g clip-path="url(#screenClip)">
+    <rect x="17" y="17" width="66" height="66" fill="url(#crtGlow)" />
+    <g stroke="#e0d5be" stroke-width="0.9" opacity="0.09">
+      <line x1="17" y1="26" x2="83" y2="26" />
+      <line x1="17" y1="34" x2="83" y2="34" />
+      <line x1="17" y1="42" x2="83" y2="42" />
+      <line x1="17" y1="50" x2="83" y2="50" />
+      <line x1="17" y1="58" x2="83" y2="58" />
+      <line x1="17" y1="66" x2="83" y2="66" />
+      <line x1="17" y1="74" x2="83" y2="74" />
+    </g>
+    <!-- Floating danmaku bars inside CRT -->
+    <rect x="25" y="26" width="22" height="3.6" rx="1.8" fill="#e6d6b8" opacity="0.45" />
+    <rect x="56" y="70" width="18" height="3.6" rx="1.8" fill="#ff9a1f" opacity="0.55" />
+  </g>
+  <!-- Glowing oscilloscope "M" trace -->
+  <path
+    d="M 23 56 L 31 56 L 39 33 L 50 61 L 61 33 L 69 56 L 77 56"
+    fill="none"
+    stroke="#ff951a"
+    stroke-width="4.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="77" cy="56" r="3" fill="#fff2d6" />
+</svg>

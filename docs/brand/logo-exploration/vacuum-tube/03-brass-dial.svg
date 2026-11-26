@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="MusicDan — Brass Tuning Dial">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#17110c" />
+      <stop offset="100%" stop-color="#070503" />
+    </linearGradient>
+    <linearGradient id="brassRing" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f6e3ba" />
+      <stop offset="48%" stop-color="#cf994d" />
+      <stop offset="100%" stop-color="#7c521d" />
+    </linearGradient>
+    <radialGradient id="dialGlow" cx="56%" cy="44%" r="44%">
+      <stop offset="0%" stop-color="#ff8800" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#ff8800" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="100" height="100" rx="22" fill="url(#bg)" />
+  <rect width="100" height="100" rx="22" fill="url(#dialGlow)" />
+  <!-- Outer brass bezel ring -->
+  <circle cx="50" cy="50" r="34" fill="none" stroke="url(#brassRing)" stroke-width="4.5" />
+  <!-- 270-degree calibrated scale ticks -->
+  <g stroke-linecap="round">
+    <line x1="50" y1="22" x2="50" y2="28" stroke="#ff951a" stroke-width="3" />
+    <line x1="50" y1="23" x2="50" y2="27" stroke="#d8c7a6" stroke-width="2.2" transform="rotate(-135 50 50)" />
+    <line x1="50" y1="23" x2="50" y2="27" stroke="#d8c7a6" stroke-width="2.2" transform="rotate(-101.25 50 50)" />
+    <line x1="50" y1="23" x2="50" y2="27" stroke="#d8c7a6" stroke-width="2.2" transform="rotate(-67.5 50 50)" />
+    <line x1="50" y1="23" x2="50" y2="27" stroke="#d8c7a6" stroke-width="2.2" transform="rotate(-33.75 50 50)" />
+    <line x1="50" y1="23" x2="50" y2="27" stroke="#d8c7a6" stroke-width="2.2" transform="rotate(33.75 50 50)" />
+    <line x1="50" y1="23" x2="50" y2="27" stroke="#ff951a" stroke-width="2.8" transform="rotate(67.5 50 50)" />
+    <line x1="50" y1="23" x2="50" y2="27" stroke="#d8c7a6" stroke-width="2.2" transform="rotate(101.25 50 50)" />
+    <line x1="50" y1="23" x2="50" y2="27" stroke="#d8c7a6" stroke-width="2.2" transform="rotate(135 50 50)" />
+  </g>
+  <!-- Glowing sweeping needle + tilted notehead hub -->
+  <line x1="47" y1="53" x2="67" y2="33" stroke="#ff8800" stroke-width="4.4" stroke-linecap="round" />
+  <circle cx="67" cy="33" r="2.6" fill="#fff0d4" />
+  <ellipse cx="47" cy="54" rx="8" ry="6" transform="rotate(-22 47 54)" fill="#f3e5c8" />
+  <circle cx="47" cy="54" r="2.2" fill="#17110c" />
+  <!-- Bottom danmaku frequency ticks -->
+  <rect x="35" y="70" width="14" height="3.6" rx="1.8" fill="#ff951a" opacity="0.85" />
+  <rect x="52" y="70" width="13" height="3.6" rx="1.8" fill="#d8c7a6" opacity="0.45" />
+</svg>

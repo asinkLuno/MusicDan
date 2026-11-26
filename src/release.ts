@@ -33,13 +33,17 @@ export function compareVersions(a: string, b: string): number {
   return 0;
 }
 
+const MD_LINK_RE = /\[([^\]]+)\]\([^)]*\)/g;
+const MD_BOLD_RE = /\*\*([^*]+)\*\*/g;
+const MD_CODE_RE = /`([^`]*)`/g;
+const LINE_SPLIT_RE = /\r?\n/;
+const MD_HEADING_RE = /^#{1,6}\s+(.*)$/;
+const VERSION_TITLE_RE = /^✨?\s*v?\d+(\.\d+)+\s*更新内容$/;
+const MD_ITEM_RE = /^[-*]\s+(.*)$/;
+
 /** 去掉粗体、链接、行内代码等标记，只保留可读文本。 */
 function inlineText(text: string): string {
-  return text
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/`([^`]*)`/g, '$1')
-    .trim();
+  return text.replace(MD_LINK_RE, '$1').replace(MD_BOLD_RE, '$1').replace(MD_CODE_RE, '$1').trim();
 }
 
 /**
@@ -51,19 +55,19 @@ function inlineText(text: string): string {
 export function parseReleaseNotes(markdown: string): ReleaseNoteBlock[] {
   const blocks: ReleaseNoteBlock[] = [];
   let skipping = false;
-  for (const raw of markdown.split(/\r?\n/)) {
+  for (const raw of markdown.split(LINE_SPLIT_RE)) {
     const line = raw.trim();
     if (!line) continue;
-    const heading = line.match(/^#{1,6}\s+(.*)$/);
+    const heading = line.match(MD_HEADING_RE);
     if (heading) {
       const text = inlineText(heading[1]);
       skipping = text.includes('Android 用户请下载');
       // “✨ vX.Y.Z 更新内容”由界面自行标注版本，跳过原始标题
-      if (!skipping && !/^✨?\s*v?\d+(\.\d+)+\s*更新内容$/.test(text)) blocks.push({ kind: 'heading', text });
+      if (!skipping && !VERSION_TITLE_RE.test(text)) blocks.push({ kind: 'heading', text });
       continue;
     }
     if (skipping || line.startsWith('包含自')) continue;
-    const item = line.match(/^[-*]\s+(.*)$/);
+    const item = line.match(MD_ITEM_RE);
     if (item) blocks.push({ kind: 'item', text: inlineText(item[1]) });
     else blocks.push({ kind: 'text', text: inlineText(line) });
   }

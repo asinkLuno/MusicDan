@@ -61,6 +61,12 @@ export interface InstallPermission {
   granted: boolean;
 }
 
+const DEMO_SCENARIOS = new Set(['creep', 'november-rain']);
+const IS_BROWSER_DEMO =
+  import.meta.env.DEV &&
+  typeof window !== 'undefined' &&
+  DEMO_SCENARIOS.has(new URLSearchParams(window.location.search).get('demo') || '');
+
 export function invoke<K extends keyof CommandMap>(
   command: K,
   ...args: CommandMap[K]['args'] extends undefined ? [] : [CommandMap[K]['args']]
@@ -75,11 +81,7 @@ export function invoke<K extends keyof CommandMap>(
     }
   ).__TAURI__;
   const payload = args[0] as Record<string, unknown> | undefined;
-  if (
-    !tauri &&
-    import.meta.env.DEV &&
-    ['creep', 'november-rain'].includes(new URLSearchParams(window.location.search).get('demo') || '')
-  ) {
+  if (!tauri && IS_BROWSER_DEMO) {
     return import('./browser-demo').then((module) => module.demoInvoke(command, payload)) as Promise<
       CommandMap[K]['result']
     >;

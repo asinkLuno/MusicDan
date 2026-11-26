@@ -1,5 +1,5 @@
 {
-  "textColor": "#f5effb",
-  "high": { "minLikes": 1000, "colors": ["#c4a5ed", "#f3eaff", "#a5d8f3"] },
-  "top": { "minLikes": 10000, "colors": ["#f2cc83", "#fff4d6", "#edb56a"] }
+  "textColor": "#f7efe0",
+  "high": { "minLikes": 1000, "colors": ["#f5c87e", "#fff2d6", "#e8a54f"] },
+  "top": { "minLikes": 10000, "colors": ["#ff9b38", "#ffe4a6", "#f0721e"] }
 }

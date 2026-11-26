@@ -3,7 +3,7 @@ import { defaults } from './types';
 import { invoke } from './commands';
 import type { Settings, Snapshot } from './types';
 
-interface OverlayStatus {
+export interface OverlayStatus {
   granted: boolean;
   running: boolean;
   supported: boolean;
@@ -11,6 +11,7 @@ interface OverlayStatus {
 
 const CLOCK_DRIFT_MS = 150;
 const CLOCK_SYNC_MS = 3000;
+const POLL_INTERVAL_MS = 750;
 
 function sameSnapshot(previous: Snapshot | null, next: Snapshot): boolean {
   if (!previous) return false;
@@ -49,20 +50,31 @@ function sameSnapshot(previous: Snapshot | null, next: Snapshot): boolean {
 export function usePlayerState() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [cfg, setCfg] = useState<Settings>(defaults);
-  const [commentLimitDraft, setCommentLimitDraft] = useState(String(defaults.commentLimit ?? ''));
   const [overlay, setOverlay] = useState<OverlayStatus>({ granted: false, running: false, supported: true });
   const [error, setError] = useState('');
   const initialized = useRef(false);
+  const pendingSettings = useRef<Settings | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fail = useCallback((e: unknown) => setError(e instanceof Error ? e.message : String(e)), []);
 
   useEffect(() => {
     let stopped = false;
+    let inFlight = false;
     let revision: number | undefined;
-    let timer: ReturnType<typeof setTimeout>;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    function schedule() {
+      if (stopped || document.hidden) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        void poll();
+      }, POLL_INTERVAL_MS);
+    }
 
     async function poll() {
+      if (stopped || document.hidden || inFlight) return;
+      inFlight = true;
       try {
         const [state, status] = await Promise.all([
           invoke('get_player_state', {
@@ -86,32 +98,65 @@ export function usePlayerState() {
         if (!initialized.current) {
           initialized.current = true;
           setCfg(state.settings);
-          setCommentLimitDraft(state.settings.commentLimit == null ? '' : String(state.settings.commentLimit));
         }
       } catch (e) {
         if (!stopped) fail(e);
+      } finally {
+        inFlight = false;
       }
-      if (!stopped) timer = setTimeout(poll, 750);
+      schedule();
     }
 
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        clearTimeout(timer);
+        timer = undefined;
+      } else {
+        void poll();
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
     void poll();
     return () => {
       stopped = true;
       clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, [fail]);
 
-  const change = useCallback(
-    (patch: Partial<Settings>) => {
-      const next = { ...cfg, ...patch };
-      setCfg(next);
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => {
-        void invoke('update_settings', { settings: next }).catch(fail);
-      }, 180);
+  useEffect(
+    () => () => {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+        if (pendingSettings.current) {
+          const toFlush = pendingSettings.current;
+          pendingSettings.current = null;
+          void invoke('update_settings', { settings: toFlush }).catch(() => {});
+        }
+      }
     },
-    [cfg, fail],
+    [],
   );
 
-  return { snapshot, cfg, commentLimitDraft, setCommentLimitDraft, overlay, setOverlay, error, setError, fail, change };
+  const change = useCallback(
+    (patch: Partial<Settings>) => {
+      setCfg((previous) => {
+        const next = { ...previous, ...patch };
+        pendingSettings.current = next;
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        saveTimer.current = setTimeout(() => {
+          saveTimer.current = null;
+          const settings = pendingSettings.current;
+          pendingSettings.current = null;
+          if (settings) void invoke('update_settings', { settings }).catch(fail);
+        }, 180);
+        return next;
+      });
+    },
+    [fail],
+  );
+
+  return { snapshot, cfg, overlay, setOverlay, error, setError, fail, change };
 }
